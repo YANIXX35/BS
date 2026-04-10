@@ -6,6 +6,7 @@ BS/
 token.json
 tokens/
 *.json.key
+client_secret_*.json
 
 # Python
 __pycache__/
