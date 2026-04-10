@@ -1,0 +1,48 @@
+<div class="sidebar">
+  <div class="sidebar-header">
+    <mat-icon class="logo-icon">mail</mat-icon>
+    <h2>Mail Notifier</h2>
+  </div>
+
+  <mat-divider />
+
+  <mat-nav-list>
+    <mat-list-item [class.active]="activeSection === 'overview'" (click)="navigate('overview')">
+      <mat-icon matListItemIcon>dashboard</mat-icon>
+      <span matListItemTitle>Dashboard</span>
+    </mat-list-item>
+    <mat-list-item [class.active]="activeSection === 'inbox'" (click)="navigate('inbox')">
+      <mat-icon matListItemIcon>inbox</mat-icon>
+      <span matListItemTitle>Boite de reception</span>
+    </mat-list-item>
+    <mat-list-item [class.active]="activeSection === 'settings'" (click)="navigate('settings')">
+      <mat-icon matListItemIcon>settings</mat-icon>
+      <span matListItemTitle>Parametres</span>
+    </mat-list-item>
+  </mat-nav-list>
+
+  <mat-divider />
+
+  <div class="status-section">
+    <p class="status-title">Canaux actifs</p>
+    <div class="channel">
+      <mat-icon [class.active]="status?.telegram">send</mat-icon>
+      <span>Telegram</span>
+      <span class="badge" [class.on]="status?.telegram">
+        {{ status?.telegram ? 'ON' : 'OFF' }}
+      </span>
+    </div>
+    <div class="channel">
+      <mat-icon [class.active]="status?.whatsapp">chat</mat-icon>
+      <span>WhatsApp</span>
+      <span class="badge" [class.on]="status?.whatsapp">
+        {{ status?.whatsapp ? 'ON' : 'OFF' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <mat-icon [class.running]="status?.running">fiber_manual_record</mat-icon>
+    <span>{{ status?.running ? 'Surveillance active' : 'Arrete' }}</span>
+  </div>
+</div>

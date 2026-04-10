@@ -1,0 +1,46 @@
+<mat-card class="email-list-card">
+  <mat-card-header>
+    <mat-card-title>
+      <mat-icon>inbox</mat-icon>
+      Boite de reception
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loading) {
+      <div class="center">
+        <mat-spinner diameter="48" />
+        <p>Chargement des mails...</p>
+      </div>
+    } @else if (error) {
+      <div class="center error">
+        <mat-icon>error_outline</mat-icon>
+        <p>Impossible de se connecter au serveur. Lance <code>python api.py</code></p>
+      </div>
+    } @else if (emails.length === 0) {
+      <div class="center">
+        <mat-icon>inbox</mat-icon>
+        <p>Aucun mail trouve</p>
+      </div>
+    } @else {
+      <div class="email-items">
+        @for (email of emails; track email.id) {
+          <div class="email-item" [class.unread]="email.unread">
+            <div class="avatar">{{ getSenderInitial(email.sender) }}</div>
+            <div class="email-body">
+              <div class="email-top">
+                <span class="sender">{{ getSenderName(email.sender) }}</span>
+                <span class="date">{{ email.date | slice:0:16 }}</span>
+              </div>
+              <p class="subject" [class.bold]="email.unread">{{ email.subject }}</p>
+              <p class="snippet">{{ email.snippet }}</p>
+            </div>
+            @if (email.unread) {
+              <span class="unread-dot"></span>
+            }
+          </div>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

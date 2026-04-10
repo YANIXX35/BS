@@ -1,0 +1,149 @@
+<div class="app-container">
+  <app-sidebar [activeSection]="activeSection" (sectionChange)="onSectionChange($event)" />
+  <main class="main-content">
+    <div class="dashboard">
+
+      <!-- ── OVERVIEW ── -->
+      @if (activeSection === 'overview' || activeSection === 'inbox') {
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Voici l'etat de ta boite mail</p>
+          </div>
+          <button mat-stroked-button (click)="goHome()">
+            <mat-icon>arrow_back</mat-icon> Accueil
+          </button>
+        </div>
+
+        <div class="stats-row">
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat">
+                <mat-icon class="icon blue">email</mat-icon>
+                <div>
+                  <p class="stat-value">{{ loading ? '...' : (stats?.total_messages | number) }}</p>
+                  <p class="stat-label">Total mails</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat">
+                <mat-icon class="icon orange">mark_email_unread</mat-icon>
+                <div>
+                  <p class="stat-value">{{ loading ? '...' : stats?.unread_count }}</p>
+                  <p class="stat-label">Non lus</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat">
+                <mat-icon class="icon green">send</mat-icon>
+                <div>
+                  <p class="stat-value">Telegram</p>
+                  <p class="stat-label">{{ settings.telegram_chat_id ? 'Configure' : 'Non configure' }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="stat-card">
+            <mat-card-content>
+              <div class="stat">
+                <mat-icon class="icon teal">chat</mat-icon>
+                <div>
+                  <p class="stat-value">WhatsApp</p>
+                  <p class="stat-label">{{ settings.green_api_instance ? 'Configure' : 'Non configure' }}</p>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+
+        <app-email-list />
+      }
+
+      <!-- ── PARAMETRES ── -->
+      @if (activeSection === 'settings') {
+        <div class="page-header">
+          <div>
+            <h1>Parametres</h1>
+            <p>Configure tes canaux de notification</p>
+          </div>
+        </div>
+
+        <mat-card class="settings-card">
+          <mat-card-content>
+
+            @if (settingsSaved) {
+              <div class="alert success">
+                <mat-icon>check_circle</mat-icon> Parametres sauvegardes avec succes !
+              </div>
+            }
+            @if (settingsError) {
+              <div class="alert error">
+                <mat-icon>error</mat-icon> {{ settingsError }}
+              </div>
+            }
+
+            <h3 class="settings-section-title">
+              <mat-icon>mark_email_read</mat-icon> Surveillance Gmail
+            </h3>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Adresse Gmail a surveiller</mat-label>
+              <input matInput type="email" [(ngModel)]="settings.gmail_address" placeholder="votre@gmail.com" />
+              <mat-icon matSuffix>email</mat-icon>
+            </mat-form-field>
+
+            <h3 class="settings-section-title">
+              <mat-icon>send</mat-icon> Telegram
+            </h3>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Telegram Chat ID</mat-label>
+              <input matInput [(ngModel)]="settings.telegram_chat_id" placeholder="1737003061" />
+              <mat-icon matSuffix>send</mat-icon>
+            </mat-form-field>
+
+            <h3 class="settings-section-title">
+              <mat-icon>chat</mat-icon> WhatsApp (Green API)
+            </h3>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Numero de telephone</mat-label>
+              <input matInput [(ngModel)]="settings.phone" placeholder="22543875302" />
+              <mat-icon matSuffix>phone</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Green API Instance ID</mat-label>
+              <input matInput [(ngModel)]="settings.green_api_instance" placeholder="7107583327" />
+              <mat-icon matSuffix>router</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Green API Token</mat-label>
+              <input matInput [(ngModel)]="settings.green_api_token" placeholder="Token Green API" />
+              <mat-icon matSuffix>vpn_key</mat-icon>
+            </mat-form-field>
+
+            <button mat-flat-button class="btn-save" (click)="saveSettings()" [disabled]="settingsLoading">
+              @if (settingsLoading) {
+                <mat-spinner diameter="20" />
+              } @else {
+                <ng-container>
+                  <mat-icon>save</mat-icon> Sauvegarder
+                </ng-container>
+              }
+            </button>
+
+          </mat-card-content>
+        </mat-card>
+      }
+
+    </div>
+  </main>
+</div>

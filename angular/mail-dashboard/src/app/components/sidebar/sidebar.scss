@@ -1,0 +1,108 @@
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: #1a237e;
+  color: white;
+  display: flex;
+  flex-direction: column;
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 16px;
+
+    .logo-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      color: #90caf9;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+    }
+  }
+
+  mat-nav-list {
+    padding-top: 8px;
+
+    mat-list-item {
+      color: rgba(255,255,255,0.7);
+      border-radius: 8px;
+      margin: 2px 8px;
+      cursor: pointer;
+
+      &:hover, &.active {
+        background: rgba(255,255,255,0.15);
+        color: white;
+      }
+
+      mat-icon { color: rgba(255,255,255,0.7); }
+    }
+  }
+
+  .status-section {
+    padding: 16px;
+
+    .status-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      margin: 0 0 12px 0;
+    }
+
+    .channel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: rgba(255,255,255,0.4);
+        &.active { color: #69f0ae; }
+      }
+
+      .badge {
+        margin-left: auto;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.5);
+        &.on {
+          background: rgba(105,240,174,0.2);
+          color: #69f0ae;
+        }
+      }
+    }
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+
+    mat-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+      color: rgba(255,255,255,0.3);
+      &.running { color: #69f0ae; }
+    }
+  }
+}

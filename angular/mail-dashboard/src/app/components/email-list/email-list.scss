@@ -1,0 +1,120 @@
+.email-list-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+
+  mat-card-header {
+    mat-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      color: #1a237e;
+      mat-icon { color: #1a237e; }
+    }
+  }
+
+  .center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 0;
+    gap: 12px;
+    color: #999;
+
+    mat-icon { font-size: 48px; width: 48px; height: 48px; }
+
+    &.error {
+      color: #e53935;
+      mat-icon { color: #e53935; }
+      code {
+        background: #fbe9e7;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+    }
+  }
+
+  .email-items {
+    display: flex;
+    flex-direction: column;
+
+    .email-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0f0f0;
+      cursor: pointer;
+      position: relative;
+
+      &:last-child { border-bottom: none; }
+      &:hover { background: #fafafa; }
+      &.unread { background: #e8eaf6; border-radius: 8px; padding: 14px 8px; }
+
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #1a237e;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      .email-body {
+        flex: 1;
+        min-width: 0;
+
+        .email-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .sender {
+            font-weight: 600;
+            font-size: 14px;
+            color: #212121;
+          }
+
+          .date {
+            font-size: 12px;
+            color: #999;
+          }
+        }
+
+        .subject {
+          margin: 2px 0;
+          font-size: 14px;
+          color: #444;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          &.bold { font-weight: 700; color: #212121; }
+        }
+
+        .snippet {
+          margin: 0;
+          font-size: 13px;
+          color: #888;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+
+      .unread-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #1a237e;
+        flex-shrink: 0;
+        margin-top: 6px;
+      }
+    }
+  }
+}

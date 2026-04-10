@@ -1,0 +1,510 @@
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-header">
+      <mat-icon>admin_panel_settings</mat-icon>
+      <span>Admin Panel</span>
+    </div>
+
+    <div class="admin-profile">
+      <div class="admin-avatar">{{ admin.name ? admin.name.charAt(0).toUpperCase() : 'A' }}</div>
+      <div>
+        <p class="admin-name">{{ admin.name }}</p>
+        <p class="admin-role">Administrateur</p>
+      </div>
+    </div>
+
+    <mat-divider />
+
+    <nav class="sidebar-nav">
+      @for (item of navItems; track item.id) {
+        <button class="nav-item" [class.active]="activeSection === item.id" (click)="setSection(item.id)">
+          <mat-icon>{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+        </button>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item logout" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Deconnexion</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="admin-main">
+
+    <!-- TOPBAR -->
+    <header class="admin-topbar">
+      <div class="topbar-title">
+        @switch (activeSection) {
+          @case ('overview')  { <h2><mat-icon>dashboard</mat-icon> Vue generale</h2> }
+          @case ('emails')    { <h2><mat-icon>email</mat-icon> Mes mails</h2> }
+          @case ('users')     { <h2><mat-icon>people</mat-icon> Gestion utilisateurs</h2> }
+          @case ('payments')  { <h2><mat-icon>payment</mat-icon> Paiements</h2> }
+          @case ('settings')  { <h2><mat-icon>settings</mat-icon> Parametres</h2> }
+        }
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-email">{{ admin.email }}</span>
+        <div class="topbar-badge">Admin</div>
+      </div>
+    </header>
+
+    <div class="admin-content">
+
+      <!-- ══════════════════ OVERVIEW ══════════════════ -->
+      @if (activeSection === 'overview') {
+        <div class="section-overview">
+
+          <div class="stats-grid">
+            <mat-card class="stat-card indigo">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>people</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ stats?.total_users ?? '...' }}</p>
+                  <p class="lbl">Utilisateurs</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="stat-card green">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>verified_user</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ stats?.verified_users ?? '...' }}</p>
+                  <p class="lbl">Verifies</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="stat-card gold">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>star</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ stats?.premium_users ?? '...' }}</p>
+                  <p class="lbl">Premium</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="stat-card teal">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>email</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ gmailStats?.total_messages ?? '...' }}</p>
+                  <p class="lbl">Mails Gmail</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="stat-card orange">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>receipt</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ stats?.total_payments ?? '...' }}</p>
+                  <p class="lbl">Paiements</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="stat-card red">
+              <mat-card-content>
+                <div class="stat-icon"><mat-icon>attach_money</mat-icon></div>
+                <div class="stat-body">
+                  <p class="val">{{ getTotalRevenue() | number:'1.2-2' }}€</p>
+                  <p class="lbl">Revenus</p>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Derniers utilisateurs + derniers paiements -->
+          <div class="overview-grid">
+            <mat-card class="mini-card">
+              <mat-card-header>
+                <mat-card-title><mat-icon>people</mat-icon> Derniers inscrits</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                @for (u of users.slice(0,5); track u.id) {
+                  <div class="mini-row">
+                    <div class="mini-avatar" [style.background]="getAvatarColor(u.email)">{{ u.name.charAt(0).toUpperCase() }}</div>
+                    <div class="mini-info">
+                      <p class="mini-name">{{ u.name }}</p>
+                      <p class="mini-email">{{ u.email }}</p>
+                    </div>
+                    <span class="role-badge" [class]="u.role">{{ u.role }}</span>
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="mini-card">
+              <mat-card-header>
+                <mat-card-title><mat-icon>payment</mat-icon> Derniers paiements</mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                @if (payments.length === 0) {
+                  <div class="empty-state"><mat-icon>receipt_long</mat-icon><p>Aucun paiement</p></div>
+                }
+                @for (p of payments.slice(0,5); track p.id) {
+                  <div class="mini-row">
+                    <div class="mini-avatar green">{{ p.name.charAt(0).toUpperCase() }}</div>
+                    <div class="mini-info">
+                      <p class="mini-name">{{ p.name }}</p>
+                      <p class="mini-email">{{ p.plan }} — {{ p.created_at }}</p>
+                    </div>
+                    <span class="amount-badge">+{{ p.amount }}€</span>
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════ EMAILS ══════════════════ -->
+      @if (activeSection === 'emails') {
+        <mat-card class="full-card">
+          <mat-card-header>
+            <mat-card-title><mat-icon>inbox</mat-icon> Boite de reception — kyliyanisse&#64;gmail.com</mat-card-title>
+            <mat-card-subtitle>{{ emails.length }} mails</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (loading.emails) {
+              <mat-progress-bar mode="indeterminate" />
+            } @else {
+              <div class="email-list">
+                @for (email of emails; track email.id) {
+                  <div class="email-row" [class.unread]="email.unread">
+                    <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
+                      {{ getSenderInitial(email.sender) }}
+                    </div>
+                    <div class="email-body">
+                      <div class="email-top">
+                        <span class="sender">{{ getSenderName(email.sender) }}</span>
+                        <span class="date">{{ email.date | slice:5:16 }}</span>
+                      </div>
+                      <p class="subject" [class.bold]="email.unread">{{ email.subject }}</p>
+                      <p class="snippet">{{ email.snippet }}</p>
+                    </div>
+                    @if (email.unread) { <span class="new-badge">Nouveau</span> }
+                  </div>
+                }
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <!-- ══════════════════ USERS ══════════════════ -->
+      @if (activeSection === 'users') {
+        <div class="section-users">
+          <div class="section-toolbar">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Rechercher</mat-label>
+              <input matInput [(ngModel)]="userSearch" placeholder="Nom ou email..." />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <button mat-flat-button class="btn-add" (click)="openCreateUser()">
+              <mat-icon>person_add</mat-icon> Ajouter
+            </button>
+          </div>
+
+          <mat-card class="table-card">
+            <mat-card-content>
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Plan</th>
+                    <th>Verifie</th>
+                    <th>Inscription</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (user of filteredUsers; track user.id) {
+                    <tr>
+                      <td>{{ user.id }}</td>
+                      <td>
+                        <div class="td-user">
+                          <div class="td-avatar" [style.background]="getAvatarColor(user.email)">{{ user.name.charAt(0).toUpperCase() }}</div>
+                          {{ user.name }}
+                        </div>
+                      </td>
+                      <td>{{ user.email }}</td>
+                      <td><span class="role-badge" [class]="user.role">{{ user.role }}</span></td>
+                      <td><span class="plan-badge" [class]="user.plan">{{ user.plan }}</span></td>
+                      <td>
+                        <mat-icon [class]="user.is_verified ? 'verified' : 'unverified'">
+                          {{ user.is_verified ? 'check_circle' : 'cancel' }}
+                        </mat-icon>
+                      </td>
+                      <td>{{ user.created_at }}</td>
+                      <td>
+                        <div class="td-actions">
+                          <button mat-icon-button (click)="openEditUser(user)" matTooltip="Modifier">
+                            <mat-icon class="edit-icon">edit</mat-icon>
+                          </button>
+                          <button mat-icon-button (click)="deleteUser(user.id)" matTooltip="Supprimer">
+                            <mat-icon class="delete-icon">delete</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      }
+
+      <!-- ══════════════════ PAYMENTS ══════════════════ -->
+      @if (activeSection === 'payments') {
+        <div class="section-payments">
+
+          <div class="payment-stats">
+            <mat-card class="pay-stat">
+              <mat-card-content>
+                <mat-icon>receipt</mat-icon>
+                <p class="pay-val">{{ payments.length }}</p>
+                <p class="pay-lbl">Total transactions</p>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="pay-stat green">
+              <mat-card-content>
+                <mat-icon>attach_money</mat-icon>
+                <p class="pay-val">{{ getTotalRevenue() | number:'1.2-2' }}€</p>
+                <p class="pay-lbl">Revenus totaux</p>
+              </mat-card-content>
+            </mat-card>
+            <mat-card class="pay-stat gold">
+              <mat-card-content>
+                <mat-icon>star</mat-icon>
+                <p class="pay-val">{{ stats?.premium_users ?? 0 }}</p>
+                <p class="pay-lbl">Abonnes premium</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <div class="section-toolbar">
+            <h3>Historique des paiements</h3>
+            <button mat-flat-button class="btn-add" (click)="openCreatePayment()">
+              <mat-icon>add</mat-icon> Nouveau paiement
+            </button>
+          </div>
+
+          <mat-card class="table-card">
+            <mat-card-content>
+              @if (payments.length === 0) {
+                <div class="empty-state">
+                  <mat-icon>receipt_long</mat-icon>
+                  <p>Aucun paiement enregistre</p>
+                  <button mat-flat-button class="btn-add" (click)="openCreatePayment()">Ajouter le premier</button>
+                </div>
+              } @else {
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Utilisateur</th>
+                      <th>Email</th>
+                      <th>Plan</th>
+                      <th>Montant</th>
+                      <th>Statut</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of payments; track p.id) {
+                      <tr>
+                        <td>{{ p.id }}</td>
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.email }}</td>
+                        <td><span class="plan-badge" [class]="p.plan">{{ p.plan }}</span></td>
+                        <td class="amount">{{ p.amount | number:'1.2-2' }}€</td>
+                        <td><span class="status-badge" [class]="p.status">{{ p.status }}</span></td>
+                        <td>{{ p.created_at }}</td>
+                        <td>
+                          <button mat-icon-button (click)="deletePayment(p.id)" matTooltip="Supprimer">
+                            <mat-icon class="delete-icon">delete</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Plans tarifaires -->
+          <h3 class="plans-title">Plans tarifaires</h3>
+          <div class="plans-grid">
+            @for (plan of planOptions; track plan.value) {
+              <mat-card class="plan-card" [class.featured]="plan.value === 'premium'">
+                @if (plan.value === 'premium') { <div class="plan-tag">Populaire</div> }
+                <mat-card-content>
+                  <mat-icon class="plan-icon">{{ plan.value === 'free' ? 'lock_open' : plan.value === 'premium' ? 'star' : 'business' }}</mat-icon>
+                  <h3>{{ plan.label }}</h3>
+                  <p class="plan-price">{{ plan.price === 0 ? 'Gratuit' : plan.price + '€/mois' }}</p>
+                  <mat-divider />
+                  <ul class="plan-features">
+                    <li><mat-icon>check</mat-icon> Surveillance Gmail</li>
+                    <li><mat-icon>check</mat-icon> Notifications Telegram</li>
+                    @if (plan.value !== 'free') {
+                      <li><mat-icon>check</mat-icon> Notifications WhatsApp</li>
+                      <li><mat-icon>check</mat-icon> Filtres avances</li>
+                    }
+                    @if (plan.value === 'enterprise') {
+                      <li><mat-icon>check</mat-icon> Multi-comptes</li>
+                      <li><mat-icon>check</mat-icon> Support prioritaire</li>
+                    }
+                  </ul>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ══════════════════ SETTINGS ══════════════════ -->
+      @if (activeSection === 'settings') {
+        <div class="section-settings">
+          <mat-card class="settings-card">
+            <mat-card-header>
+              <mat-card-title><mat-icon>account_circle</mat-icon> Mon profil admin</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="settings-profile">
+                <div class="big-avatar">{{ admin.name ? admin.name.charAt(0).toUpperCase() : 'A' }}</div>
+                <div>
+                  <h3>{{ admin.name }}</h3>
+                  <p>{{ admin.email }}</p>
+                  <span class="role-badge admin">Administrateur</span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="settings-card">
+            <mat-card-header>
+              <mat-card-title><mat-icon>notifications</mat-icon> Canaux de notification</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="settings-row"><mat-icon style="color:#0088cc">send</mat-icon><span>Telegram</span><span class="status-on">Actif</span></div>
+              <div class="settings-row"><mat-icon style="color:#25d366">chat</mat-icon><span>WhatsApp</span><span class="status-on">Actif</span></div>
+              <div class="settings-row"><mat-icon style="color:#ea4335">email</mat-icon><span>Gmail SMTP</span><span class="status-on">Actif</span></div>
+            </mat-card-content>
+          </mat-card>
+
+          <mat-card class="settings-card">
+            <mat-card-header>
+              <mat-card-title><mat-icon>storage</mat-icon> Base de donnees</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="settings-row"><mat-icon>dns</mat-icon><span>MySQL — mal_yk</span><span class="status-on">Connecte</span></div>
+              <div class="settings-row"><mat-icon>people</mat-icon><span>Utilisateurs</span><span>{{ stats?.total_users ?? 0 }}</span></div>
+              <div class="settings-row"><mat-icon>receipt</mat-icon><span>Paiements</span><span>{{ stats?.total_payments ?? 0 }}</span></div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL USER ══════════════════ -->
+@if (showUserModal) {
+  <div class="modal-overlay" (click)="showUserModal = false">
+    <mat-card class="modal-card" (click)="$event.stopPropagation()">
+      <mat-card-header>
+        <mat-card-title>{{ isEditMode ? 'Modifier' : 'Ajouter' }} un utilisateur</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nom complet</mat-label>
+          <input matInput [(ngModel)]="editingUser.name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" [(ngModel)]="editingUser.email" />
+        </mat-form-field>
+        @if (!isEditMode) {
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Mot de passe</mat-label>
+            <input matInput type="password" [(ngModel)]="editingUser.password" />
+          </mat-form-field>
+        }
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Role</mat-label>
+          <mat-select [(ngModel)]="editingUser.role">
+            <mat-option value="user">Utilisateur</mat-option>
+            <mat-option value="admin">Admin</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Plan</mat-label>
+          <mat-select [(ngModel)]="editingUser.plan">
+            <mat-option value="free">Gratuit</mat-option>
+            <mat-option value="premium">Premium</mat-option>
+            <mat-option value="enterprise">Enterprise</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-stroked-button (click)="showUserModal = false">Annuler</button>
+        <button mat-flat-button class="btn-save" (click)="saveUser()">
+          <ng-container><mat-icon>save</mat-icon> Sauvegarder</ng-container>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+}
+
+<!-- ══════════════════ MODAL PAYMENT ══════════════════ -->
+@if (showPaymentModal) {
+  <div class="modal-overlay" (click)="showPaymentModal = false">
+    <mat-card class="modal-card" (click)="$event.stopPropagation()">
+      <mat-card-header>
+        <mat-card-title>Nouveau paiement</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>ID Utilisateur</mat-label>
+          <input matInput type="number" [(ngModel)]="newPayment.user_id" placeholder="Ex: 1" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Plan</mat-label>
+          <mat-select [(ngModel)]="newPayment.plan">
+            <mat-option value="premium">Premium — 9.99€</mat-option>
+            <mat-option value="enterprise">Enterprise — 29.99€</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Montant (€)</mat-label>
+          <input matInput type="number" [(ngModel)]="newPayment.amount" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Statut</mat-label>
+          <mat-select [(ngModel)]="newPayment.status">
+            <mat-option value="paid">Paye</mat-option>
+            <mat-option value="pending">En attente</mat-option>
+            <mat-option value="failed">Echoue</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-stroked-button (click)="showPaymentModal = false">Annuler</button>
+        <button mat-flat-button class="btn-save" (click)="savePayment()">
+          <ng-container><mat-icon>save</mat-icon> Enregistrer</ng-container>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+}

@@ -1,0 +1,35 @@
+# Dossier BS (dépôt git séparé)
+BS/
+
+# Secrets & tokens — NE JAMAIS POUSSER
+.env
+token.json
+tokens/
+*.json.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Angular / Node
+angular/mail-dashboard/node_modules/
+angular/mail-dashboard/.angular/
+angular/mail-dashboard/dist/
+angular/mail-dashboard/out-tsc/
+
+# Logs
+*.log
+api_output.log
+
+# OS
+.DS_Store
+Thumbs.db
