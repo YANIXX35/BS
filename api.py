@@ -617,4 +617,5 @@ if __name__ == '__main__':
     init_db()
     notifier_status["running"] = True
     threading.Thread(target=telegram_bot_polling, daemon=True, name="tg-bot-polling").start()
-    app.run(port=5000, debug=False)
+    port = int(os.getenv('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
