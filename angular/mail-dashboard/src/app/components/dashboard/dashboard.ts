@@ -35,7 +35,9 @@ export class Dashboard implements OnInit {
   constructor(private emailService: EmailService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    this.emailService.getStats().subscribe({
+    const stored = localStorage.getItem('user');
+    const email = stored ? JSON.parse(stored).email : '';
+    this.emailService.getStats(email).subscribe({
       next: (s) => { this.stats = s; this.loading = false; },
       error: () => { this.loading = false; }
     });
