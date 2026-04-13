@@ -18,7 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AdminService, AdminUser, Payment, AdminStats } from '../../services/admin';
 import { EmailService, Email, Stats } from '../../services/email';
 
-export type Section = 'overview' | 'users' | 'emails' | 'payments' | 'settings';
+export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings';
 
 interface NavItem {
   id: Section;
@@ -61,12 +61,18 @@ export class AdminDashboard implements OnInit {
   // Search
   userSearch = '';
 
+  // Mails par utilisateur
+  selectedUserEmail = '';
+  userEmails: Email[] = [];
+  loadingUserEmails = false;
+
   navItems: NavItem[] = [
-    { id: 'overview',  icon: 'dashboard', label: 'Vue generale' },
-    { id: 'emails',    icon: 'email',     label: 'Mes mails' },
-    { id: 'users',     icon: 'people',    label: 'Utilisateurs' },
-    { id: 'payments',  icon: 'payment',   label: 'Paiements' },
-    { id: 'settings',  icon: 'settings',  label: 'Parametres' },
+    { id: 'overview',    icon: 'dashboard',   label: 'Vue generale' },
+    { id: 'emails',      icon: 'email',       label: 'Mes mails' },
+    { id: 'user-emails', icon: 'manage_search', label: 'Mails utilisateurs' },
+    { id: 'users',       icon: 'people',      label: 'Utilisateurs' },
+    { id: 'payments',    icon: 'payment',     label: 'Paiements' },
+    { id: 'settings',    icon: 'settings',    label: 'Parametres' },
   ];
 
   planOptions = [
@@ -93,11 +99,21 @@ export class AdminDashboard implements OnInit {
     this.adminService.getStats().subscribe({ next: s => { this.stats = s; this.loading.stats = false; this.cdr.detectChanges(); }, error: () => this.loading.stats = false });
     this.adminService.getUsers().subscribe({ next: u => { this.users = u; this.loading.users = false; this.cdr.detectChanges(); }, error: () => this.loading.users = false });
     this.adminService.getPayments().subscribe({ next: p => { this.payments = p; this.loading.payments = false; this.cdr.detectChanges(); }, error: () => this.loading.payments = false });
-    this.emailService.getStats().subscribe({ next: s => { this.gmailStats = s; this.cdr.detectChanges(); } });
-    this.emailService.getEmails().subscribe({ next: e => { this.emails = e; this.loading.emails = false; this.cdr.detectChanges(); }, error: () => this.loading.emails = false });
+    this.emailService.getStats(this.admin.email).subscribe({ next: s => { this.gmailStats = s; this.cdr.detectChanges(); } });
+    this.emailService.getEmails(this.admin.email).subscribe({ next: e => { this.emails = e; this.loading.emails = false; this.cdr.detectChanges(); }, error: () => this.loading.emails = false });
   }
 
   setSection(s: Section) { this.activeSection = s; }
+
+  loadUserEmails() {
+    if (!this.selectedUserEmail) return;
+    this.loadingUserEmails = true;
+    this.userEmails = [];
+    this.emailService.getEmails(this.selectedUserEmail).subscribe({
+      next: (e) => { this.userEmails = e; this.loadingUserEmails = false; this.cdr.detectChanges(); },
+      error: () => { this.loadingUserEmails = false; this.cdr.detectChanges(); }
+    });
+  }
 
   // ── USERS CRUD ──
   get filteredUsers(): AdminUser[] {

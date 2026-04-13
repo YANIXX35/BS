@@ -257,9 +257,34 @@
             <input matInput type="email" [(ngModel)]="settings.gmail_address" placeholder="votre@gmail.com" />
             <mat-icon matSuffix>email</mat-icon>
           </mat-form-field>
+
+          <div class="gmail-connect-row">
+            @if (gmailConnected) {
+              <div class="gmail-status connected">
+                <mat-icon>check_circle</mat-icon>
+                <span>Gmail autorisé et surveillé</span>
+              </div>
+            } @else {
+              <div class="gmail-status not-connected">
+                <mat-icon>warning</mat-icon>
+                <span>Gmail non encore autorisé</span>
+              </div>
+            }
+            <button mat-flat-button class="btn-gmail" (click)="connectGmail()" [disabled]="gmailConnecting">
+              @if (gmailConnecting) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <ng-container>
+                  <mat-icon>login</mat-icon>
+                  {{ gmailConnected ? 'Reconnecter Gmail' : 'Autoriser mon Gmail' }}
+                </ng-container>
+              }
+            </button>
+          </div>
+
           <p class="config-hint">
             <mat-icon>info</mat-icon>
-            Entre le Gmail que tu veux surveiller. Le systeme te notifiera a chaque nouveau mail recu.
+            Clique sur "Autoriser mon Gmail" et connecte-toi avec le compte Gmail à surveiller.
           </p>
         </mat-card-content>
       </mat-card>

@@ -640,3 +640,30 @@
   font-size: 13px;
   padding: 8px 0;
 }
+
+.gmail-connect-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+.gmail-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+  &.connected { background: #e8f5e9; color: #2e7d32; }
+  &.not-connected { background: #fff3e0; color: #e65100; }
+}
+.btn-gmail {
+  background: #ea4335 !important;
+  color: white !important;
+  border-radius: 8px;
+  gap: 6px;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}

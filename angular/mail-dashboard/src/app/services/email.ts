@@ -41,16 +41,16 @@ export class EmailService {
 
   constructor(private http: HttpClient) {}
 
-  getEmails(): Observable<Email[]> {
-    return this.http.get<Email[]>(`${this.apiUrl}/emails`);
+  getEmails(email: string): Observable<Email[]> {
+    return this.http.get<Email[]>(`${this.apiUrl}/emails`, { params: { email } });
   }
 
   getStatus(): Observable<Status> {
     return this.http.get<Status>(`${this.apiUrl}/status`);
   }
 
-  getStats(): Observable<Stats> {
-    return this.http.get<Stats>(`${this.apiUrl}/stats`);
+  getStats(email: string): Observable<Stats> {
+    return this.http.get<Stats>(`${this.apiUrl}/stats`, { params: { email } });
   }
 
   getUserSettings(email: string): Observable<UserSettings> {
@@ -63,5 +63,13 @@ export class EmailService {
 
   getWhatsappQr(email: string): Observable<{ type: string; message: string }> {
     return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
+  }
+
+  getGmailConnectUrl(email: string): Observable<{ auth_url: string }> {
+    return this.http.get<{ auth_url: string }>(`${this.apiUrl}/auth/gmail-connect`, { params: { email } });
+  }
+
+  getGmailStatus(email: string): Observable<{ connected: boolean }> {
+    return this.http.get<{ connected: boolean }>(`${this.apiUrl}/auth/gmail-status`, { params: { email } });
   }
 }

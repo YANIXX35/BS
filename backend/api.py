@@ -36,8 +36,12 @@ def handle_options(path):
     return '', 200
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-CREDENTIALS_FILE = 'client_secret_566087061726-ho604krop059vb98q4iek8cfbacfk1ds.apps.googleusercontent.com.json'
+CREDENTIALS_FILE = 'client_secret_566087061726-dvbm61gi2hkinu2eapo26iikrpr5johp.apps.googleusercontent.com.json'
 TOKEN_FILE = 'token.json'
+TOKENS_DIR = 'tokens'
+
+os.makedirs(TOKENS_DIR, exist_ok=True)
+oauth_pending = {}  # state -> {email, user_id, flow, port}
 
 SMTP_EMAIL        = os.getenv('SMTP_EMAIL')
 SMTP_PASSWORD     = os.getenv('SMTP_PASSWORD')
@@ -113,6 +117,13 @@ def init_db():
                     email VARCHAR(150) NOT NULL UNIQUE,
                     password VARCHAR(64) NOT NULL,
                     is_verified TINYINT(1) DEFAULT 1,
+                    role VARCHAR(20) DEFAULT 'user',
+                    plan VARCHAR(20) DEFAULT 'free',
+                    phone VARCHAR(30),
+                    gmail_address VARCHAR(150),
+                    telegram_chat_id VARCHAR(50),
+                    green_api_instance VARCHAR(100),
+                    green_api_token VARCHAR(100),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -123,7 +134,18 @@ def init_db():
                     code VARCHAR(6) NOT NULL,
                     name VARCHAR(100),
                     password VARCHAR(64),
+                    extra TEXT,
                     expires_at DATETIME NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    plan VARCHAR(20),
+                    amount DECIMAL(10,2),
+                    status VARCHAR(20) DEFAULT 'paid',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -456,20 +478,123 @@ def admin_delete_payment(pay_id):
         db.close()
 
 
+# ─── GMAIL OAUTH2 WEB FLOW ────────────────────────────────────────────────────
+
+def _get_free_port():
+    import socket
+    with socket.socket() as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
+
+
+@app.route('/api/auth/gmail-connect')
+def gmail_connect():
+    email = request.args.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'error': 'email requis'}), 400
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE email = %s AND is_verified = 1", (email,))
+            user = cur.fetchone()
+        if not user:
+            return jsonify({'error': 'Utilisateur non trouve'}), 404
+    finally:
+        db.close()
+
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+    from google_auth_oauthlib.flow import InstalledAppFlow
+    import wsgiref.simple_server, wsgiref.util
+
+    port = _get_free_port()
+    redirect_uri = f'http://localhost:{port}/'
+    flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
+    flow.redirect_uri = redirect_uri
+    auth_url, state = flow.authorization_url(access_type='offline', prompt='consent')
+
+    user_id = user['id']
+
+    def _serve_callback():
+        """Mini-serveur local qui attend le callback Google et sauvegarde le token."""
+        result = {}
+
+        def wsgi_app(environ, start_response):
+            from urllib.parse import urlparse, parse_qs
+            qs = parse_qs(environ.get('QUERY_STRING', ''))
+            code = qs.get('code', [None])[0]
+            if code:
+                try:
+                    flow.fetch_token(code=code)
+                    token_path = os.path.join(TOKENS_DIR, f'token_{user_id}.json')
+                    with open(token_path, 'w') as f:
+                        f.write(flow.credentials.to_json())
+                    result['ok'] = True
+                except Exception as e:
+                    print(f'[OAuth2] Erreur: {e}')
+            html = b'''<html><body style="font-family:Arial;text-align:center;padding:60px;background:#f5f5f5;">
+                <div style="background:white;border-radius:16px;padding:40px;max-width:400px;margin:auto;">
+                <div style="font-size:64px">&#x2705;</div>
+                <h2 style="color:#1a237e">Gmail connect&#xe9; !</h2>
+                <p>Tu peux fermer cette fen&#xea;tre.</p>
+                </div><script>setTimeout(()=>window.close(),2000)</script></body></html>'''
+            start_response('200 OK', [('Content-Type', 'text/html'), ('Content-Length', str(len(html)))])
+            return [html]
+
+        server = wsgiref.simple_server.make_server('localhost', port, wsgi_app)
+        server.handle_request()
+        server.server_close()
+        print(f'[OAuth2] Token sauvegarde pour user_id={user_id} ({email})')
+
+    threading.Thread(target=_serve_callback, daemon=True).start()
+    return jsonify({'auth_url': auth_url})
+
+
+@app.route('/api/auth/gmail-status')
+def gmail_status():
+    email = request.args.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'connected': False}), 400
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            user = cur.fetchone()
+        if not user:
+            return jsonify({'connected': False})
+        token_path = os.path.join(TOKENS_DIR, f'token_{user["id"]}.json')
+        connected = os.path.exists(token_path)
+        return jsonify({'connected': connected})
+    finally:
+        db.close()
+
+
 # ─── GMAIL ROUTES ─────────────────────────────────────────────────────────────
 
-def get_gmail_service():
-    creds = None
-    if os.path.exists(TOKEN_FILE):
-        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+def get_gmail_service_for(email):
+    """Retourne le service Gmail pour un utilisateur donné via son token."""
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+            user = cur.fetchone()
+        if not user:
+            return None
+        user_id = user['id']
+    finally:
+        db.close()
+
+    token_path = os.path.join(TOKENS_DIR, f'token_{user_id}.json')
+    if not os.path.exists(token_path):
+        return None
+
+    creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
+            with open(token_path, 'w') as f:
+                f.write(creds.to_json())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
-        with open(TOKEN_FILE, 'w') as token:
-            token.write(creds.to_json())
+            return None
     return build('gmail', 'v1', credentials=creds)
 
 
@@ -485,8 +610,11 @@ def get_status():
 
 @app.route('/api/emails')
 def get_emails():
+    email = request.args.get('email', '').strip().lower()
     try:
-        service = get_gmail_service()
+        service = get_gmail_service_for(email) if email else None
+        if not service:
+            return jsonify([])
         results = service.users().messages().list(userId='me', labelIds=['INBOX'], maxResults=20).execute()
         messages = results.get('messages', [])
         emails = []
@@ -506,8 +634,11 @@ def get_emails():
 
 @app.route('/api/stats')
 def get_stats():
+    email = request.args.get('email', '').strip().lower()
     try:
-        service = get_gmail_service()
+        service = get_gmail_service_for(email) if email else None
+        if not service:
+            return jsonify({"total_messages": 0, "unread_count": 0, "email": email})
         profile = service.users().getProfile(userId='me').execute()
         unread  = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD'], maxResults=1).execute()
         return jsonify({

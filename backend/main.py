@@ -12,7 +12,7 @@ import requests
 load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-CREDENTIALS_FILE = 'client_secret_566087061726-ho604krop059vb98q4iek8cfbacfk1ds.apps.googleusercontent.com.json'
+CREDENTIALS_FILE = 'client_secret_566087061726-dvbm61gi2hkinu2eapo26iikrpr5johp.apps.googleusercontent.com.json'
 TOKENS_DIR = 'tokens'
 
 # Defaults from .env (used as fallback if user has no personal credentials)
@@ -112,7 +112,7 @@ def send_whatsapp(instance, token, phone, message):
     """Envoie une notification WhatsApp via Green API."""
     if not instance or not token or not phone:
         return False
-    url = f"https://api.green-api.com/waInstance{instance}/sendMessage/{token}"
+    url = f"https://7107.api.greenapi.com/waInstance{instance}/sendMessage/{token}"
     try:
         resp = requests.post(url, json={"chatId": f"{phone}@c.us", "message": message}, timeout=10)
         if not resp.ok:

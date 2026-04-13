@@ -206,7 +206,7 @@
                   </mat-form-field>
 
                   <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Adresse email</mat-label>
+                    <mat-label>Adresse email (compte)</mat-label>
                     <input matInput type="email" [(ngModel)]="regEmail" placeholder="exemple@gmail.com" />
                     <mat-icon matSuffix>email</mat-icon>
                   </mat-form-field>
@@ -217,6 +217,26 @@
                     <mat-icon matSuffix>lock</mat-icon>
                   </mat-form-field>
 
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Gmail a surveiller</mat-label>
+                    <input matInput type="email" [(ngModel)]="regGmail" placeholder="tonmail@gmail.com" />
+                    <mat-icon matSuffix>mark_email_unread</mat-icon>
+                    <mat-hint>Laisse vide pour utiliser ton email de compte</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Numero WhatsApp</mat-label>
+                    <input matInput [(ngModel)]="regPhone" placeholder="2250143875302" />
+                    <mat-icon matSuffix>chat</mat-icon>
+                    <mat-hint>Format international sans + (ex: 2250143875302)</mat-hint>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Telegram Chat ID</mat-label>
+                    <input matInput [(ngModel)]="regTelegramChatId" placeholder="123456789" />
+                    <mat-icon matSuffix>send</mat-icon>
+                    <mat-hint>Envoie /start a @Kylimail_bot sur Telegram pour obtenir ton ID</mat-hint>
+                  </mat-form-field>
 
                   <button mat-flat-button class="btn-submit" (click)="register()" [disabled]="regLoading">
                     @if (regLoading) {

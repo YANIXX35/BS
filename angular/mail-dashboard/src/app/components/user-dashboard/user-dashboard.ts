@@ -47,6 +47,10 @@ export class UserDashboard implements OnInit {
   qrImage = '';
   qrStatus = '';
 
+  // Gmail connect
+  gmailConnected = false;
+  gmailConnecting = false;
+
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
   quickActions = [
@@ -69,12 +73,12 @@ export class UserDashboard implements OnInit {
 
     setInterval(() => { this.currentTime = new Date(); this.cdr.detectChanges(); }, 1000);
 
-    this.emailService.getStats().subscribe({
+    this.emailService.getStats(this.user.email).subscribe({
       next: (s) => { this.stats = s; this.loadingStats = false; this.cdr.detectChanges(); },
       error: () => { this.loadingStats = false; }
     });
 
-    this.emailService.getEmails().subscribe({
+    this.emailService.getEmails(this.user.email).subscribe({
       next: (e) => { this.emails = e.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
       error: () => { this.loadingEmails = false; }
     });
@@ -91,6 +95,27 @@ export class UserDashboard implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {}
+    });
+    this.emailService.getGmailStatus(this.user.email).subscribe({
+      next: (res) => { this.gmailConnected = res.connected; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+  }
+
+  connectGmail() {
+    this.gmailConnecting = true;
+    this.emailService.getGmailConnectUrl(this.user.email).subscribe({
+      next: (res) => {
+        this.gmailConnecting = false;
+        window.open(res.auth_url, '_blank', 'width=600,height=700');
+        setTimeout(() => {
+          this.emailService.getGmailStatus(this.user.email).subscribe({
+            next: (s) => { this.gmailConnected = s.connected; this.cdr.detectChanges(); }
+          });
+        }, 5000);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.gmailConnecting = false; this.cdr.detectChanges(); }
     });
   }
 
@@ -125,7 +150,7 @@ export class UserDashboard implements OnInit {
       this.activeView = 'settings';
     } else if (action === 'refresh') {
       this.loadingEmails = true;
-      this.emailService.getEmails().subscribe({
+      this.emailService.getEmails(this.user.email).subscribe({
         next: (e) => { this.emails = e.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
         error: () => { this.loadingEmails = false; }
       });

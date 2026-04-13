@@ -42,8 +42,9 @@
       <div class="topbar-title">
         @switch (activeSection) {
           @case ('overview')  { <h2><mat-icon>dashboard</mat-icon> Vue generale</h2> }
-          @case ('emails')    { <h2><mat-icon>email</mat-icon> Mes mails</h2> }
-          @case ('users')     { <h2><mat-icon>people</mat-icon> Gestion utilisateurs</h2> }
+          @case ('emails')      { <h2><mat-icon>email</mat-icon> Mes mails</h2> }
+          @case ('user-emails') { <h2><mat-icon>manage_search</mat-icon> Mails utilisateurs</h2> }
+          @case ('users')       { <h2><mat-icon>people</mat-icon> Gestion utilisateurs</h2> }
           @case ('payments')  { <h2><mat-icon>payment</mat-icon> Paiements</h2> }
           @case ('settings')  { <h2><mat-icon>settings</mat-icon> Parametres</h2> }
         }
@@ -193,6 +194,78 @@
             }
           </mat-card-content>
         </mat-card>
+      }
+
+      <!-- ══════════════════ MAILS UTILISATEURS ══════════════════ -->
+      @if (activeSection === 'user-emails') {
+        <div class="section-user-emails">
+          <mat-card class="selector-card">
+            <mat-card-content>
+              <div class="user-selector-row">
+                <mat-form-field appearance="outline" class="selector-field">
+                  <mat-label>Choisir un utilisateur</mat-label>
+                  <mat-select [(ngModel)]="selectedUserEmail" (selectionChange)="loadUserEmails()">
+                    @for (u of users; track u.id) {
+                      <mat-option [value]="u.email">
+                        <div class="option-user">
+                          <strong>{{ u.name }}</strong> — {{ u.email }}
+                        </div>
+                      </mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matSuffix>person_search</mat-icon>
+                </mat-form-field>
+                <button mat-flat-button class="btn-add" (click)="loadUserEmails()" [disabled]="!selectedUserEmail">
+                  <mat-icon>refresh</mat-icon> Actualiser
+                </button>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          @if (selectedUserEmail) {
+            <mat-card class="full-card">
+              <mat-card-header>
+                <mat-card-title><mat-icon>inbox</mat-icon> Boite de {{ selectedUserEmail }}</mat-card-title>
+                <mat-card-subtitle>{{ userEmails.length }} mails chargés</mat-card-subtitle>
+              </mat-card-header>
+              <mat-card-content>
+                @if (loadingUserEmails) {
+                  <mat-progress-bar mode="indeterminate" />
+                  <p style="text-align:center;color:#888;padding:16px">Chargement des mails...</p>
+                } @else if (userEmails.length === 0) {
+                  <div class="empty-state">
+                    <mat-icon>inbox</mat-icon>
+                    <p>Aucun mail ou Gmail non encore autorisé par cet utilisateur</p>
+                  </div>
+                } @else {
+                  <div class="email-list">
+                    @for (email of userEmails; track email.id) {
+                      <div class="email-row" [class.unread]="email.unread">
+                        <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
+                          {{ getSenderInitial(email.sender) }}
+                        </div>
+                        <div class="email-body">
+                          <div class="email-top">
+                            <span class="sender">{{ getSenderName(email.sender) }}</span>
+                            <span class="date">{{ email.date | slice:5:16 }}</span>
+                          </div>
+                          <p class="subject" [class.bold]="email.unread">{{ email.subject }}</p>
+                          <p class="snippet">{{ email.snippet }}</p>
+                        </div>
+                        @if (email.unread) { <span class="new-badge">Nouveau</span> }
+                      </div>
+                    }
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+          } @else {
+            <div class="empty-state" style="margin-top:40px">
+              <mat-icon>person_search</mat-icon>
+              <p>Sélectionne un utilisateur pour voir sa boite mail</p>
+            </div>
+          }
+        </div>
       }
 
       <!-- ══════════════════ USERS ══════════════════ -->
