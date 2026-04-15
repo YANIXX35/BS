@@ -26,6 +26,16 @@ interface NavItem {
   label: string;
 }
 
+// Extended user type with new fields from the API
+interface AdminUserDetail extends AdminUser {
+  phone?: string;
+  gmail_address?: string;
+  telegram_chat_id?: string;
+  green_api_instance?: string;
+  gmail_connected?: boolean;
+  monitor_active?: boolean;
+}
+
 @Component({
   selector: 'app-admin-dashboard',
   imports: [
@@ -43,23 +53,27 @@ export class AdminDashboard implements OnInit {
 
   stats: AdminStats | null = null;
   gmailStats: Stats | null = null;
-  users: AdminUser[] = [];
+  users: AdminUserDetail[] = [];
   payments: Payment[] = [];
   emails: Email[] = [];
 
   loading = { stats: true, users: true, payments: true, emails: true };
 
+  // Detail panel
+  selectedUser: AdminUserDetail | null = null;
+
+  // Search
+  globalSearch = '';
+  userSearch = '';
+
   // CRUD User modal
   showUserModal = false;
-  editingUser: Partial<AdminUser> & { password?: string } = {};
+  editingUser: Partial<AdminUserDetail> & { password?: string } = {};
   isEditMode = false;
 
   // CRUD Payment modal
   showPaymentModal = false;
   newPayment: any = { user_id: '', plan: 'premium', amount: 9.99, status: 'paid' };
-
-  // Search
-  userSearch = '';
 
   // Mails par utilisateur
   selectedUserEmail = '';
@@ -67,17 +81,16 @@ export class AdminDashboard implements OnInit {
   loadingUserEmails = false;
 
   navItems: NavItem[] = [
-    { id: 'overview',    icon: 'dashboard',   label: 'Vue generale' },
-    { id: 'emails',      icon: 'email',       label: 'Mes mails' },
+    { id: 'overview',    icon: 'dashboard',     label: 'Vue generale' },
+    { id: 'emails',      icon: 'email',         label: 'Mes mails' },
     { id: 'user-emails', icon: 'manage_search', label: 'Mails utilisateurs' },
-    { id: 'users',       icon: 'people',      label: 'Utilisateurs' },
-    { id: 'payments',    icon: 'payment',     label: 'Paiements' },
-    { id: 'settings',    icon: 'settings',    label: 'Parametres' },
+    { id: 'users',       icon: 'people',        label: 'Utilisateurs' },
+    { id: 'payments',    icon: 'payment',       label: 'Paiements' },
   ];
 
   planOptions = [
-    { value: 'free', label: 'Gratuit', price: 0 },
-    { value: 'premium', label: 'Premium', price: 9.99 },
+    { value: 'free',       label: 'Gratuit',    price: 0 },
+    { value: 'premium',    label: 'Premium',    price: 9.99 },
     { value: 'enterprise', label: 'Enterprise', price: 29.99 },
   ];
 
@@ -96,14 +109,35 @@ export class AdminDashboard implements OnInit {
   }
 
   loadAll() {
-    this.adminService.getStats().subscribe({ next: s => { this.stats = s; this.loading.stats = false; this.cdr.detectChanges(); }, error: () => this.loading.stats = false });
-    this.adminService.getUsers().subscribe({ next: u => { this.users = u; this.loading.users = false; this.cdr.detectChanges(); }, error: () => this.loading.users = false });
-    this.adminService.getPayments().subscribe({ next: p => { this.payments = p; this.loading.payments = false; this.cdr.detectChanges(); }, error: () => this.loading.payments = false });
-    this.emailService.getStats(this.admin.email).subscribe({ next: s => { this.gmailStats = s; this.cdr.detectChanges(); } });
-    this.emailService.getEmails(this.admin.email).subscribe({ next: e => { this.emails = e; this.loading.emails = false; this.cdr.detectChanges(); }, error: () => this.loading.emails = false });
+    this.adminService.getStats().subscribe({
+      next: s => { this.stats = s; this.loading.stats = false; this.cdr.detectChanges(); },
+      error: () => this.loading.stats = false
+    });
+    this.adminService.getUsers().subscribe({
+      next: u => { this.users = u as AdminUserDetail[]; this.loading.users = false; this.cdr.detectChanges(); },
+      error: () => this.loading.users = false
+    });
+    this.adminService.getPayments().subscribe({
+      next: p => { this.payments = p; this.loading.payments = false; this.cdr.detectChanges(); },
+      error: () => this.loading.payments = false
+    });
+    this.emailService.getStats(this.admin.email).subscribe({
+      next: s => { this.gmailStats = s; this.cdr.detectChanges(); }
+    });
+    this.emailService.getEmails(this.admin.email).subscribe({
+      next: e => { this.emails = e; this.loading.emails = false; this.cdr.detectChanges(); },
+      error: () => this.loading.emails = false
+    });
   }
 
-  setSection(s: Section) { this.activeSection = s; }
+  setSection(s: Section) {
+    this.activeSection = s;
+    this.selectedUser = null;
+  }
+
+  selectUser(u: AdminUserDetail | null) {
+    this.selectedUser = this.selectedUser?.id === u?.id ? null : u;
+  }
 
   loadUserEmails() {
     if (!this.selectedUserEmail) return;
@@ -116,10 +150,12 @@ export class AdminDashboard implements OnInit {
   }
 
   // ── USERS CRUD ──
-  get filteredUsers(): AdminUser[] {
-    if (!this.userSearch) return this.users;
-    const q = this.userSearch.toLowerCase();
-    return this.users.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+  get filteredUsers(): AdminUserDetail[] {
+    const q = (this.userSearch || this.globalSearch).toLowerCase();
+    if (!q) return this.users;
+    return this.users.filter(u =>
+      u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
   }
 
   openCreateUser() {
@@ -128,7 +164,7 @@ export class AdminDashboard implements OnInit {
     this.showUserModal = true;
   }
 
-  openEditUser(user: AdminUser) {
+  openEditUser(user: AdminUserDetail) {
     this.editingUser = { ...user };
     this.isEditMode = true;
     this.showUserModal = true;
@@ -151,7 +187,7 @@ export class AdminDashboard implements OnInit {
   deleteUser(id: number) {
     if (!confirm('Supprimer cet utilisateur ?')) return;
     this.adminService.deleteUser(id).subscribe({
-      next: () => { this.snack.open('Supprime', '', { duration: 2000 }); this.loadAll(); }
+      next: () => { this.snack.open('Supprime', '', { duration: 2000 }); this.selectedUser = null; this.loadAll(); }
     });
   }
 
@@ -170,7 +206,9 @@ export class AdminDashboard implements OnInit {
 
   deletePayment(id: number) {
     if (!confirm('Supprimer ce paiement ?')) return;
-    this.adminService.deletePayment(id).subscribe({ next: () => { this.snack.open('Supprime', '', { duration: 2000 }); this.loadAll(); } });
+    this.adminService.deletePayment(id).subscribe({
+      next: () => { this.snack.open('Supprime', '', { duration: 2000 }); this.loadAll(); }
+    });
   }
 
   getTotalRevenue(): number {
@@ -178,13 +216,21 @@ export class AdminDashboard implements OnInit {
   }
 
   getSenderName(s: string): string {
-    const m = s.match(/^(.+?)\s*</); return m ? m[1].replace(/"/g, '').trim() : s.split('@')[0];
+    const m = s.match(/^(.+?)\s*</);
+    return m ? m[1].replace(/"/g, '').trim() : s.split('@')[0];
   }
-  getSenderInitial(s: string): string { return this.getSenderName(s).charAt(0).toUpperCase(); }
+
+  getSenderInitial(s: string): string {
+    return this.getSenderName(s).charAt(0).toUpperCase();
+  }
+
   getAvatarColor(s: string): string {
-    const c = ['#1a237e','#0288d1','#2e7d32','#f57c00','#6a1b9a','#c62828'];
+    const c = ['#1a237e', '#0288d1', '#2e7d32', '#f57c00', '#6a1b9a', '#c62828'];
     return c[s.charCodeAt(0) % c.length];
   }
 
-  logout() { localStorage.removeItem('user'); this.router.navigate(['/']); }
+  logout() {
+    localStorage.removeItem('user');
+    this.router.navigate(['/']);
+  }
 }
