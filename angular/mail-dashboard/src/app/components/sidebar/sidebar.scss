@@ -106,3 +106,47 @@
     }
   }
 }
+
+// ── RESPONSIVE : bottom nav bar sur mobile ────────────────────────────────────
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    min-height: auto;
+    height: 56px;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.2);
+
+    .sidebar-header,
+    .status-section,
+    .sidebar-footer { display: none; }
+
+    mat-divider { display: none; }
+
+    mat-nav-list {
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      width: 100%;
+
+      mat-list-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 56px;
+        margin: 0;
+        border-radius: 0;
+
+        ::ng-deep .mdc-list-item__content { flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+        mat-icon { font-size: 22px; width: 22px; height: 22px; }
+        span[matListItemTitle] { font-size: 10px; }
+      }
+    }
+  }
+}

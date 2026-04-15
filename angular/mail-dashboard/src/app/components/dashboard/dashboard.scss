@@ -1,3 +1,24 @@
+// Layout conteneur sidebar + contenu
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-x: hidden;
+  background: #f0f2f5;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+    padding-bottom: 72px; // espace pour la bottom nav
+  }
+}
+
 .dashboard {
   .page-header {
     margin-bottom: 24px;
@@ -64,11 +85,24 @@
     }
   }
 
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      h1 { font-size: 22px; }
+    }
+    .settings-card { max-width: 100%; }
+  }
+
   .stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     margin-bottom: 24px;
+
+    @media (max-width: 768px) { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 400px) { grid-template-columns: 1fr; }
 
     .stat-card {
       border-radius: 12px;

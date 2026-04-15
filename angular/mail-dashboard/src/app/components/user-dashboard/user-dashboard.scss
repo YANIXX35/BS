@@ -1,5 +1,7 @@
 * { box-sizing: border-box; }
 
+* { box-sizing: border-box; }
+
 // ── NAVBAR ───────────────────────────────────────────────────────────────────
 .dash-navbar {
   position: sticky;
@@ -632,6 +634,41 @@
     align-items: center;
     gap: 8px;
   }
+}
+
+// ── RESPONSIVE ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .dash-navbar {
+    padding: 0 12px;
+    .nav-center { display: none; }
+    .nav-right .nav-user .user-info { display: none; }
+  }
+
+  .dash-container { padding: 12px; padding-bottom: 72px; }
+
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    .welcome-text h1 { font-size: 20px; }
+  }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .main-grid { grid-template-columns: 1fr; }
+
+  .settings-grid {
+    grid-template-columns: 1fr;
+    .whatsapp-card { grid-column: 1; }
+  }
+
+  .save-row { justify-content: stretch; .btn-save { width: 100%; justify-content: center; } }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .dash-navbar .nav-right .logout-btn span { display: none; }
 }
 
 .empty-channels {
