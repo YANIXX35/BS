@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://VOTRE-API.up.railway.app'  // à remplacer après déploiement Railway
+  apiUrl: 'https://backend-mail-1.onrender.com'
 };
