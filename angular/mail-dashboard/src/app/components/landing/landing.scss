@@ -660,6 +660,331 @@ $bg:      #f8faff;
   }
 }
 
+// ── PRICING ────────────────────────────────────────────────────────────────────
+.pricing {
+  padding: 100px 80px;
+  background: $white;
+
+  .payment-success-banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1.5px solid #86efac;
+    color: #15803d;
+    border-radius: 14px;
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    max-width: 700px;
+    margin: 0 auto 48px;
+
+    mat-icon { color: #22c55e; font-size: 22px; flex-shrink: 0; }
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 1040px;
+    margin: 0 auto 32px;
+    align-items: start;
+  }
+
+  .pricing-card {
+    background: $white;
+    border: 1.5px solid $border;
+    border-radius: 24px;
+    padding: 32px 28px;
+    position: relative;
+    transition: transform 0.25s, box-shadow 0.25s;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+
+    &:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(15,23,42,0.1); }
+
+    &.featured {
+      border-color: $blue;
+      background: linear-gradient(160deg, #f0f4ff 0%, #ffffff 40%);
+      box-shadow: 0 8px 32px rgba(26,35,126,0.15);
+      transform: scale(1.03);
+
+      &:hover { transform: scale(1.03) translateY(-4px); box-shadow: 0 24px 56px rgba(26,35,126,0.2); }
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, $blue, $sky);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 4px 18px;
+      border-radius: 20px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(26,35,126,0.3);
+    }
+
+    .plan-header {
+      .plan-name {
+        font-size: 18px;
+        font-weight: 800;
+        color: $text;
+        margin: 0 0 10px;
+      }
+
+      .plan-price {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+
+        .price-amount {
+          font-size: 36px;
+          font-weight: 900;
+          color: $blue;
+          letter-spacing: -1px;
+          line-height: 1;
+        }
+
+        .price-period {
+          font-size: 13px;
+          color: $muted;
+          font-weight: 500;
+        }
+      }
+    }
+
+    .plan-features {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: $text;
+        font-weight: 500;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px; height: 18px;
+          color: #22c55e;
+          flex-shrink: 0;
+        }
+
+        &.disabled {
+          color: #cbd5e1;
+          mat-icon { color: #e2e8f0; }
+        }
+      }
+    }
+
+    .plan-btn {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+      &.free-btn {
+        border: 1.5px solid $border;
+        color: $muted;
+        &:hover { border-color: $blue; color: $blue; }
+      }
+
+      &.pay-btn {
+        background: #f1f5f9;
+        color: $text;
+        &:hover { background: #e2e8f0; }
+      }
+
+      &.featured-btn {
+        background: linear-gradient(135deg, $blue, $blue-l);
+        color: white;
+        box-shadow: 0 4px 16px rgba(26,35,126,0.25);
+        &:hover { box-shadow: 0 8px 24px rgba(26,35,126,0.35); }
+      }
+    }
+  }
+
+  .pricing-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: $muted;
+    font-size: 13px;
+    margin: 0;
+
+    mat-icon { font-size: 16px; width: 16px; height: 16px; color: #22c55e; }
+    strong { color: $text; }
+  }
+}
+
+// ── PAYMENT MODAL ──────────────────────────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(4px);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease-out;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+.pay-modal {
+  background: $white;
+  border-radius: 24px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  box-shadow: 0 32px 80px rgba(15,23,42,0.2);
+  animation: slideUp 0.25s ease-out;
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .modal-close-btn {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover { background: #e2e8f0; }
+    mat-icon { font-size: 18px; color: $muted; }
+  }
+
+  .pay-modal-header {
+    text-align: center;
+    margin-bottom: 24px;
+
+    .pay-modal-icon {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, $blue, $sky);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 8px 24px rgba(26,35,126,0.25);
+
+      mat-icon { color: white; font-size: 30px; width: 30px; height: 30px; }
+    }
+
+    h3 {
+      font-size: 20px;
+      font-weight: 800;
+      color: $text;
+      margin: 0 0 6px;
+    }
+
+    p {
+      font-size: 14px;
+      color: $muted;
+      margin: 0;
+      background: #f1f5f9;
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+  }
+
+  .full-width { width: 100%; margin-bottom: 8px; }
+
+  .genius-pay-btn {
+    width: 100%;
+    height: 50px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, $blue, $blue-l);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(26,35,126,0.28);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: box-shadow 0.2s, transform 0.15s;
+
+    mat-icon { font-size: 20px; width: 20px; height: 20px; }
+
+    &:hover {
+      box-shadow: 0 8px 24px rgba(26,35,126,0.38);
+      transform: translateY(-1px);
+    }
+  }
+
+  .pay-secure-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: $muted;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; color: #22c55e; }
+  }
+
+  .pay-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+
+    p { color: $muted; font-size: 14px; margin: 0; }
+  }
+
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    mat-icon { font-size: 18px; flex-shrink: 0; }
+    &.error { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; mat-icon { width: 18px; height: 18px; } }
+  }
+
+  .retry-btn {
+    width: 100%;
+    border-radius: 10px;
+    border-color: $border;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  }
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 .login-section {
   padding: 100px 80px;
@@ -948,7 +1273,7 @@ $bg:      #f8faff;
 @media (max-width: 1100px) {
   .features .features-grid { grid-template-columns: repeat(2, 1fr); }
   .hero { padding: 100px 48px 72px; }
-  .features, .how-it-works, .login-section { padding-left: 48px; padding-right: 48px; }
+  .features, .how-it-works, .pricing, .login-section { padding-left: 48px; padding-right: 48px; }
 }
 
 @media (max-width: 900px) {
@@ -1015,6 +1340,15 @@ $bg:      #f8faff;
 
   .login-section { padding: 64px 24px; }
   .footer { padding: 40px 24px; }
+
+  .pricing {
+    padding: 64px 24px;
+    .pricing-grid {
+      grid-template-columns: 1fr;
+      max-width: 420px;
+      .pricing-card.featured { transform: scale(1); }
+    }
+  }
 }
 
 @media (max-width: 540px) {

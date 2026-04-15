@@ -7,6 +7,7 @@
   <div class="nav-links">
     <a href="#features">Fonctionnalites</a>
     <a href="#how">Comment ca marche</a>
+    <a href="#pricing">Tarifs</a>
     <a href="#login">Connexion</a>
   </div>
   <button mat-flat-button class="nav-cta" (click)="scrollTo('login')">
@@ -139,6 +140,116 @@
     </div>
   </div>
 </section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-header">
+    <span class="section-badge">Tarifs</span>
+    <h2>Choisissez votre plan</h2>
+    <p>Commencez gratuitement, upgradez quand vous voulez</p>
+  </div>
+
+  @if (paymentSuccess) {
+    <div class="payment-success-banner">
+      <mat-icon>check_circle</mat-icon>
+      Paiement confirme ! Votre plan <strong>{{ paymentSuccessPlan }}</strong> est maintenant actif.
+    </div>
+  }
+
+  <div class="pricing-grid">
+    @for (plan of plans; track plan.id) {
+      <div class="pricing-card" [class.featured]="plan.popular">
+        @if (plan.popular) {
+          <div class="popular-badge">Populaire</div>
+        }
+        <div class="plan-header">
+          <h3 class="plan-name">{{ plan.name }}</h3>
+          <div class="plan-price">
+            <span class="price-amount">{{ plan.price }}</span>
+            <span class="price-period">{{ plan.period }}</span>
+          </div>
+        </div>
+        <ul class="plan-features">
+          @for (f of plan.features; track f.label) {
+            <li [class.disabled]="!f.ok">
+              <mat-icon>{{ f.ok ? 'check_circle' : 'cancel' }}</mat-icon>
+              {{ f.label }}
+            </li>
+          }
+        </ul>
+        @if (plan.id === 'free') {
+          <button mat-stroked-button class="plan-btn free-btn" (click)="scrollTo('login')">
+            Commencer gratuitement
+          </button>
+        } @else {
+          <button mat-flat-button class="plan-btn pay-btn" [class.featured-btn]="plan.popular"
+            (click)="openPayModal(plan.id === 'premium' ? 'premium' : 'enterprise')">
+            <mat-icon>payment</mat-icon>
+            Payer avec Genius Pay
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="pricing-note">
+    <mat-icon>lock</mat-icon>
+    Paiements securises via <strong>Genius Pay</strong> — Visa, Mastercard, Mobile Money
+  </p>
+</section>
+
+<!-- MODAL PAIEMENT -->
+@if (showPayModal) {
+  <div class="modal-overlay" (click)="showPayModal = false">
+    <div class="pay-modal" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="showPayModal = false">
+        <mat-icon>close</mat-icon>
+      </button>
+
+      <div class="pay-modal-header">
+        <div class="pay-modal-icon">
+          <mat-icon>payment</mat-icon>
+        </div>
+        <h3>Finaliser votre abonnement</h3>
+        <p>
+          {{ payPlan === 'premium' ? 'Premium — 5 000 XOF/mois' : 'Enterprise — 15 000 XOF/mois' }}
+        </p>
+      </div>
+
+      @if (!paymentLoading && !paymentError) {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Adresse email du compte</mat-label>
+          <input matInput type="email" [(ngModel)]="paymentEmail" placeholder="exemple@gmail.com"
+            (keyup.enter)="pay()" />
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+        <button mat-flat-button class="genius-pay-btn" (click)="pay()">
+          <mat-icon>payment</mat-icon>
+          Payer avec Genius Pay
+        </button>
+        <p class="pay-secure-note">
+          <mat-icon>lock</mat-icon> Paiement 100% securise
+        </p>
+      }
+
+      @if (paymentLoading) {
+        <div class="pay-loading">
+          <mat-spinner diameter="44" />
+          <p>Connexion a Genius Pay...</p>
+        </div>
+      }
+
+      @if (paymentError) {
+        <div class="alert error">
+          <mat-icon>error</mat-icon> {{ paymentError }}
+        </div>
+        <button mat-stroked-button class="retry-btn" (click)="paymentError = ''">
+          <mat-icon>refresh</mat-icon> Reessayer
+        </button>
+      }
+    </div>
+  </div>
+}
 
 <!-- LOGIN / REGISTER -->
 <section class="login-section" id="login">
