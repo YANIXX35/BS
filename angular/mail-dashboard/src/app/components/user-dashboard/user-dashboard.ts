@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -62,6 +62,7 @@ export class UserDashboard implements OnInit {
   constructor(
     private emailService: EmailService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -70,6 +71,15 @@ export class UserDashboard implements OnInit {
     if (stored) {
       this.user = JSON.parse(stored);
     }
+
+    this.route.queryParams.subscribe(params => {
+      if (params['gmail'] === 'connected') {
+        this.gmailConnected = true;
+        this.activeView = 'settings';
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
+        this.loadUserSettings();
+      }
+    });
 
     setInterval(() => { this.currentTime = new Date(); this.cdr.detectChanges(); }, 1000);
 
@@ -107,13 +117,8 @@ export class UserDashboard implements OnInit {
     this.emailService.getGmailConnectUrl(this.user.email).subscribe({
       next: (res) => {
         this.gmailConnecting = false;
-        window.open(res.auth_url, '_blank', 'width=600,height=700');
-        setTimeout(() => {
-          this.emailService.getGmailStatus(this.user.email).subscribe({
-            next: (s) => { this.gmailConnected = s.connected; this.cdr.detectChanges(); }
-          });
-        }, 5000);
-        this.cdr.detectChanges();
+        // Redirection directe : fonctionne sur mobile ET desktop (pas de popup)
+        window.location.href = res.auth_url;
       },
       error: () => { this.gmailConnecting = false; this.cdr.detectChanges(); }
     });
