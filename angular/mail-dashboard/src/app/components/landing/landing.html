@@ -1,7 +1,7 @@
 <!-- NAVBAR -->
-<nav class="navbar">
+<nav class="navbar" [class.scrolled]="scrolled">
   <div class="nav-brand">
-    <mat-icon>mail</mat-icon>
+    <div class="brand-icon"><mat-icon>mail</mat-icon></div>
     <span>MailNotifier</span>
   </div>
   <div class="nav-links">
@@ -9,18 +9,24 @@
     <a href="#how">Comment ca marche</a>
     <a href="#login">Connexion</a>
   </div>
-  <button mat-flat-button (click)="scrollTo('login')">
-    <mat-icon>login</mat-icon> Connexion
+  <button mat-flat-button class="nav-cta" (click)="scrollTo('login')">
+    Commencer gratuitement
   </button>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
+  <div class="hero-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
   <div class="hero-content">
-    <span class="hero-badge">
-      <mat-icon>notifications_active</mat-icon>
-      Surveillance en temps reel
-    </span>
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Surveillance Gmail en temps reel
+    </div>
     <h1>Ne rate plus<br><span class="gradient-text">aucun mail important</span></h1>
     <p>Connecte ta boite Gmail et recois chaque nouveau mail instantanement sur <strong>Telegram</strong> et <strong>WhatsApp</strong>. Simple, rapide, gratuit.</p>
     <div class="hero-actions">
@@ -28,41 +34,61 @@
         <mat-icon>rocket_launch</mat-icon>
         Commencer maintenant
       </button>
-      <button mat-stroked-button class="btn-outline" href="#features">
+      <button mat-stroked-button class="btn-outline" (click)="scrollTo('how')">
         <mat-icon>play_circle</mat-icon>
-        Voir comment ca marche
+        Comment ca marche
       </button>
     </div>
     <div class="hero-stats">
-      <div class="stat"><strong>30s</strong><span>Delai de detection</span></div>
-      <div class="divider"></div>
-      <div class="stat"><strong>2</strong><span>Canaux de notification</span></div>
-      <div class="divider"></div>
-      <div class="stat"><strong>100%</strong><span>Gratuit</span></div>
+      <div class="stat">
+        <strong>30s</strong>
+        <span>Delai de detection</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <strong>2</strong>
+        <span>Canaux de notification</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <strong>100%</strong>
+        <span>Gratuit</span>
+      </div>
     </div>
   </div>
+
   <div class="hero-visual">
+    <div class="phone-glow"></div>
     <div class="phone-mockup">
-      <div class="phone-screen">
-        <div class="notif-card">
-          <div class="notif-icon telegram">
-            <mat-icon>send</mat-icon>
-          </div>
-          <div class="notif-body">
-            <p class="notif-app">Telegram - MailNotifier</p>
-            <p class="notif-title">Nouveau Mail !</p>
-            <p class="notif-text">De : John Doe<br>Objet : Reunion demain a 10h</p>
-          </div>
+      <div class="phone-bar">
+        <span class="phone-time">9:41</span>
+        <div class="phone-icons">
+          <mat-icon>signal_cellular_alt</mat-icon>
+          <mat-icon>battery_full</mat-icon>
         </div>
-        <div class="notif-card">
-          <div class="notif-icon whatsapp">
-            <mat-icon>chat</mat-icon>
-          </div>
+      </div>
+      <div class="phone-screen">
+        <div class="notif-card card-1">
+          <div class="notif-icon telegram"><mat-icon>send</mat-icon></div>
           <div class="notif-body">
-            <p class="notif-app">WhatsApp - MailNotifier</p>
+            <p class="notif-app">Telegram · MailNotifier</p>
             <p class="notif-title">Nouveau Mail !</p>
-            <p class="notif-text">De : Marie<br>Objet : Devis confirme</p>
+            <p class="notif-text">De : John Doe — Reunion demain a 10h</p>
           </div>
+          <span class="notif-time">maintenant</span>
+        </div>
+        <div class="notif-card card-2">
+          <div class="notif-icon whatsapp"><mat-icon>chat</mat-icon></div>
+          <div class="notif-body">
+            <p class="notif-app">WhatsApp · MailNotifier</p>
+            <p class="notif-title">Nouveau Mail !</p>
+            <p class="notif-text">De : Marie — Devis confirme</p>
+          </div>
+          <span class="notif-time">il y a 2s</span>
+        </div>
+        <div class="live-indicator">
+          <span class="live-dot"></span>
+          Surveillance active
         </div>
       </div>
     </div>
@@ -72,20 +98,19 @@
 <!-- FEATURES -->
 <section class="features" id="features">
   <div class="section-header">
+    <span class="section-badge">Fonctionnalites</span>
     <h2>Tout ce dont tu as besoin</h2>
     <p>Un systeme complet pour ne jamais rater un mail</p>
   </div>
   <div class="features-grid">
     @for (f of features; track f.title) {
-      <mat-card class="feature-card">
-        <mat-card-content>
-          <div class="feature-icon">
-            <mat-icon>{{ f.icon }}</mat-icon>
-          </div>
-          <h3>{{ f.title }}</h3>
-          <p>{{ f.desc }}</p>
-        </mat-card-content>
-      </mat-card>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <mat-icon>{{ f.icon }}</mat-icon>
+        </div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.desc }}</p>
+      </div>
     }
   </div>
 </section>
@@ -93,29 +118,37 @@
 <!-- HOW IT WORKS -->
 <section class="how-it-works" id="how">
   <div class="section-header">
+    <span class="section-badge">Mise en place</span>
     <h2>Comment ca marche ?</h2>
     <p>Mis en place en moins de 5 minutes</p>
   </div>
-  <div class="steps">
-    @for (step of steps; track step.number) {
-      <div class="step">
-        <div class="step-number">{{ step.number }}</div>
-        <div class="step-content">
-          <h3>{{ step.title }}</h3>
-          <p>{{ step.desc }}</p>
+  <div class="steps-wrap">
+    <div class="steps-connector"></div>
+    <div class="steps">
+      @for (step of steps; track step.number) {
+        <div class="step">
+          <div class="step-bubble">
+            <span>{{ step.number }}</span>
+          </div>
+          <div class="step-content">
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.desc }}</p>
+          </div>
         </div>
-        <div class="step-arrow">
-          <mat-icon>arrow_forward</mat-icon>
-        </div>
-      </div>
-    }
+      }
+    </div>
   </div>
 </section>
 
 <!-- LOGIN / REGISTER -->
 <section class="login-section" id="login">
+  <div class="login-bg">
+    <div class="login-orb orb-a"></div>
+    <div class="login-orb orb-b"></div>
+  </div>
   <div class="login-wrapper">
     <div class="login-left">
+      <div class="login-left-badge">Acces securise</div>
       <h2>Acces a ton espace</h2>
       <p>Connecte-toi ou cree un compte pour acceder au dashboard et gerer tes notifications en temps reel.</p>
       <ul class="login-perks">
@@ -136,7 +169,7 @@
           <mat-tab label="Connexion">
             <div class="tab-content">
               <div class="login-header">
-                <mat-icon class="login-logo">login</mat-icon>
+                <div class="login-logo-wrap"><mat-icon class="login-logo">login</mat-icon></div>
                 <h3>Bon retour !</h3>
                 <p>Connecte-toi a ton compte</p>
               </div>
@@ -187,7 +220,7 @@
               <!-- ETAPE 1 : FORMULAIRE -->
               @if (regStep === 'form') {
                 <div class="login-header">
-                  <mat-icon class="login-logo">person_add</mat-icon>
+                  <div class="login-logo-wrap"><mat-icon class="login-logo">person_add</mat-icon></div>
                   <h3>Nouveau compte</h3>
                   <p>Inscription avec verification par email</p>
                 </div>
@@ -313,12 +346,13 @@
 
 <!-- FOOTER -->
 <footer class="footer">
-  <div class="footer-content">
+  <div class="footer-inner">
     <div class="footer-brand">
-      <mat-icon>mail</mat-icon>
+      <div class="footer-icon"><mat-icon>mail</mat-icon></div>
       <span>MailNotifier</span>
     </div>
-    <p>Surveille ta boite Gmail et recois des alertes sur Telegram et WhatsApp</p>
-    <p class="footer-copy">2024 MailNotifier - Yanisse Walker</p>
+    <p class="footer-tagline">Surveille ta boite Gmail et recois des alertes sur Telegram et WhatsApp</p>
+    <div class="footer-divider"></div>
+    <p class="footer-copy">© 2025 MailNotifier — Yanisse Walker</p>
   </div>
 </footer>

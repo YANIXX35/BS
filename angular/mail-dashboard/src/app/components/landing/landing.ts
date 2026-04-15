@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,6 +21,11 @@ type Step = 'form' | 'otp' | 'success';
   styleUrl: './landing.scss'
 })
 export class Landing {
+  scrolled = false;
+
+  @HostListener('window:scroll')
+  onScroll() { this.scrolled = window.scrollY > 20; }
+
   // Login
   loginEmail = '';
   loginPassword = '';
