@@ -1,3 +1,4 @@
+print("=== MailNotifier API v3.0 - MONITOR ACTIF ===")
 import os
 import time
 import random
