@@ -149,7 +149,7 @@ $bg:      #f8faff;
   position: relative;
   overflow: hidden;
   gap: 48px;
-  background: linear-gradient(160deg, #f0f4ff 0%, #fafbff 40%, #f0f7ff 100%);
+  background: url('/hero-bg.png') center center / cover no-repeat;
 
   // Decorative background
   .hero-bg {
@@ -157,12 +157,13 @@ $bg:      #f8faff;
     inset: 0;
     overflow: hidden;
     pointer-events: none;
+    background: linear-gradient(135deg, rgba(232,234,246,0.82) 0%, rgba(227,242,253,0.75) 50%, rgba(243,229,245,0.80) 100%);
 
     .orb {
       position: absolute;
       border-radius: 50%;
       filter: blur(60px);
-      opacity: 0.45;
+      opacity: 0.35;
       animation: orbFloat 12s ease-in-out infinite;
     }
 
