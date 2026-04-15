@@ -1,7 +1,12 @@
 <div class="admin-layout">
 
+  <!-- ══ OVERLAY MOBILE ══ -->
+  @if (mobileMenuOpen) {
+    <div class="mobile-overlay" (click)="mobileMenuOpen = false"></div>
+  }
+
   <!-- ══ SIDEBAR ══ -->
-  <aside class="sidebar">
+  <aside class="sidebar" [class.mobile-open]="mobileMenuOpen">
     <div class="sidebar-logo">
       <div class="logo-icon"><mat-icon>mail</mat-icon></div>
       <span>MailNotifier</span>
@@ -41,6 +46,9 @@
 
     <!-- TOPBAR -->
     <header class="topbar">
+      <button class="hamburger-btn" (click)="toggleMobileMenu()">
+        <mat-icon>menu</mat-icon>
+      </button>
       <div class="topbar-left">
         <h2 class="page-title">
           @switch (activeSection) {

@@ -50,6 +50,7 @@ interface AdminUserDetail extends AdminUser {
 export class AdminDashboard implements OnInit {
   activeSection: Section = 'overview';
   admin = { name: '', email: '' };
+  mobileMenuOpen = false;
 
   stats: AdminStats | null = null;
   gmailStats: Stats | null = null;
@@ -133,6 +134,11 @@ export class AdminDashboard implements OnInit {
   setSection(s: Section) {
     this.activeSection = s;
     this.selectedUser = null;
+    this.mobileMenuOpen = false;
+  }
+
+  toggleMobileMenu() {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
   }
 
   selectUser(u: AdminUserDetail | null) {

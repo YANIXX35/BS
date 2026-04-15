@@ -736,6 +736,130 @@ $panel-w:   300px;
   }
 }
 
+// ── HAMBURGER (mobile only) ────────────────────────────────────────────────────
+.hamburger-btn {
+  display: none;
+  width: 36px; height: 36px;
+  border: none; background: transparent;
+  border-radius: 8px; cursor: pointer;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+  &:hover { background: #f3f4f6; }
+  mat-icon { color: $muted; font-size: 22px; width: 22px; height: 22px; }
+}
+
+// ── MOBILE OVERLAY ─────────────────────────────────────────────────────────────
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+}
+
+// ── RESPONSIVE MOBILE ──────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+
+  // Sidebar : panneau glissant depuis la gauche
+  .sidebar {
+    position: fixed;
+    top: 0; bottom: 0;
+    left: calc(-1 * #{$sidebar-w});
+    transition: left 0.25s ease, box-shadow 0.25s ease;
+    z-index: 100;
+
+    &.mobile-open {
+      left: 0;
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+    }
+  }
+
+  // Hamburger visible
+  .hamburger-btn { display: flex; }
+
+  // Topbar
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+
+    .topbar-center { display: none; }
+
+    .topbar-left {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .topbar-right {
+      .admin-chip {
+        padding: 4px;
+        .chip-info { display: none; }
+      }
+    }
+  }
+
+  // Main area : pas de décalage pour le panel
+  .main-area {
+    &.panel-open { margin-right: 0; }
+  }
+
+  // Content wrap
+  .content-wrap { padding: 12px; }
+
+  // Quick grids : 2 colonnes
+  .quick-grid {
+    grid-template-columns: repeat(2, 1fr);
+    &.three { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  // File list : masquer les colonnes secondaires
+  .file-list {
+    .file-list-header {
+      grid-template-columns: 1fr 80px 56px;
+
+      .col-sharing,
+      .col-date { display: none; }
+    }
+
+    .file-row {
+      grid-template-columns: 1fr 80px 56px;
+
+      .col-sharing,
+      .col-date { display: none; }
+    }
+  }
+
+  // Plans tarifaires : 1 colonne
+  .plans-grid {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  // Settings : 1 colonne
+  .settings-grid { grid-template-columns: 1fr; }
+
+  // Detail panel : plein écran
+  .detail-panel {
+    width: 100%;
+    left: 0;
+  }
+
+  // Sélecteur utilisateur vertical
+  .user-selector-row {
+    flex-direction: column;
+    align-items: stretch;
+    .selector-field { max-width: 100%; }
+  }
+
+  // Block header : wrap sur petits écrans
+  .section-block .block-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    .block-actions { flex-wrap: wrap; }
+  }
+
+  // Inline search : largeur auto
+  .inline-search input { width: 120px; }
+}
+
 // ── MODAL ──────────────────────────────────────────────────────────────────────
 .modal-overlay {
   position: fixed; inset: 0; z-index: 999;
