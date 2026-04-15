@@ -583,11 +583,32 @@
 }
 
 @media (max-width: 480px) {
-  .hero .hero-content h1 { font-size: 26px; }
+  .hero {
+    padding: 80px 12px 32px;
+    .hero-content {
+      h1 { font-size: 26px; }
+      p { font-size: 15px; }
+      .hero-actions {
+        flex-direction: column;
+        .btn-primary, .btn-outline { width: 100%; justify-content: center; }
+      }
+      .hero-stats {
+        gap: 14px;
+        .stat strong { font-size: 20px; }
+      }
+    }
+    .hero-visual { display: none; } // cache le phone mockup sur très petit écran
+  }
+
   .features .features-grid { grid-template-columns: 1fr; }
-  .hero .hero-content .hero-actions {
-    flex-direction: column;
-    .btn-primary, .btn-outline { width: 100%; justify-content: center; }
+
+  .login-section .login-left { display: none; } // cache le panneau gauche, seul le formulaire compte
+}
+
+@media (max-width: 360px) {
+  .navbar {
+    padding: 0 10px;
+    .nav-brand span { display: none; } // garde juste l'icône sur 320px
   }
 }
 

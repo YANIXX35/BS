@@ -1,7 +1,5 @@
 * { box-sizing: border-box; }
 
-* { box-sizing: border-box; }
-
 // ── NAVBAR ───────────────────────────────────────────────────────────────────
 .dash-navbar {
   position: sticky;
@@ -638,37 +636,126 @@
 
 // ── RESPONSIVE ────────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
+
   .dash-navbar {
     padding: 0 12px;
+    height: 56px;
     .nav-center { display: none; }
     .nav-right .nav-user .user-info { display: none; }
+    .nav-left .nav-separator,
+    .nav-left .nav-page { display: none; }
   }
 
-  .dash-container { padding: 12px; padding-bottom: 72px; }
+  .dash-container {
+    padding: 12px;
+    padding-bottom: 16px; // pas de bottom nav sur cette page
+  }
 
   .welcome-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
-    padding: 20px;
-    .welcome-text h1 { font-size: 20px; }
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    .welcome-text h1 { font-size: 19px; }
+    .welcome-text p { font-size: 13px; }
+    .welcome-status { font-size: 13px; padding: 6px 14px; }
   }
 
-  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
 
-  .main-grid { grid-template-columns: 1fr; }
+    .stat-card mat-card-content {
+      gap: 10px;
+      padding: 14px !important;
+    }
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      mat-icon { font-size: 22px; }
+    }
+    .stat-body {
+      .stat-value { font-size: 20px; }
+      .stat-label { font-size: 11px; }
+    }
+    .stat-trend { display: none; }
+  }
+
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .emails-card {
+    .email-list .email-row {
+      .email-content .email-header .email-date { display: none; }
+      .unread-badge { font-size: 0; padding: 0; width: 8px; height: 8px; border-radius: 50%; min-width: 8px; }
+    }
+  }
 
   .settings-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
     .whatsapp-card { grid-column: 1; }
   }
 
-  .save-row { justify-content: stretch; .btn-save { width: 100%; justify-content: center; } }
+  .gmail-connect-row {
+    flex-direction: column;
+    align-items: stretch;
+    .gmail-status { justify-content: center; }
+    .btn-gmail { width: 100%; justify-content: center; }
+  }
+
+  .config-card {
+    mat-card-header {
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tg-steps .tg-step { font-size: 12px; }
+  }
+
+  .save-row {
+    justify-content: stretch;
+    .btn-save { width: 100%; justify-content: center; }
+  }
 }
 
 @media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr; }
-  .dash-navbar .nav-right .logout-btn span { display: none; }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    .stat-card mat-card-content { padding: 12px !important; gap: 8px; }
+    .stat-icon { width: 34px; height: 34px; mat-icon { font-size: 18px; } }
+    .stat-body .stat-value { font-size: 18px; }
+  }
+
+  .dash-navbar {
+    .nav-left .nav-brand { font-size: 15px; }
+  }
+
+  .welcome-banner {
+    padding: 14px 14px;
+    .welcome-text h1 { font-size: 17px; }
+  }
+
+  .emails-card .email-list .email-row {
+    .email-avatar { width: 34px; height: 34px; min-width: 34px; font-size: 13px; }
+    .email-content {
+      .email-header .email-sender { font-size: 13px; }
+      .email-subject { font-size: 12px; }
+    }
+  }
+
+  .channels-card .channel-row {
+    .channel-icon { width: 34px; height: 34px; mat-icon { font-size: 17px; } }
+    .channel-info .channel-name { font-size: 13px; }
+    .channel-status { font-size: 11px; padding: 2px 7px; }
+  }
+
+  .settings-header h2 { font-size: 18px; }
 }
 
 .empty-channels {
