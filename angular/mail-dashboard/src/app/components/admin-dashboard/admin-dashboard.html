@@ -454,7 +454,17 @@
       <!-- ══════════════════════ SETTINGS ══════════════════════ -->
       @if (activeSection === 'settings') {
         <div class="section">
+
+          @if (settingsSaved) {
+            <div class="alert success"><mat-icon>check_circle</mat-icon> Parametres sauvegardes !</div>
+          }
+          @if (settingsError) {
+            <div class="alert error"><mat-icon>error</mat-icon> {{ settingsError }}</div>
+          }
+
           <div class="settings-grid">
+
+            <!-- Profil -->
             <div class="section-block">
               <div class="block-header"><h3><mat-icon>account_circle</mat-icon> Mon profil</h3></div>
               <div class="settings-profile">
@@ -466,19 +476,125 @@
                 </div>
               </div>
             </div>
+
+            <!-- Gmail IMAP -->
             <div class="section-block">
-              <div class="block-header"><h3><mat-icon>notifications</mat-icon> Canaux actifs</h3></div>
-              <div class="settings-row"><mat-icon style="color:#0088cc">send</mat-icon><span>Telegram</span><span class="status-on">Actif</span></div>
-              <div class="settings-row"><mat-icon style="color:#25d366">chat</mat-icon><span>WhatsApp</span><span class="status-on">Actif</span></div>
-              <div class="settings-row"><mat-icon style="color:#ea4335">email</mat-icon><span>Gmail SMTP</span><span class="status-on">Actif</span></div>
+              <div class="block-header">
+                <h3><mat-icon style="color:#ea4335">email</mat-icon> Gmail a surveiller</h3>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width" style="margin-bottom:12px">
+                <mat-label>Adresse Gmail</mat-label>
+                <input matInput type="email" [(ngModel)]="adminSettings.gmail_address" placeholder="votre@gmail.com" />
+                <mat-icon matSuffix>email</mat-icon>
+              </mat-form-field>
+
+              <div style="margin-bottom:12px">
+                @if (gmailConnected) {
+                  <div class="settings-row">
+                    <mat-icon style="color:#2e7d32">check_circle</mat-icon>
+                    <span>Gmail connecte et surveille</span>
+                    <span class="status-on">Actif</span>
+                  </div>
+                } @else {
+                  <div class="settings-row">
+                    <mat-icon style="color:#c62828">lock</mat-icon>
+                    <span>Gmail non connecte</span>
+                    <span class="status-off">Inactif</span>
+                  </div>
+                }
+              </div>
+
+              @if (!showGmailModal) {
+                <button mat-flat-button class="btn-gmail" (click)="showGmailModal = true">
+                  <mat-icon>vpn_key</mat-icon>
+                  {{ gmailConnected ? 'Modifier la connexion' : 'Connecter mon Gmail' }}
+                </button>
+              }
+
+              @if (showGmailModal) {
+                <div class="gmail-modal">
+                  <div class="gmail-modal-step">
+                    <span class="step-num">1</span>
+                    <div>
+                      <p style="margin:0;font-weight:600">Ouvre Google App Passwords</p>
+                      <a href="https://myaccount.google.com/apppasswords" target="_blank" mat-stroked-button class="btn-google-link">
+                        <mat-icon>open_in_new</mat-icon> Ouvrir
+                      </a>
+                    </div>
+                  </div>
+                  <div class="gmail-modal-step">
+                    <span class="step-num">2</span>
+                    <p style="margin:0">Cree un mot de passe pour <strong>Mail</strong> → copie le code de <strong>16 caracteres</strong></p>
+                  </div>
+                  <div class="gmail-modal-step">
+                    <span class="step-num">3</span>
+                    <div style="width:100%">
+                      <p style="margin:0 0 8px;font-weight:600">Colle le code ici</p>
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Code 16 caracteres</mat-label>
+                        <input matInput [(ngModel)]="appPassword" placeholder="xxxx xxxx xxxx xxxx" />
+                        <mat-icon matSuffix>key</mat-icon>
+                      </mat-form-field>
+                    </div>
+                  </div>
+
+                  @if (gmailTestSuccess) {
+                    <div class="alert success"><mat-icon>check_circle</mat-icon> {{ gmailTestSuccess }}</div>
+                  }
+                  @if (gmailTestError) {
+                    <div class="alert error"><mat-icon>error</mat-icon> {{ gmailTestError }}</div>
+                  }
+
+                  <div style="display:flex;gap:8px;margin-top:8px">
+                    <button mat-flat-button class="btn-gmail" (click)="testGmailImap()" [disabled]="gmailTestLoading || !appPassword">
+                      @if (gmailTestLoading) { <mat-spinner diameter="18" /> }
+                      @else { <ng-container><mat-icon>verified_user</mat-icon> Valider</ng-container> }
+                    </button>
+                    <button mat-stroked-button (click)="showGmailModal = false; gmailTestError = ''; gmailTestSuccess = ''">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
+
+            <!-- Telegram -->
+            <div class="section-block">
+              <div class="block-header"><h3><mat-icon style="color:#0088cc">send</mat-icon> Telegram</h3></div>
+              <div class="tg-step" style="margin-bottom:8px">
+                <span class="step-num">1</span>
+                <span>Recherche <strong>&#64;Kylimail_bot</strong> sur Telegram</span>
+              </div>
+              <div class="tg-step" style="margin-bottom:8px">
+                <span class="step-num">2</span>
+                <span>Envoie <strong>/start</strong> — le bot te repond avec ton Chat ID</span>
+              </div>
+              <mat-form-field appearance="outline" class="full-width" style="margin-top:8px">
+                <mat-label>Telegram Chat ID</mat-label>
+                <input matInput [(ngModel)]="adminSettings.telegram_chat_id" placeholder="ex: 1737003061" />
+                <mat-icon matSuffix>send</mat-icon>
+              </mat-form-field>
+            </div>
+
+            <!-- Base de données -->
             <div class="section-block">
               <div class="block-header"><h3><mat-icon>storage</mat-icon> Base de donnees</h3></div>
               <div class="settings-row"><mat-icon>dns</mat-icon><span>PostgreSQL</span><span class="status-on">Connecte</span></div>
               <div class="settings-row"><mat-icon>people</mat-icon><span>Utilisateurs</span><span>{{ stats?.total_users ?? 0 }}</span></div>
               <div class="settings-row"><mat-icon>receipt</mat-icon><span>Paiements</span><span>{{ stats?.total_payments ?? 0 }}</span></div>
             </div>
+
           </div>
+
+          <!-- Sauvegarder -->
+          <div style="margin-top:24px">
+            <button mat-flat-button class="btn-save" (click)="saveAdminSettings()" [disabled]="settingsLoading">
+              @if (settingsLoading) { <mat-spinner diameter="20" /> }
+              @else { <ng-container><mat-icon>save</mat-icon> Sauvegarder</ng-container> }
+            </button>
+          </div>
+
         </div>
       }
 

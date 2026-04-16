@@ -15,8 +15,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminService, AdminUser, Payment, AdminStats } from '../../services/admin';
-import { EmailService, Email, Stats } from '../../services/email';
+import { EmailService, Email, Stats, UserSettings } from '../../services/email';
 
 export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings';
 
@@ -42,7 +43,7 @@ interface AdminUserDetail extends AdminUser {
     CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule,
     MatTableModule, MatChipsModule, MatFormFieldModule, MatInputModule,
     MatSelectModule, MatDialogModule, MatDividerModule, MatTooltipModule,
-    MatProgressBarModule, MatSnackBarModule
+    MatProgressBarModule, MatProgressSpinnerModule, MatSnackBarModule
   ],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss'
@@ -59,6 +60,21 @@ export class AdminDashboard implements OnInit {
   emails: Email[] = [];
 
   loading = { stats: true, users: true, payments: true, emails: true };
+
+  // Gmail IMAP (admin settings)
+  adminSettings: UserSettings = {
+    name: '', email: '', phone: '', gmail_address: '',
+    telegram_chat_id: '', green_api_instance: '', green_api_token: ''
+  };
+  gmailConnected = false;
+  showGmailModal = false;
+  appPassword = '';
+  gmailTestLoading = false;
+  gmailTestSuccess = '';
+  gmailTestError = '';
+  settingsLoading = false;
+  settingsSaved = false;
+  settingsError = '';
 
   // Detail panel
   selectedUser: AdminUserDetail | null = null;
@@ -107,6 +123,72 @@ export class AdminDashboard implements OnInit {
     const stored = localStorage.getItem('user');
     if (stored) this.admin = JSON.parse(stored);
     this.loadAll();
+    this.loadAdminGmailStatus();
+  }
+
+  loadAdminGmailStatus() {
+    if (!this.admin.email) return;
+    this.emailService.getUserSettings(this.admin.email).subscribe({
+      next: (s) => { this.adminSettings = s; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+    this.emailService.getGmailStatus(this.admin.email).subscribe({
+      next: (res) => { this.gmailConnected = res.connected; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+  }
+
+  testGmailImap() {
+    if (!this.adminSettings.gmail_address || !this.appPassword) {
+      this.gmailTestError = 'Renseigne ton adresse Gmail et le code';
+      return;
+    }
+    this.gmailTestLoading = true;
+    this.gmailTestSuccess = '';
+    this.gmailTestError = '';
+    this.emailService.testGmailImap(this.adminSettings.gmail_address, this.appPassword).subscribe({
+      next: (res) => {
+        this.gmailTestLoading = false;
+        if (res.success) {
+          this.gmailTestSuccess = 'Gmail connecte avec succes !';
+          this.emailService.updateUserSettings({
+            ...this.adminSettings, email: this.admin.email, app_password: this.appPassword
+          }).subscribe({ next: () => {
+            this.gmailConnected = true;
+            this.showGmailModal = false;
+            this.appPassword = '';
+            this.cdr.detectChanges();
+          }});
+        } else {
+          this.gmailTestError = res.error || 'Code incorrect';
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.gmailTestLoading = false;
+        this.gmailTestError = err.error?.error || 'Erreur de connexion';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  saveAdminSettings() {
+    this.settingsLoading = true;
+    this.settingsSaved = false;
+    this.settingsError = '';
+    this.emailService.updateUserSettings({ ...this.adminSettings, email: this.admin.email }).subscribe({
+      next: () => {
+        this.settingsLoading = false;
+        this.settingsSaved = true;
+        this.cdr.detectChanges();
+        setTimeout(() => { this.settingsSaved = false; this.cdr.detectChanges(); }, 3000);
+      },
+      error: (err) => {
+        this.settingsLoading = false;
+        this.settingsError = err.error?.error || 'Erreur lors de la sauvegarde';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadAll() {
