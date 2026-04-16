@@ -54,7 +54,7 @@ export class Landing implements OnInit {
 
   // ── Payment ────────────────────────────────────────────────────────────────
   showPayModal = false;
-  payPlan: 'premium' | 'enterprise' = 'premium';
+  payPlan: 'test' | 'premium' | 'enterprise' = 'premium';
   paymentEmail = '';
   paymentLoading = false;
   paymentError = '';
@@ -172,7 +172,7 @@ export class Landing implements OnInit {
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
-  openPayModal(plan: 'premium' | 'enterprise') {
+  openPayModal(plan: 'test' | 'premium' | 'enterprise') {
     this.payPlan = plan;
     this.paymentError = '';
     this.paymentLoading = false;

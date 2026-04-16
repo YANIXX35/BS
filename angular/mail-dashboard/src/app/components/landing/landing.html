@@ -196,6 +196,13 @@
     <mat-icon>lock</mat-icon>
     Paiements securises via <strong>Genius Pay</strong> — Visa, Mastercard, Mobile Money
   </p>
+
+  <div class="test-payment-zone">
+    <p>Test de paiement</p>
+    <button mat-stroked-button class="test-pay-btn" (click)="openPayModal('test')">
+      <mat-icon>science</mat-icon> Payer 50 XOF (test)
+    </button>
+  </div>
 </section>
 
 <!-- MODAL PAIEMENT -->
@@ -212,7 +219,7 @@
         </div>
         <h3>Finaliser votre abonnement</h3>
         <p>
-          {{ payPlan === 'premium' ? 'Premium — 5 000 XOF/mois' : 'Enterprise — 15 000 XOF/mois' }}
+          {{ payPlan === 'test' ? 'Test — 50 XOF' : payPlan === 'premium' ? 'Premium — 5 000 XOF/mois' : 'Enterprise — 15 000 XOF/mois' }}
         </p>
       </div>
 
