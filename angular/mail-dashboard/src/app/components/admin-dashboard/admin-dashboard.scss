@@ -757,107 +757,115 @@ $panel-w:   300px;
 }
 
 // ── RESPONSIVE MOBILE ──────────────────────────────────────────────────────────
+@media (max-width: 1024px) {
+  .quick-grid { grid-template-columns: repeat(3, 1fr); }
+  .plans-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
 
-  // Sidebar : panneau glissant depuis la gauche
   .sidebar {
-    position: fixed;
-    top: 0; bottom: 0;
+    position: fixed; top: 0; bottom: 0;
     left: calc(-1 * #{$sidebar-w});
     transition: left 0.25s ease, box-shadow 0.25s ease;
     z-index: 100;
-
     &.mobile-open {
       left: 0;
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+      box-shadow: 4px 0 32px rgba(0,0,0,0.2);
     }
   }
 
-  // Hamburger visible
+  .mobile-overlay {
+    display: block;
+    position: fixed; inset: 0; z-index: 99;
+    background: rgba(0,0,0,0.35);
+  }
+
   .hamburger-btn { display: flex; }
 
-  // Topbar
   .topbar {
-    padding: 0 12px;
-    gap: 8px;
-
+    padding: 0 12px; gap: 8px;
+    height: 54px;
     .topbar-center { display: none; }
-
-    .topbar-left {
-      flex: 1;
-      min-width: 0;
-    }
-
+    .topbar-left { flex: 1; min-width: 0; .page-title { font-size: 15px; } }
     .topbar-right {
-      .admin-chip {
-        padding: 4px;
-        .chip-info { display: none; }
-      }
+      gap: 8px;
+      .notif-btn { display: none; }
+      .admin-chip { .chip-info { display: none; } .chip-avatar { width: 30px; height: 30px; font-size: 13px; } }
     }
   }
 
-  // Main area : pas de décalage pour le panel
-  .main-area {
-    &.panel-open { margin-right: 0; }
-  }
+  .main-area { margin-left: 0 !important; width: 100%; &.panel-open { margin-right: 0; } }
 
-  // Content wrap
   .content-wrap { padding: 12px; }
 
-  // Quick grids : 2 colonnes
   .quick-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr); gap: 10px;
     &.three { grid-template-columns: repeat(2, 1fr); }
+    .quick-card { padding: 14px 12px; .qc-val { font-size: 20px; } .qc-lbl { font-size: 11px; } }
   }
 
-  // File list : masquer les colonnes secondaires
   .file-list {
     .file-list-header {
-      grid-template-columns: 1fr 80px 56px;
-
-      .col-sharing,
-      .col-date { display: none; }
+      grid-template-columns: 1fr 80px 48px;
+      .col-sharing, .col-date { display: none; }
     }
-
     .file-row {
-      grid-template-columns: 1fr 80px 56px;
-
-      .col-sharing,
-      .col-date { display: none; }
+      grid-template-columns: 1fr 80px 48px;
+      padding: 9px 12px;
+      .col-sharing, .col-date { display: none; }
+      .file-icon { width: 32px; height: 32px; font-size: 13px; }
+      .file-name { font-size: 13px; }
+      .file-sub  { font-size: 11px; }
     }
   }
 
-  // Plans tarifaires : 1 colonne
-  .plans-grid {
-    grid-template-columns: 1fr;
-    padding: 12px;
-  }
+  .plans-grid { grid-template-columns: 1fr; padding: 12px; }
 
-  // Settings : 1 colonne
   .settings-grid { grid-template-columns: 1fr; }
 
-  // Detail panel : plein écran
+  .settings-profile { flex-direction: column; align-items: center; text-align: center; }
+
   .detail-panel {
-    width: 100%;
-    left: 0;
+    position: fixed; inset: 0; width: 100%; z-index: 150;
+    overflow-y: auto;
+    border-left: none;
+    box-shadow: none;
   }
 
-  // Sélecteur utilisateur vertical
   .user-selector-row {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: column; align-items: stretch;
     .selector-field { max-width: 100%; }
+    button { width: 100%; }
   }
 
-  // Block header : wrap sur petits écrans
-  .section-block .block-header {
-    flex-wrap: wrap;
-    gap: 8px;
-    .block-actions { flex-wrap: wrap; }
+  .section-block {
+    padding: 14px;
+    .block-header { flex-wrap: wrap; gap: 8px; .block-actions { flex-wrap: wrap; width: 100%; } }
   }
 
-  // Inline search : largeur auto
-  .inline-search input { width: 120px; }
+  .inline-search { flex: 1; input { width: 100%; } }
+
+  .page-title { font-size: 15px; }
+
+  // Gmail modal stack vertical sur mobile
+  .gmail-modal { padding: 12px; }
+  .btn-gmail { width: 100%; justify-content: center; }
+  .tg-step { flex-wrap: wrap; gap: 6px; }
+}
+
+@media (max-width: 480px) {
+  .quick-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .content-wrap { padding: 8px; }
+  .topbar { height: 50px; .page-title { font-size: 14px; } }
+
+  .file-list {
+    .file-list-header, .file-row { grid-template-columns: 1fr 48px; .col-size { display: none; } }
+  }
+
+  .section-block { padding: 12px; }
+
+  .modal-card { border-radius: 12px; }
 }
 
 // ── MODAL ──────────────────────────────────────────────────────────────────────

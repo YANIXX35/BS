@@ -31,7 +31,7 @@ export class UserDashboard implements OnInit {
   loadingStats = true;
   loadingEmails = true;
   currentTime = new Date();
-  activeView: 'dashboard' | 'settings' = 'dashboard';
+  activeView: 'dashboard' | 'settings' | 'profile' = 'dashboard';
 
   // Settings
   settings: UserSettings = {
@@ -41,6 +41,11 @@ export class UserDashboard implements OnInit {
   settingsLoading = false;
   settingsSaved = false;
   settingsError = '';
+
+  // Profile
+  profilePhoto = '';
+  editName = '';
+  profileSaved = false;
 
   // QR WhatsApp
   qrLoading = false;
@@ -97,6 +102,31 @@ export class UserDashboard implements OnInit {
     });
 
     this.loadUserSettings();
+    this.profilePhoto = localStorage.getItem('profilePhoto_' + this.user.email) || '';
+    this.editName = this.user.name || '';
+  }
+
+  onPhotoSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.profilePhoto = e.target?.result as string;
+      localStorage.setItem('profilePhoto_' + this.user.email, this.profilePhoto);
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  saveProfile() {
+    this.user.name = this.editName;
+    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    stored.name = this.editName;
+    localStorage.setItem('user', JSON.stringify(stored));
+    this.emailService.updateUserSettings({ ...this.settings, email: this.user.email, name: this.editName }).subscribe();
+    this.profileSaved = true;
+    this.cdr.detectChanges();
+    setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
   }
 
   loadUserSettings() {

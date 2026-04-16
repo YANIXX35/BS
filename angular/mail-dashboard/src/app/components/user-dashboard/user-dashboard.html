@@ -1,26 +1,35 @@
 <!-- NAVBAR -->
 <nav class="dash-navbar">
   <div class="nav-left">
-    <mat-icon class="nav-logo">mail</mat-icon>
+    <div class="nav-logo-wrap">
+      <mat-icon>mail</mat-icon>
+    </div>
     <span class="nav-brand">MailNotifier</span>
-    <span class="nav-separator">|</span>
-    <span class="nav-page" (click)="activeView='dashboard'" style="cursor:pointer">
-      {{ activeView === 'settings' ? 'Parametres' : 'Dashboard' }}
-    </span>
   </div>
-  <div class="nav-center">
+
+  <div class="nav-tabs">
+    <button class="nav-tab" [class.active]="activeView==='dashboard'" (click)="activeView='dashboard'">
+      <mat-icon>dashboard</mat-icon><span>Dashboard</span>
+    </button>
+    <button class="nav-tab" [class.active]="activeView==='settings'" (click)="activeView='settings'">
+      <mat-icon>settings</mat-icon><span>Parametres</span>
+    </button>
+    <button class="nav-tab" [class.active]="activeView==='profile'" (click)="activeView='profile'">
+      <mat-icon>person</mat-icon><span>Profil</span>
+    </button>
+  </div>
+
+  <div class="nav-right">
     <div class="live-clock">
       <mat-icon>schedule</mat-icon>
-      {{ currentTime | date:'HH:mm:ss' }} — {{ currentTime | date:'EEEE d MMMM yyyy' }}
+      <span>{{ currentTime | date:'HH:mm' }}</span>
     </div>
-  </div>
-  <div class="nav-right">
-    <div class="nav-user">
-      <div class="user-avatar">{{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}</div>
-      <div class="user-info">
-        <span class="user-name">{{ user.name || 'Utilisateur' }}</span>
-        <span class="user-email">{{ user.email }}</span>
-      </div>
+    <div class="nav-avatar" (click)="activeView='profile'" matTooltip="Mon profil" style="cursor:pointer">
+      @if (profilePhoto) {
+        <img [src]="profilePhoto" alt="photo" class="nav-avatar-img" />
+      } @else {
+        {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+      }
     </div>
     <button mat-icon-button (click)="logout()" matTooltip="Deconnexion" class="logout-btn">
       <mat-icon>logout</mat-icon>
@@ -28,377 +37,481 @@
   </div>
 </nav>
 
-<!-- ════════════════════════════ DASHBOARD ════════════════════════════ -->
+<!-- ══════════════════════ DASHBOARD ══════════════════════ -->
 @if (activeView === 'dashboard') {
+<div class="dash-container">
 
-  <div class="dash-container">
-
-    <!-- WELCOME BANNER -->
-    <div class="welcome-banner">
-      <div class="welcome-text">
-        <h1>Bonjour, {{ user.name || 'Yanisse' }} 👋</h1>
-        <p>Voici le recapitulatif de ta boite mail et de tes notifications en temps reel.</p>
+  <!-- WELCOME -->
+  <div class="welcome-banner">
+    <div class="welcome-left">
+      <div class="welcome-avatar">
+        @if (profilePhoto) {
+          <img [src]="profilePhoto" alt="photo" />
+        } @else {
+          {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+        }
       </div>
-      <div class="welcome-status">
-        <div class="status-dot"></div>
-        <span>Surveillance active</span>
+      <div>
+        <h1>Bonjour, {{ user.name || 'Utilisateur' }} 👋</h1>
+        <p>{{ currentTime | date:'EEEE d MMMM yyyy' }}</p>
       </div>
     </div>
-
-    <!-- STATS CARDS -->
-    <div class="stats-grid">
-      <mat-card class="stat-card blue">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>email</mat-icon></div>
-          <div class="stat-body">
-            <p class="stat-value">{{ loadingStats ? '...' : (stats?.total_messages | number) }}</p>
-            <p class="stat-label">Total mails</p>
-          </div>
-          <div class="stat-trend up"><mat-icon>trending_up</mat-icon></div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card orange">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>mark_email_unread</mat-icon></div>
-          <div class="stat-body">
-            <p class="stat-value">{{ loadingEmails ? '...' : getUnreadCount() }}</p>
-            <p class="stat-label">Non lus</p>
-          </div>
-          <div class="stat-trend"><mat-icon>inbox</mat-icon></div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card green">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>send</mat-icon></div>
-          <div class="stat-body">
-            <p class="stat-value">{{ channels.length > 0 ? (channels | slice:0:3).filter(c => c.active).length : '...' }}</p>
-            <p class="stat-label">Canaux actifs</p>
-          </div>
-          <div class="stat-trend up"><mat-icon>check_circle</mat-icon></div>
-        </mat-card-content>
-      </mat-card>
-
-      <mat-card class="stat-card purple">
-        <mat-card-content>
-          <div class="stat-icon"><mat-icon>notifications_active</mat-icon></div>
-          <div class="stat-body">
-            <p class="stat-value">30s</p>
-            <p class="stat-label">Delai detection</p>
-          </div>
-          <div class="stat-trend up"><mat-icon>speed</mat-icon></div>
-        </mat-card-content>
-      </mat-card>
-    </div>
-
-    <!-- MAIN GRID -->
-    <div class="main-grid">
-
-      <!-- EMAILS RECENTS -->
-      <mat-card class="emails-card">
-        <mat-card-header>
-          <mat-card-title><mat-icon>inbox</mat-icon> Derniers mails</mat-card-title>
-          <mat-card-subtitle>{{ emails.length }} mails charges</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          @if (loadingEmails) {
-            <div class="loading-state">
-              <mat-progress-bar mode="indeterminate" />
-              <p>Chargement des mails...</p>
-            </div>
-          } @else if (emails.length === 0) {
-            <div class="empty-state">
-              <mat-icon>inbox</mat-icon>
-              <p>Aucun mail trouve</p>
-            </div>
-          } @else {
-            <div class="email-list">
-              @for (email of emails; track email.id) {
-                <div class="email-row" [class.unread]="email.unread">
-                  <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
-                    {{ getSenderInitial(email.sender) }}
-                  </div>
-                  <div class="email-content">
-                    <div class="email-header">
-                      <span class="email-sender">{{ getSenderName(email.sender) }}</span>
-                      <span class="email-date">{{ email.date | slice:5:11 }}</span>
-                    </div>
-                    <p class="email-subject" [class.bold]="email.unread">{{ email.subject }}</p>
-                    <p class="email-snippet">{{ email.snippet }}</p>
-                  </div>
-                  @if (email.unread) {
-                    <div class="unread-badge">Nouveau</div>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </mat-card-content>
-      </mat-card>
-
-      <!-- COLONNE DROITE -->
-      <div class="right-col">
-
-        <!-- CANAUX DE NOTIFICATION -->
-        <mat-card class="channels-card">
-          <mat-card-header>
-            <mat-card-title><mat-icon>notifications</mat-icon> Canaux actifs</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            @for (ch of channels; track ch.name) {
-              <div class="channel-row">
-                <div class="channel-icon" [style.background]="ch.color">
-                  <mat-icon>{{ ch.icon }}</mat-icon>
-                </div>
-                <div class="channel-info">
-                  <p class="channel-name">{{ ch.name }}</p>
-                  <p class="channel-handle">{{ ch.handle }}</p>
-                </div>
-                <div class="channel-status" [class.active]="ch.active">
-                  {{ ch.active ? 'Actif' : 'Inactif' }}
-                </div>
-              </div>
-            }
-            @if (channels.length === 0) {
-              <p class="empty-channels">Aucun canal configure. <button mat-button (click)="activeView='settings'">Configurer</button></p>
-            }
-          </mat-card-content>
-        </mat-card>
-
-        <!-- ACTIONS RAPIDES -->
-        <mat-card class="actions-card">
-          <mat-card-header>
-            <mat-card-title><mat-icon>flash_on</mat-icon> Actions rapides</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="actions-grid">
-              @for (action of quickActions; track action.label) {
-                <button class="action-btn" [style.--color]="action.color" (click)="runAction(action.action)">
-                  <mat-icon>{{ action.icon }}</mat-icon>
-                  <span>{{ action.label }}</span>
-                </button>
-              }
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-        <!-- COMPTE -->
-        <mat-card class="account-card">
-          <mat-card-header>
-            <mat-card-title><mat-icon>account_circle</mat-icon> Mon compte</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <div class="account-info">
-              <div class="account-avatar">{{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}</div>
-              <div class="account-details">
-                <p class="account-name">{{ user.name }}</p>
-                <p class="account-email">{{ user.email }}</p>
-                <div class="account-badge"><mat-icon>verified</mat-icon> Compte verifie</div>
-              </div>
-            </div>
-            <mat-divider />
-            <div class="account-stats">
-              <div class="acc-stat">
-                <span class="acc-val">{{ stats?.total_messages | number }}</span>
-                <span class="acc-lbl">Mails</span>
-              </div>
-              <div class="acc-stat">
-                <span class="acc-val">{{ channels.filter(c => c.active).length }}</span>
-                <span class="acc-lbl">Canaux</span>
-              </div>
-              <div class="acc-stat">
-                <span class="acc-val">ON</span>
-                <span class="acc-lbl">Statut</span>
-              </div>
-            </div>
-          </mat-card-content>
-        </mat-card>
-
-      </div>
+    <div class="welcome-status">
+      <div class="status-dot"></div>
+      <span>Surveillance active</span>
     </div>
   </div>
-}
 
-<!-- ════════════════════════════ PARAMETRES ════════════════════════════ -->
-@if (activeView === 'settings') {
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon-wrap blue">
+        <mat-icon>email</mat-icon>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ loadingStats ? '—' : (stats?.total_messages | number) }}</span>
+        <span class="stat-label">Total mails</span>
+      </div>
+      <div class="stat-arrow up"><mat-icon>trending_up</mat-icon></div>
+    </div>
 
-  <div class="dash-container">
-
-    <div class="settings-header">
-      <button mat-icon-button (click)="activeView='dashboard'" matTooltip="Retour au dashboard">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      <div>
-        <h2>Configuration des canaux</h2>
-        <p>Renseigne tes informations pour recevoir les notifications de tes mails</p>
+    <div class="stat-card">
+      <div class="stat-icon-wrap orange">
+        <mat-icon>mark_email_unread</mat-icon>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ loadingEmails ? '—' : getUnreadCount() }}</span>
+        <span class="stat-label">Non lus</span>
+      </div>
+      <div class="stat-chip" [class.has-unread]="getUnreadCount() > 0">
+        {{ getUnreadCount() > 0 ? 'Nouveau' : 'A jour' }}
       </div>
     </div>
 
-    @if (settingsSaved) {
-      <div class="alert success"><mat-icon>check_circle</mat-icon> Parametres sauvegardes !</div>
-    }
-    @if (settingsError) {
-      <div class="alert error"><mat-icon>error</mat-icon> {{ settingsError }}</div>
-    }
+    <div class="stat-card">
+      <div class="stat-icon-wrap green">
+        <mat-icon>hub</mat-icon>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">{{ channels.filter(c => c.active).length }}/{{ channels.length }}</span>
+        <span class="stat-label">Canaux actifs</span>
+      </div>
+      <div class="stat-arrow up"><mat-icon>check_circle</mat-icon></div>
+    </div>
 
-    <div class="settings-grid">
+    <div class="stat-card">
+      <div class="stat-icon-wrap purple">
+        <mat-icon>speed</mat-icon>
+      </div>
+      <div class="stat-body">
+        <span class="stat-value">30s</span>
+        <span class="stat-label">Delai detection</span>
+      </div>
+      <div class="stat-arrow up"><mat-icon>bolt</mat-icon></div>
+    </div>
+  </div>
 
-      <!-- ── GMAIL ── -->
-      <mat-card class="config-card">
-        <mat-card-header>
-          <div class="config-icon" style="background:#ea4335"><mat-icon>email</mat-icon></div>
-          <mat-card-title>Gmail a surveiller</mat-card-title>
-          <mat-card-subtitle>Connexion en 3 clics via mot de passe d'application</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- EMAILS -->
+    <div class="card emails-card">
+      <div class="card-header">
+        <div class="card-title">
+          <mat-icon>inbox</mat-icon>
+          <span>Derniers mails</span>
+        </div>
+        <span class="badge">{{ emails.length }}</span>
+      </div>
+      <div class="card-body">
+        @if (loadingEmails) {
+          <div class="loading-state">
+            <mat-progress-bar mode="indeterminate" />
+            <p>Chargement...</p>
+          </div>
+        } @else if (emails.length === 0) {
+          <div class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <p>Aucun mail</p>
+          </div>
+        } @else {
+          <div class="email-list">
+            @for (email of emails; track email.id) {
+              <div class="email-row" [class.unread]="email.unread">
+                <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
+                  {{ getSenderInitial(email.sender) }}
+                </div>
+                <div class="email-content">
+                  <div class="email-meta">
+                    <span class="email-sender">{{ getSenderName(email.sender) }}</span>
+                    <span class="email-date">{{ email.date | slice:5:11 }}</span>
+                  </div>
+                  <p class="email-subject" [class.bold]="email.unread">{{ email.subject }}</p>
+                  <p class="email-snippet">{{ email.snippet }}</p>
+                </div>
+                @if (email.unread) {
+                  <span class="unread-dot"></span>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT COL -->
+    <div class="right-col">
+
+      <!-- CANAUX -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><mat-icon>notifications</mat-icon><span>Canaux</span></div>
+          <button mat-icon-button class="card-action" (click)="activeView='settings'" matTooltip="Configurer">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+        <div class="card-body">
+          @for (ch of channels; track ch.name) {
+            <div class="channel-row">
+              <div class="ch-icon" [style.background]="ch.color+'18'" [style.color]="ch.color">
+                <mat-icon>{{ ch.icon }}</mat-icon>
+              </div>
+              <div class="ch-info">
+                <span class="ch-name">{{ ch.name }}</span>
+                <span class="ch-handle">{{ ch.handle }}</span>
+              </div>
+              <div class="ch-badge" [class.active]="ch.active">
+                {{ ch.active ? 'Actif' : 'Inactif' }}
+              </div>
+            </div>
+          }
+          @if (channels.length === 0) {
+            <p class="empty-text">Aucun canal. <button mat-button (click)="activeView='settings'">Configurer</button></p>
+          }
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><mat-icon>flash_on</mat-icon><span>Actions</span></div>
+        </div>
+        <div class="card-body actions-body">
+          @for (action of quickActions; track action.label) {
+            <button class="action-btn" [style.--c]="action.color" (click)="runAction(action.action)">
+              <mat-icon>{{ action.icon }}</mat-icon>
+              <span>{{ action.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- COMPTE -->
+      <div class="card account-card">
+        <div class="card-header">
+          <div class="card-title"><mat-icon>account_circle</mat-icon><span>Mon compte</span></div>
+          <button mat-icon-button class="card-action" (click)="activeView='profile'" matTooltip="Modifier">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="account-row">
+            <div class="acc-avatar">
+              @if (profilePhoto) {
+                <img [src]="profilePhoto" alt="photo" />
+              } @else {
+                {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+              }
+            </div>
+            <div class="acc-info">
+              <span class="acc-name">{{ user.name }}</span>
+              <span class="acc-email">{{ user.email }}</span>
+              <span class="acc-verified"><mat-icon>verified</mat-icon> Verifie</span>
+            </div>
+          </div>
+          <mat-divider style="margin:14px 0" />
+          <div class="acc-stats">
+            <div class="acc-stat">
+              <span class="acc-val">{{ stats?.total_messages | number }}</span>
+              <span class="acc-lbl">Mails</span>
+            </div>
+            <div class="acc-divider"></div>
+            <div class="acc-stat">
+              <span class="acc-val">{{ channels.filter(c => c.active).length }}</span>
+              <span class="acc-lbl">Canaux</span>
+            </div>
+            <div class="acc-divider"></div>
+            <div class="acc-stat">
+              <span class="acc-val on">ON</span>
+              <span class="acc-lbl">Statut</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+}
+
+<!-- ══════════════════════ PARAMETRES ══════════════════════ -->
+@if (activeView === 'settings') {
+<div class="dash-container">
+  <div class="section-header">
+    <button mat-icon-button (click)="activeView='dashboard'"><mat-icon>arrow_back</mat-icon></button>
+    <div>
+      <h2>Configuration des canaux</h2>
+      <p>Renseigne tes informations pour recevoir les notifications</p>
+    </div>
+  </div>
+
+  @if (settingsSaved) {
+    <div class="alert success"><mat-icon>check_circle</mat-icon> Parametres sauvegardes !</div>
+  }
+  @if (settingsError) {
+    <div class="alert error"><mat-icon>error</mat-icon> {{ settingsError }}</div>
+  }
+
+  <div class="settings-grid">
+
+    <!-- GMAIL -->
+    <div class="card config-card">
+      <div class="config-card-head">
+        <div class="config-icon" style="background:#ea4335"><mat-icon>email</mat-icon></div>
+        <div>
+          <p class="config-title">Gmail a surveiller</p>
+          <p class="config-sub">Connexion via mot de passe d'application</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Adresse Gmail</mat-label>
+          <input matInput type="email" [(ngModel)]="settings.gmail_address" placeholder="votre@gmail.com" />
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+
+        <div class="gmail-status-row">
+          @if (gmailConnected) {
+            <div class="status-pill connected"><mat-icon>check_circle</mat-icon> Gmail connecte</div>
+          } @else {
+            <div class="status-pill disconnected"><mat-icon>lock</mat-icon> Non connecte</div>
+          }
+        </div>
+
+        @if (!showGmailModal) {
+          <button mat-flat-button class="btn-gmail" (click)="showGmailModal=true">
+            <mat-icon>vpn_key</mat-icon>
+            {{ gmailConnected ? 'Modifier la connexion' : 'Connecter mon Gmail' }}
+          </button>
+        }
+
+        @if (showGmailModal) {
+          <div class="gmail-modal">
+            <div class="gmail-step">
+              <span class="step-num">1</span>
+              <div>
+                <p>Ouvre Google App Passwords</p>
+                <a href="https://myaccount.google.com/apppasswords" target="_blank" mat-stroked-button class="btn-google-link">
+                  <mat-icon>open_in_new</mat-icon> Ouvrir
+                </a>
+              </div>
+            </div>
+            <div class="gmail-step">
+              <span class="step-num">2</span>
+              <p>Cree un mot de passe pour <strong>Mail</strong> → copie le code <strong>16 caracteres</strong></p>
+            </div>
+            <div class="gmail-step">
+              <span class="step-num">3</span>
+              <div style="width:100%">
+                <p style="margin:0 0 8px">Colle le code ici</p>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Code 16 caracteres</mat-label>
+                  <input matInput [(ngModel)]="appPassword" placeholder="xxxx xxxx xxxx xxxx" />
+                  <mat-icon matSuffix>key</mat-icon>
+                </mat-form-field>
+              </div>
+            </div>
+            @if (gmailTestSuccess) {
+              <div class="alert success"><mat-icon>check_circle</mat-icon> {{ gmailTestSuccess }}</div>
+            }
+            @if (gmailTestError) {
+              <div class="alert error"><mat-icon>error</mat-icon> {{ gmailTestError }}</div>
+            }
+            <div class="gmail-actions">
+              <button mat-flat-button class="btn-gmail" (click)="testGmailImap()" [disabled]="gmailTestLoading||!appPassword">
+                @if (gmailTestLoading) { <mat-spinner diameter="18" /> }
+                @else { <ng-container><mat-icon>verified_user</mat-icon> Valider</ng-container> }
+              </button>
+              <button mat-stroked-button (click)="showGmailModal=false;gmailTestError='';gmailTestSuccess=''">Annuler</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- TELEGRAM -->
+    <div class="card config-card">
+      <div class="config-card-head">
+        <div class="config-icon" style="background:#0088cc"><mat-icon>send</mat-icon></div>
+        <div>
+          <p class="config-title">Telegram</p>
+          <p class="config-sub">Notifications sur Telegram</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="steps-box">
+          <div class="step-row"><span class="step-num">1</span><span>Recherche <strong>&#64;Kylimail_bot</strong> sur Telegram</span></div>
+          <div class="step-row"><span class="step-num">2</span><span>Envoie <strong>/start</strong></span></div>
+          <div class="step-row"><span class="step-num">3</span><span>Copie le <strong>Chat ID</strong> recu</span></div>
+        </div>
+        <mat-form-field appearance="outline" class="full-width" style="margin-top:14px">
+          <mat-label>Telegram Chat ID</mat-label>
+          <input matInput [(ngModel)]="settings.telegram_chat_id" placeholder="ex: 1737003061" />
+          <mat-icon matSuffix>send</mat-icon>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- WHATSAPP -->
+    <div class="card config-card full-col">
+      <div class="config-card-head">
+        <div class="config-icon" style="background:#25d366"><mat-icon>chat</mat-icon></div>
+        <div>
+          <p class="config-title">WhatsApp</p>
+          <p class="config-sub">Notifications sur WhatsApp via Green API</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Numero de telephone WhatsApp</mat-label>
+          <input matInput [(ngModel)]="settings.phone" placeholder="22543875302 (sans + ni espaces)" />
+          <mat-icon matSuffix>phone</mat-icon>
+        </mat-form-field>
+        <p class="hint"><mat-icon>info</mat-icon> Entre ton numero sans le + ni espaces.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="save-row">
+    <button mat-flat-button class="btn-save" (click)="saveSettings()" [disabled]="settingsLoading">
+      @if (settingsLoading) { <mat-spinner diameter="20" /> }
+      @else { <ng-container><mat-icon>save</mat-icon> Sauvegarder</ng-container> }
+    </button>
+  </div>
+</div>
+}
+
+<!-- ══════════════════════ PROFIL ══════════════════════ -->
+@if (activeView === 'profile') {
+<div class="dash-container">
+  <div class="section-header">
+    <button mat-icon-button (click)="activeView='dashboard'"><mat-icon>arrow_back</mat-icon></button>
+    <div>
+      <h2>Mon profil</h2>
+      <p>Modifie tes informations personnelles</p>
+    </div>
+  </div>
+
+  @if (profileSaved) {
+    <div class="alert success"><mat-icon>check_circle</mat-icon> Profil mis a jour !</div>
+  }
+
+  <div class="profile-grid">
+
+    <!-- PHOTO + NOM -->
+    <div class="card profile-card">
+      <div class="card-body profile-body">
+
+        <div class="profile-photo-zone">
+          <div class="profile-photo-wrap">
+            @if (profilePhoto) {
+              <img [src]="profilePhoto" alt="photo" class="profile-photo" />
+            } @else {
+              <div class="profile-photo-placeholder">
+                {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
+              </div>
+            }
+            <label class="photo-edit-btn" matTooltip="Changer la photo">
+              <mat-icon>photo_camera</mat-icon>
+              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden />
+            </label>
+          </div>
+          <p class="photo-hint">JPG, PNG — max 2MB</p>
+        </div>
+
+        <div class="profile-fields">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nom complet</mat-label>
+            <input matInput [(ngModel)]="editName" placeholder="Ton nom" />
+            <mat-icon matSuffix>person</mat-icon>
+          </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Adresse Gmail a surveiller</mat-label>
-            <input matInput type="email" [(ngModel)]="settings.gmail_address" placeholder="votre@gmail.com" />
+            <mat-label>Email</mat-label>
+            <input matInput [value]="user.email" disabled />
             <mat-icon matSuffix>email</mat-icon>
           </mat-form-field>
 
-          <!-- Statut -->
-          <div class="gmail-connect-row" style="margin-bottom:16px">
-            @if (gmailConnected) {
-              <div class="gmail-status connected">
-                <mat-icon>check_circle</mat-icon>
-                <span>Gmail connecte et surveille</span>
-              </div>
-            } @else {
-              <div class="gmail-status not-connected">
-                <mat-icon>lock</mat-icon>
-                <span>Gmail non connecte</span>
-              </div>
-            }
-          </div>
+          <button mat-flat-button class="btn-save" (click)="saveProfile()">
+            <mat-icon>save</mat-icon> Sauvegarder le profil
+          </button>
+        </div>
 
-          <!-- Bouton principal -->
-          @if (!showGmailModal) {
-            <button mat-flat-button class="btn-gmail" (click)="showGmailModal = true">
-              <mat-icon>vpn_key</mat-icon>
-              {{ gmailConnected ? 'Modifier la connexion' : 'Connecter mon Gmail' }}
-            </button>
-          }
-
-          <!-- Modal inline -->
-          @if (showGmailModal) {
-            <div class="gmail-modal">
-
-              <div class="gmail-modal-step">
-                <span class="step-num">1</span>
-                <div>
-                  <p style="margin:0;font-weight:600">Ouvre la page Google App Passwords</p>
-                  <a href="https://myaccount.google.com/apppasswords" target="_blank" mat-stroked-button class="btn-google-link">
-                    <mat-icon>open_in_new</mat-icon> Ouvrir Google App Passwords
-                  </a>
-                </div>
-              </div>
-
-              <div class="gmail-modal-step">
-                <span class="step-num">2</span>
-                <p style="margin:0">Cree un mot de passe pour <strong>Mail</strong> → copie le code de <strong>16 caracteres</strong></p>
-              </div>
-
-              <div class="gmail-modal-step">
-                <span class="step-num">3</span>
-                <div style="width:100%">
-                  <p style="margin:0 0 8px;font-weight:600">Colle le code ici</p>
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Code 16 caracteres</mat-label>
-                    <input matInput [(ngModel)]="appPassword" placeholder="xxxx xxxx xxxx xxxx" />
-                    <mat-icon matSuffix>key</mat-icon>
-                  </mat-form-field>
-                </div>
-              </div>
-
-              @if (gmailTestSuccess) {
-                <div class="alert success"><mat-icon>check_circle</mat-icon> {{ gmailTestSuccess }}</div>
-              }
-              @if (gmailTestError) {
-                <div class="alert error"><mat-icon>error</mat-icon> {{ gmailTestError }}</div>
-              }
-
-              <div style="display:flex;gap:8px;margin-top:8px">
-                <button mat-flat-button class="btn-gmail" (click)="testGmailImap()" [disabled]="gmailTestLoading || !appPassword">
-                  @if (gmailTestLoading) { <mat-spinner diameter="18" /> }
-                  @else { <ng-container><mat-icon>verified_user</mat-icon> Valider</ng-container> }
-                </button>
-                <button mat-stroked-button (click)="showGmailModal = false; gmailTestError = ''; gmailTestSuccess = ''">
-                  Annuler
-                </button>
-              </div>
-
-            </div>
-          }
-
-        </mat-card-content>
-      </mat-card>
-
-      <!-- ── TELEGRAM ── -->
-      <mat-card class="config-card">
-        <mat-card-header>
-          <div class="config-icon" style="background:#0088cc"><mat-icon>send</mat-icon></div>
-          <mat-card-title>Telegram</mat-card-title>
-          <mat-card-subtitle>Recois les notifications sur Telegram</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="tg-steps">
-            <div class="tg-step">
-              <span class="step-num">1</span>
-              <span>Ouvre Telegram et recherche <strong>&#64;Kylimail_bot</strong></span>
-            </div>
-            <div class="tg-step">
-              <span class="step-num">2</span>
-              <span>Envoie la commande <strong>/start</strong></span>
-            </div>
-            <div class="tg-step">
-              <span class="step-num">3</span>
-              <span>Le bot te repondra avec ton <strong>Chat ID</strong></span>
-            </div>
-          </div>
-          <mat-form-field appearance="outline" class="full-width" style="margin-top:16px">
-            <mat-label>Ton Telegram Chat ID</mat-label>
-            <input matInput [(ngModel)]="settings.telegram_chat_id" placeholder="ex: 1737003061" />
-            <mat-icon matSuffix>send</mat-icon>
-          </mat-form-field>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- ── WHATSAPP ── -->
-      <mat-card class="config-card whatsapp-card">
-        <mat-card-header>
-          <div class="config-icon" style="background:#25d366"><mat-icon>chat</mat-icon></div>
-          <mat-card-title>WhatsApp</mat-card-title>
-          <mat-card-subtitle>Connexion via Green API pour recevoir les mails sur WhatsApp</mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Numero de telephone WhatsApp</mat-label>
-            <input matInput [(ngModel)]="settings.phone" placeholder="22543875302 (sans + ni espaces)" />
-            <mat-icon matSuffix>phone</mat-icon>
-          </mat-form-field>
-          <p class="config-hint">
-            <mat-icon>info</mat-icon>
-            Entre ton numero sans le + ni les espaces. Les notifications seront envoyees automatiquement sur ce numero.
-          </p>
-
-        </mat-card-content>
-      </mat-card>
-
+      </div>
     </div>
 
-    <!-- BOUTON SAUVEGARDER -->
-    <div class="save-row">
-      <button mat-flat-button class="btn-save" (click)="saveSettings()" [disabled]="settingsLoading">
-        @if (settingsLoading) {
-          <mat-spinner diameter="20" />
-        } @else {
-          <ng-container><mat-icon>save</mat-icon> Sauvegarder les parametres</ng-container>
-        }
-      </button>
+    <!-- INFOS COMPTE -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><mat-icon>info</mat-icon><span>Informations du compte</span></div>
+      </div>
+      <div class="card-body">
+        <div class="info-row">
+          <mat-icon>badge</mat-icon>
+          <div>
+            <span class="info-label">Nom</span>
+            <span class="info-value">{{ user.name }}</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <mat-icon>email</mat-icon>
+          <div>
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ user.email }}</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <mat-icon>verified</mat-icon>
+          <div>
+            <span class="info-label">Statut</span>
+            <span class="info-value verified">Compte verifie</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <mat-icon>email</mat-icon>
+          <div>
+            <span class="info-label">Gmail surveille</span>
+            <span class="info-value">{{ settings.gmail_address || 'Non configure' }}</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <mat-icon>send</mat-icon>
+          <div>
+            <span class="info-label">Telegram</span>
+            <span class="info-value">{{ settings.telegram_chat_id || 'Non configure' }}</span>
+          </div>
+        </div>
+        <div class="info-row">
+          <mat-icon>notifications_active</mat-icon>
+          <div>
+            <span class="info-label">Canaux actifs</span>
+            <span class="info-value">{{ channels.filter(c => c.active).length }} / {{ channels.length }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
+</div>
 }
