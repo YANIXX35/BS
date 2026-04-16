@@ -33,6 +33,8 @@ export interface UserSettings {
   telegram_chat_id: string;
   green_api_instance: string;
   green_api_token: string;
+  app_password?: string;
+  app_password_set?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -71,5 +73,12 @@ export class EmailService {
 
   getGmailStatus(email: string): Observable<{ connected: boolean }> {
     return this.http.get<{ connected: boolean }>(`${this.apiUrl}/auth/gmail-status`, { params: { email } });
+  }
+
+  testGmailImap(gmail_address: string, app_password: string): Observable<{ success: boolean; message?: string; error?: string }> {
+    return this.http.post<{ success: boolean; message?: string; error?: string }>(
+      `${this.apiUrl}/auth/gmail-test`,
+      { gmail_address, app_password }
+    );
   }
 }

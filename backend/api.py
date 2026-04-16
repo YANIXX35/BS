@@ -177,6 +177,7 @@ def init_db():
                 )
             """)
             cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS genius_tx_id VARCHAR(200)")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS app_password VARCHAR(200)")
         db.commit()
         print("Tables verifiees/creees avec succes.")
     finally:
@@ -747,13 +748,36 @@ def gmail_status():
     db = get_db()
     try:
         with db.cursor() as cur:
-            cur.execute("SELECT id, gmail_token FROM users WHERE email = %s", (email,))
+            cur.execute("SELECT app_password FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
         if not user:
             return jsonify({'connected': False})
-        return jsonify({'connected': bool(user.get('gmail_token'))})
+        return jsonify({'connected': bool(user.get('app_password'))})
     finally:
         db.close()
+
+
+@app.route('/api/auth/gmail-test', methods=['POST'])
+def test_gmail_imap():
+    """Teste la connexion IMAP avec l'adresse Gmail et l'App Password."""
+    import imaplib
+    data   = request.get_json() or {}
+    gmail  = data.get('gmail_address', '').strip().lower()
+    passwd = data.get('app_password', '').strip()
+    if not gmail or not passwd:
+        return jsonify({'success': False, 'error': 'Gmail et app_password requis'}), 400
+    try:
+        mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
+        mail.login(gmail, passwd)
+        mail.select('INBOX', readonly=True)
+        _, data_r = mail.uid('search', None, 'ALL')
+        count = len(data_r[0].split()) if data_r[0] else 0
+        mail.logout()
+        return jsonify({'success': True, 'message': f'Connexion IMAP OK — {count} emails dans la boite'}), 200
+    except imaplib.IMAP4.error as e:
+        return jsonify({'success': False, 'error': f'Identifiants incorrects: {str(e)}'}), 401
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 # ─── GMAIL ROUTES ─────────────────────────────────────────────────────────────
@@ -876,22 +900,24 @@ def get_user_settings():
     try:
         with db.cursor() as cur:
             cur.execute(
-                "SELECT name, email, phone, gmail_address, telegram_chat_id, green_api_instance, green_api_token "
+                "SELECT name, email, phone, gmail_address, telegram_chat_id, green_api_instance, green_api_token, app_password "
                 "FROM users WHERE email = %s AND is_verified = 1",
                 (email,)
             )
             user = cur.fetchone()
         if not user:
-            # Retourne un objet vide plutôt qu'une 404 — l'utilisateur n'a pas encore rempli ses paramètres
             return jsonify({
                 "name": "", "email": email, "phone": "",
                 "gmail_address": "", "telegram_chat_id": "",
-                "green_api_instance": "", "green_api_token": ""
+                "green_api_instance": "", "green_api_token": "",
+                "app_password_set": False
             })
-        # Remplace les None par des chaînes vides pour le frontend
+        user = dict(user)
         for key in ["phone", "gmail_address", "telegram_chat_id", "green_api_instance", "green_api_token"]:
             if user.get(key) is None:
                 user[key] = ""
+        # Never send the actual password to frontend — just a boolean
+        user['app_password_set'] = bool(user.pop('app_password', None))
         return jsonify(user)
     finally:
         db.close()
@@ -906,23 +932,46 @@ def update_user_settings():
     db = get_db()
     try:
         with db.cursor() as cur:
-            cur.execute(
-                """UPDATE users SET
-                    phone = %s,
-                    gmail_address = %s,
-                    telegram_chat_id = %s,
-                    green_api_instance = %s,
-                    green_api_token = %s
-                WHERE email = %s AND is_verified = 1""",
-                (
-                    data.get('phone'),
-                    data.get('gmail_address'),
-                    data.get('telegram_chat_id'),
-                    data.get('green_api_instance'),
-                    data.get('green_api_token'),
-                    email,
+            # Build update: app_password only updated if a new value is provided
+            app_password = data.get('app_password', '').strip() or None
+            if app_password:
+                cur.execute(
+                    """UPDATE users SET
+                        phone = %s,
+                        gmail_address = %s,
+                        telegram_chat_id = %s,
+                        green_api_instance = %s,
+                        green_api_token = %s,
+                        app_password = %s
+                    WHERE email = %s AND is_verified = 1""",
+                    (
+                        data.get('phone'),
+                        data.get('gmail_address'),
+                        data.get('telegram_chat_id'),
+                        data.get('green_api_instance'),
+                        data.get('green_api_token'),
+                        app_password,
+                        email,
+                    )
                 )
-            )
+            else:
+                cur.execute(
+                    """UPDATE users SET
+                        phone = %s,
+                        gmail_address = %s,
+                        telegram_chat_id = %s,
+                        green_api_instance = %s,
+                        green_api_token = %s
+                    WHERE email = %s AND is_verified = 1""",
+                    (
+                        data.get('phone'),
+                        data.get('gmail_address'),
+                        data.get('telegram_chat_id'),
+                        data.get('green_api_instance'),
+                        data.get('green_api_token'),
+                        email,
+                    )
+                )
         db.commit()
         return jsonify({"success": True})
     except Exception as e:
