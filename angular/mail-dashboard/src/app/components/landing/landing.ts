@@ -195,7 +195,9 @@ export class Landing implements OnInit {
       },
       error: (err) => {
         this.paymentLoading = false;
-        this.paymentError = err.error?.error || 'Erreur lors de la creation du paiement';
+        const detail = err.error?.error || err.error?.message || err.message || '';
+        const raw = err.error?.raw ? JSON.stringify(err.error.raw).slice(0, 120) : '';
+        this.paymentError = detail + (raw ? ` — ${raw}` : '') || 'Erreur inconnue';
         this.cdr.detectChanges();
       }
     });
