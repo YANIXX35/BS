@@ -791,3 +791,46 @@
   gap: 6px;
   mat-icon { font-size: 18px; width: 18px; height: 18px; }
 }
+
+.btn-google-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #1a73e8 !important;
+  border-color: #1a73e8 !important;
+  border-radius: 8px;
+  font-weight: 600;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.gmail-modal {
+  background: #f8f9ff;
+  border: 1px solid #e3e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.gmail-modal-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  .step-num {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ea4335;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  p { color: #444; font-size: 14px; line-height: 1.5; }
+}

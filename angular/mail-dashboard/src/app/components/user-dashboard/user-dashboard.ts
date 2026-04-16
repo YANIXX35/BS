@@ -47,9 +47,13 @@ export class UserDashboard implements OnInit {
   qrImage = '';
   qrStatus = '';
 
-  // Gmail OAuth2 via EmailEngine
+  // Gmail IMAP
   gmailConnected = false;
-  gmailConnecting = false;
+  showGmailModal = false;
+  appPassword = '';
+  gmailTestLoading = false;
+  gmailTestSuccess = '';
+  gmailTestError = '';
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -111,16 +115,36 @@ export class UserDashboard implements OnInit {
     });
   }
 
-  connectGmail() {
-    this.gmailConnecting = true;
-    this.emailService.getGmailConnectUrl(this.user.email).subscribe({
+  testGmailImap() {
+    if (!this.settings.gmail_address || !this.appPassword) {
+      this.gmailTestError = 'Renseigne ton adresse Gmail et le code';
+      return;
+    }
+    this.gmailTestLoading = true;
+    this.gmailTestSuccess = '';
+    this.gmailTestError = '';
+    this.emailService.testGmailImap(this.settings.gmail_address, this.appPassword).subscribe({
       next: (res) => {
-        this.gmailConnecting = false;
-        window.location.href = res.auth_url;
+        this.gmailTestLoading = false;
+        if (res.success) {
+          this.gmailTestSuccess = 'Gmail connecte avec succes !';
+          this.emailService.updateUserSettings({
+            ...this.settings, email: this.user.email, app_password: this.appPassword
+          }).subscribe({ next: () => {
+            this.gmailConnected = true;
+            this.showGmailModal = false;
+            this.appPassword = '';
+            this.refreshChannels();
+            this.cdr.detectChanges();
+          }});
+        } else {
+          this.gmailTestError = res.error || 'Code incorrect';
+        }
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        this.gmailConnecting = false;
-        alert(err.error?.error || 'Erreur connexion Gmail');
+        this.gmailTestLoading = false;
+        this.gmailTestError = err.error?.error || 'Erreur de connexion';
         this.cdr.detectChanges();
       }
     });
