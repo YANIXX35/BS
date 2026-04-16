@@ -249,76 +249,43 @@
         <mat-card-header>
           <div class="config-icon" style="background:#ea4335"><mat-icon>email</mat-icon></div>
           <mat-card-title>Gmail a surveiller</mat-card-title>
-          <mat-card-subtitle>Connecte ton Gmail via un mot de passe d'application</mat-card-subtitle>
+          <mat-card-subtitle>Autorise MailNotifier a surveiller ta boite mail</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-
-          <!-- Statut connexion -->
-          <div class="gmail-connect-row" style="margin-bottom:16px">
-            @if (gmailConnected) {
-              <div class="gmail-status connected">
-                <mat-icon>check_circle</mat-icon>
-                <span>Gmail connecte et surveille</span>
-              </div>
-            } @else {
-              <div class="gmail-status not-connected">
-                <mat-icon>warning</mat-icon>
-                <span>Gmail non encore configure</span>
-              </div>
-            }
-          </div>
-
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Adresse Gmail a surveiller</mat-label>
+            <mat-label>Adresse Gmail</mat-label>
             <input matInput type="email" [(ngModel)]="settings.gmail_address" placeholder="votre@gmail.com" />
             <mat-icon matSuffix>email</mat-icon>
           </mat-form-field>
 
-          <!-- Steps pour créer l'App Password -->
-          <div class="tg-steps" style="margin-bottom:16px">
-            <p style="font-weight:600;margin:0 0 8px;color:#333">Comment obtenir le mot de passe d'application :</p>
-            <div class="tg-step">
-              <span class="step-num">1</span>
-              <span>Va sur <strong>myaccount.google.com/apppasswords</strong></span>
-            </div>
-            <div class="tg-step">
-              <span class="step-num">2</span>
-              <span>Connecte-toi et active la <strong>verification en 2 etapes</strong> si ce n'est pas fait</span>
-            </div>
-            <div class="tg-step">
-              <span class="step-num">3</span>
-              <span>Cree un mot de passe pour l'application <strong>"Mail"</strong></span>
-            </div>
-            <div class="tg-step">
-              <span class="step-num">4</span>
-              <span>Copie le code de <strong>16 caracteres</strong> genere et colle-le ci-dessous</span>
-            </div>
+          <div class="gmail-connect-row">
+            @if (gmailConnected) {
+              <div class="gmail-status connected">
+                <mat-icon>check_circle</mat-icon>
+                <span>Gmail autorise et surveille</span>
+              </div>
+            } @else {
+              <div class="gmail-status not-connected">
+                <mat-icon>warning</mat-icon>
+                <span>Gmail non encore autorise</span>
+              </div>
+            }
+            <button mat-flat-button class="btn-gmail" (click)="connectGmail()" [disabled]="gmailConnecting">
+              @if (gmailConnecting) {
+                <mat-spinner diameter="18" />
+              } @else {
+                <ng-container>
+                  <mat-icon>login</mat-icon>
+                  {{ gmailConnected ? 'Reconnecter Gmail' : 'Autoriser mon Gmail' }}
+                </ng-container>
+              }
+            </button>
           </div>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>{{ gmailConnected ? 'Nouveau mot de passe (laisser vide pour garder l\'actuel)' : 'Mot de passe d\'application (16 caracteres)' }}</mat-label>
-            <input matInput type="password" [(ngModel)]="appPassword" placeholder="xxxx xxxx xxxx xxxx" />
-            <mat-icon matSuffix>key</mat-icon>
-          </mat-form-field>
-
-          @if (gmailTestSuccess) {
-            <div class="alert success" style="margin-bottom:12px"><mat-icon>check_circle</mat-icon> {{ gmailTestSuccess }}</div>
-          }
-          @if (gmailTestError) {
-            <div class="alert error" style="margin-bottom:12px"><mat-icon>error</mat-icon> {{ gmailTestError }}</div>
-          }
-
-          <button mat-flat-button class="btn-gmail" (click)="testGmailImap()" [disabled]="gmailTestLoading || !appPassword">
-            @if (gmailTestLoading) {
-              <mat-spinner diameter="18" />
-            } @else {
-              <ng-container>
-                <mat-icon>verified_user</mat-icon>
-                Tester et sauvegarder la connexion
-              </ng-container>
-            }
-          </button>
-
+          <p class="config-hint">
+            <mat-icon>info</mat-icon>
+            Clique sur "Autoriser mon Gmail", connecte-toi avec ton compte Google. C'est tout.
+          </p>
         </mat-card-content>
       </mat-card>
 

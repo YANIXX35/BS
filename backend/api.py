@@ -54,9 +54,16 @@ def get_credentials_path():
         return path
     return CREDENTIALS_FILE
 
-SMTP_EMAIL        = os.getenv('SMTP_EMAIL')
-SMTP_PASSWORD     = os.getenv('SMTP_PASSWORD')
+SMTP_EMAIL         = os.getenv('SMTP_EMAIL')
+SMTP_PASSWORD      = os.getenv('SMTP_PASSWORD')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+# ─── EMAILENGINE ──────────────────────────────────────────────────────────────
+EE_URL   = os.getenv('EMAILENGINE_URL', '').rstrip('/')
+EE_TOKEN = os.getenv('EMAILENGINE_TOKEN', '')
+
+def _ee_headers():
+    return {'Authorization': f'Bearer {EE_TOKEN}', 'Content-Type': 'application/json'}
 
 # ─── GENIUS PAY ───────────────────────────────────────────────────────────────
 GENIUS_PAY_API_KEY = os.getenv('GENIUS_PAY_API_KEY', '')
@@ -685,59 +692,38 @@ def verify_payment():
         return jsonify({'error': str(e)}), 500
 
 
-# ─── GMAIL OAUTH2 WEB FLOW ────────────────────────────────────────────────────
+# ─── GMAIL VIA EMAILENGINE ────────────────────────────────────────────────────
 
 @app.route('/api/auth/gmail-connect')
 def gmail_connect():
+    """Retourne l'URL OAuth2 EmailEngine pour connecter le Gmail de l'utilisateur."""
     email = request.args.get('email', '').strip().lower()
     if not email:
         return jsonify({'error': 'email requis'}), 400
-    db = get_db()
-    try:
-        with db.cursor() as cur:
-            cur.execute("SELECT id FROM users WHERE email = %s AND is_verified = 1", (email,))
-            user = cur.fetchone()
-        if not user:
-            return jsonify({'error': 'Utilisateur non trouve'}), 404
-    finally:
-        db.close()
+    if not EE_URL or not EE_TOKEN:
+        return jsonify({'error': 'EmailEngine non configure'}), 503
 
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-    base_url     = os.getenv('APP_BASE_URL', 'http://localhost:5000').rstrip('/')
-    redirect_uri = f'{base_url}/api/auth/gmail-callback'
-
-    flow = Flow.from_client_secrets_file(
-        get_credentials_path(), SCOPES, redirect_uri=redirect_uri
-    )
-    auth_url, state = flow.authorization_url(access_type='offline', prompt='consent')
-    oauth_pending[state] = {'email': email, 'user_id': user['id'], 'flow': flow}
-    return jsonify({'auth_url': auth_url})
-
-
-@app.route('/api/auth/gmail-callback')
-def gmail_callback():
-    state        = request.args.get('state')
-    error        = request.args.get('error')
     frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:4200').rstrip('/')
+    redirect_url = f"{frontend_url}/dashboard?gmail=connected"
 
-    if error:
-        return redirect(f'{frontend_url}/dashboard?gmail=error&msg={error}')
-    if not state or state not in oauth_pending:
-        return redirect(f'{frontend_url}/dashboard?gmail=error&msg=session_invalid')
-
-    pending = oauth_pending.pop(state)
-    flow    = pending['flow']
     try:
-        base_url          = os.getenv('APP_BASE_URL', 'http://localhost:5000').rstrip('/')
-        flow.redirect_uri = f'{base_url}/api/auth/gmail-callback'
-        flow.fetch_token(code=request.args.get('code'))
-        save_token_to_db(pending['user_id'], flow.credentials.to_json())
-        print(f"[OAuth2] Token sauvegarde en DB pour user_id={pending['user_id']}")
+        requests.post(
+            f"{EE_URL}/v1/account",
+            json={"account": email, "name": email, "email": email},
+            headers=_ee_headers(), timeout=10
+        )
+        resp = requests.post(
+            f"{EE_URL}/v1/authentication/form",
+            json={"account": email, "type": "oauth2", "redirectUrl": redirect_url},
+            headers=_ee_headers(), timeout=10
+        )
+        body = resp.json()
+        auth_url = body.get('url') or body.get('authUrl') or body.get('redirect')
+        if not auth_url:
+            return jsonify({'error': f'URL OAuth2 absente: {body}'}), 500
+        return jsonify({'auth_url': auth_url})
     except Exception as e:
-        print(f"[OAuth2] Erreur: {e}")
-        return redirect(f'{frontend_url}/dashboard?gmail=error&msg=token_failed')
-
-    return redirect(f'{frontend_url}/dashboard?gmail=connected')
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/auth/gmail-status')
@@ -745,39 +731,64 @@ def gmail_status():
     email = request.args.get('email', '').strip().lower()
     if not email:
         return jsonify({'connected': False}), 400
+
+    if EE_URL and EE_TOKEN:
+        try:
+            resp = requests.get(f"{EE_URL}/v1/account/{email}", headers=_ee_headers(), timeout=10)
+            if resp.status_code == 200:
+                state = resp.json().get('state', '')
+                return jsonify({'connected': state in ('connected', 'syncing', 'ready', 'authenticated')})
+            return jsonify({'connected': False})
+        except Exception:
+            return jsonify({'connected': False})
+
+    # Fallback : app_password
     db = get_db()
     try:
         with db.cursor() as cur:
             cur.execute("SELECT app_password FROM users WHERE email = %s", (email,))
             user = cur.fetchone()
-        if not user:
-            return jsonify({'connected': False})
-        return jsonify({'connected': bool(user.get('app_password'))})
+        return jsonify({'connected': bool(user and user.get('app_password'))})
     finally:
         db.close()
 
 
-@app.route('/api/auth/gmail-test', methods=['POST'])
-def test_gmail_imap():
-    """Teste la connexion IMAP avec l'adresse Gmail et l'App Password."""
-    import imaplib
-    data   = request.get_json() or {}
-    gmail  = data.get('gmail_address', '').strip().lower()
-    passwd = data.get('app_password', '').strip()
-    if not gmail or not passwd:
-        return jsonify({'success': False, 'error': 'Gmail et app_password requis'}), 400
+@app.route('/api/webhooks/emailengine', methods=['POST'])
+def emailengine_webhook():
+    """Recoit les evenements EmailEngine et envoie la notification Telegram."""
+    data  = request.get_json() or {}
+    event = data.get('event')
+
+    if event != 'messageNew':
+        return jsonify({'ok': True})
+
+    account  = data.get('account', '')
+    msg      = data.get('data', {})
+    subject  = msg.get('subject', '(Sans objet)')
+    from_obj = msg.get('from', {})
+    if isinstance(from_obj, list):
+        from_obj = from_obj[0] if from_obj else {}
+    sender  = from_obj.get('name') or from_obj.get('address', 'Inconnu')
+    snippet = msg.get('snippet', msg.get('text', ''))[:200]
+
+    print(f"[Webhook] Nouveau mail pour {account} — sujet: {subject}")
+
+    db = get_db()
     try:
-        mail = imaplib.IMAP4_SSL('imap.gmail.com', 993)
-        mail.login(gmail, passwd)
-        mail.select('INBOX', readonly=True)
-        _, data_r = mail.uid('search', None, 'ALL')
-        count = len(data_r[0].split()) if data_r[0] else 0
-        mail.logout()
-        return jsonify({'success': True, 'message': f'Connexion IMAP OK — {count} emails dans la boite'}), 200
-    except imaplib.IMAP4.error as e:
-        return jsonify({'success': False, 'error': f'Identifiants incorrects: {str(e)}'}), 401
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        with db.cursor() as cur:
+            cur.execute("""
+                SELECT telegram_chat_id, email FROM users
+                WHERE (gmail_address = %s OR email = %s) AND is_verified = 1
+                LIMIT 1
+            """, (account, account))
+            user = cur.fetchone()
+    finally:
+        db.close()
+
+    if user and user.get('telegram_chat_id'):
+        _send_telegram_notification(user['telegram_chat_id'], sender, subject, snippet, account)
+
+    return jsonify({'ok': True})
 
 
 # ─── GMAIL ROUTES ─────────────────────────────────────────────────────────────

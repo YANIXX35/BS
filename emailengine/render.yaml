@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: emailengine
+    runtime: docker
+    image:
+      url: docker.io/postalsys/emailengine:latest
+    plan: free
+    envVars:
+      - key: EENGINE_SECRET
+        generateValue: true
+      - key: EENGINE_REDIS
+        sync: false          # Tu colles l'URL Upstash ici (upstash.io gratuit)
+      - key: EENGINE_PORT
+        value: "3000"
+      - key: EENGINE_HOST
+        value: "0.0.0.0"

@@ -47,12 +47,9 @@ export class UserDashboard implements OnInit {
   qrImage = '';
   qrStatus = '';
 
-  // Gmail IMAP / App Password
+  // Gmail OAuth2 via EmailEngine
   gmailConnected = false;
-  appPassword = '';
-  gmailTestLoading = false;
-  gmailTestSuccess = '';
-  gmailTestError = '';
+  gmailConnecting = false;
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -103,49 +100,27 @@ export class UserDashboard implements OnInit {
     this.emailService.getUserSettings(this.user.email).subscribe({
       next: (s) => {
         this.settings = s;
-        this.gmailConnected = !!s.app_password_set;
         this.refreshChannels();
         this.cdr.detectChanges();
       },
       error: () => {}
     });
+    this.emailService.getGmailStatus(this.user.email).subscribe({
+      next: (res) => { this.gmailConnected = res.connected; this.cdr.detectChanges(); },
+      error: () => {}
+    });
   }
 
-  testGmailImap() {
-    if (!this.settings.gmail_address || !this.appPassword) {
-      this.gmailTestError = 'Renseigne ton adresse Gmail et l\'App Password';
-      return;
-    }
-    this.gmailTestLoading = true;
-    this.gmailTestSuccess = '';
-    this.gmailTestError = '';
-    this.emailService.testGmailImap(this.settings.gmail_address, this.appPassword).subscribe({
+  connectGmail() {
+    this.gmailConnecting = true;
+    this.emailService.getGmailConnectUrl(this.user.email).subscribe({
       next: (res) => {
-        this.gmailTestLoading = false;
-        if (res.success) {
-          this.gmailTestSuccess = res.message || 'Connexion OK !';
-          // Save app_password alongside current settings
-          this.emailService.updateUserSettings({
-            ...this.settings,
-            email: this.user.email,
-            app_password: this.appPassword
-          }).subscribe({
-            next: () => {
-              this.gmailConnected = true;
-              this.appPassword = '';
-              this.refreshChannels();
-              this.cdr.detectChanges();
-            },
-            error: () => {}
-          });
-        } else {
-          this.gmailTestError = res.error || 'Echec de la connexion';
-        }
-        this.cdr.detectChanges();
+        this.gmailConnecting = false;
+        window.location.href = res.auth_url;
       },
       error: (err) => {
-        this.gmailTestLoading = false;
-        this.gmailTestError = err.error?.error || 'Erreur de connexion IMAP';
+        this.gmailConnecting = false;
+        alert(err.error?.error || 'Erreur connexion Gmail');
         this.cdr.detectChanges();
       }
     });
