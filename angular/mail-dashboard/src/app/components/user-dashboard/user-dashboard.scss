@@ -12,8 +12,10 @@
   display: block;
 }
 
-*:not(mat-icon):not(.material-icons):not([class*="material-icons"]) {
-  font-family: var(--dash-font) !important;
+// Font cascade via :host — mat-icon restored explicitly below
+mat-icon, .material-icons, [class*="material-icons"] {
+  font-family: 'Material Icons' !important;
+  font-style: normal;
 }
 
 // ── STATIC VARIABLES ───────────────────────────────────────────────────────────
