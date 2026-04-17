@@ -185,6 +185,7 @@ def init_db():
             """)
             cur.execute("ALTER TABLE payments ADD COLUMN IF NOT EXISTS genius_tx_id VARCHAR(200)")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS app_password VARCHAR(200)")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT")
         db.commit()
         print("Tables verifiees/creees avec succes.")
     finally:
@@ -931,7 +932,7 @@ def get_user_settings():
     try:
         with db.cursor() as cur:
             cur.execute(
-                "SELECT name, email, phone, gmail_address, telegram_chat_id, green_api_instance, green_api_token, app_password "
+                "SELECT name, email, phone, gmail_address, telegram_chat_id, green_api_instance, green_api_token, app_password, avatar "
                 "FROM users WHERE email = %s AND is_verified = 1",
                 (email,)
             )
@@ -941,12 +942,14 @@ def get_user_settings():
                 "name": "", "email": email, "phone": "",
                 "gmail_address": "", "telegram_chat_id": "",
                 "green_api_instance": "", "green_api_token": "",
-                "app_password_set": False
+                "app_password_set": False, "avatar": ""
             })
         user = dict(user)
         for key in ["phone", "gmail_address", "telegram_chat_id", "green_api_instance", "green_api_token"]:
             if user.get(key) is None:
                 user[key] = ""
+        if user.get('avatar') is None:
+            user['avatar'] = ""
         # Never send the actual password to frontend — just a boolean
         user['app_password_set'] = bool(user.pop('app_password', None))
         return jsonify(user)
@@ -965,41 +968,52 @@ def update_user_settings():
         with db.cursor() as cur:
             # Build update: app_password only updated if a new value is provided
             app_password = data.get('app_password', '').strip() or None
+            # avatar: only update if explicitly provided (non-empty string)
+            avatar = data.get('avatar', None)
+            name   = data.get('name', None)
             if app_password:
                 cur.execute(
                     """UPDATE users SET
+                        name = COALESCE(%s, name),
                         phone = %s,
                         gmail_address = %s,
                         telegram_chat_id = %s,
                         green_api_instance = %s,
                         green_api_token = %s,
-                        app_password = %s
+                        app_password = %s,
+                        avatar = COALESCE(%s, avatar)
                     WHERE email = %s AND is_verified = 1""",
                     (
+                        name,
                         data.get('phone'),
                         data.get('gmail_address'),
                         data.get('telegram_chat_id'),
                         data.get('green_api_instance'),
                         data.get('green_api_token'),
                         app_password,
+                        avatar,
                         email,
                     )
                 )
             else:
                 cur.execute(
                     """UPDATE users SET
+                        name = COALESCE(%s, name),
                         phone = %s,
                         gmail_address = %s,
                         telegram_chat_id = %s,
                         green_api_instance = %s,
-                        green_api_token = %s
+                        green_api_token = %s,
+                        avatar = COALESCE(%s, avatar)
                     WHERE email = %s AND is_verified = 1""",
                     (
+                        name,
                         data.get('phone'),
                         data.get('gmail_address'),
                         data.get('telegram_chat_id'),
                         data.get('green_api_instance'),
                         data.get('green_api_token'),
+                        avatar,
                         email,
                     )
                 )
