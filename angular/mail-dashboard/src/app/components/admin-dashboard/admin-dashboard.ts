@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -76,6 +76,41 @@ export class AdminDashboard implements OnInit {
   settingsSaved = false;
   settingsError = '';
 
+  // Profile
+  profilePhoto = '';
+  editName = '';
+  profileSaved = false;
+
+  // Theme
+  themeColor = '#1a237e';
+  palette = [
+    { name: 'Marine',    color: '#1a237e' },
+    { name: 'Indigo',    color: '#4f46e5' },
+    { name: 'Violet',    color: '#7c3aed' },
+    { name: 'Rose',      color: '#e11d48' },
+    { name: 'Orange',    color: '#ea580c' },
+    { name: 'Vert',      color: '#059669' },
+    { name: 'Cyan',      color: '#0284c7' },
+    { name: 'Ardoise',   color: '#475569' },
+    { name: 'Corail',    color: '#db2777' },
+    { name: 'Dore',      color: '#d97706' },
+    { name: 'Noir',      color: '#111827' },
+    { name: 'Bordeaux',  color: '#9f1239' },
+  ];
+
+  // Font
+  currentFont = 'Inter';
+  fonts = [
+    { name: 'Inter',         label: 'Inter',         url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' },
+    { name: 'Poppins',       label: 'Poppins',        url: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap' },
+    { name: 'Raleway',       label: 'Raleway',        url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap' },
+    { name: 'Nunito',        label: 'Nunito',         url: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap' },
+    { name: 'Montserrat',    label: 'Montserrat',     url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap' },
+    { name: 'DM Sans',       label: 'DM Sans',        url: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap' },
+    { name: 'Outfit',        label: 'Outfit',         url: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap' },
+    { name: 'Space Grotesk', label: 'Space Grotesk',  url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap' },
+  ];
+
   // Detail panel
   selectedUser: AdminUserDetail | null = null;
 
@@ -116,7 +151,8 @@ export class AdminDashboard implements OnInit {
     private emailService: EmailService,
     private router: Router,
     private snack: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private el: ElementRef
   ) {}
 
   ngOnInit() {
@@ -124,6 +160,80 @@ export class AdminDashboard implements OnInit {
     if (stored) this.admin = JSON.parse(stored);
     this.loadAll();
     this.loadAdminGmailStatus();
+    this.profilePhoto = localStorage.getItem('profilePhoto_' + this.admin.email) || '';
+    this.editName = this.admin.name || '';
+    const savedTheme = localStorage.getItem('dashTheme_admin_' + this.admin.email);
+    if (savedTheme) this.applyTheme(savedTheme);
+    const savedFont = localStorage.getItem('dashFont_admin_' + this.admin.email);
+    if (savedFont) this.applyFont(savedFont);
+  }
+
+  // ── PROFILE ──
+  onPhotoSelected(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.profilePhoto = e.target?.result as string;
+      localStorage.setItem('profilePhoto_' + this.admin.email, this.profilePhoto);
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  saveAdminProfile() {
+    this.admin.name = this.editName;
+    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+    stored.name = this.editName;
+    localStorage.setItem('user', JSON.stringify(stored));
+    this.profileSaved = true;
+    this.cdr.detectChanges();
+    setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
+  }
+
+  // ── THEME ──
+  private hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  private shiftColor(hex: string, amount: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
+    const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
+    return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+  }
+
+  applyTheme(color: string) {
+    this.themeColor = color;
+    localStorage.setItem('dashTheme_admin_' + this.admin.email, color);
+    const host = this.el.nativeElement as HTMLElement;
+    host.style.setProperty('--p', color);
+    host.style.setProperty('--p-light', this.hexToRgba(color, 0.1));
+    host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
+    host.style.setProperty('--p-dark', this.shiftColor(color, -30));
+    host.style.setProperty('--p-shift', this.shiftColor(color, 40));
+    this.cdr.detectChanges();
+  }
+
+  // ── FONT ──
+  applyFont(fontName: string) {
+    this.currentFont = fontName;
+    localStorage.setItem('dashFont_admin_' + this.admin.email, fontName);
+    const font = this.fonts.find(f => f.name === fontName);
+    if (font) {
+      const id = 'gfont-admin-' + fontName.replace(/\s/g, '-');
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id; link.rel = 'stylesheet'; link.href = font.url;
+        document.head.appendChild(link);
+      }
+    }
+    (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
+    this.cdr.detectChanges();
   }
 
   loadAdminGmailStatus() {

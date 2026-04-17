@@ -462,17 +462,40 @@
             <div class="alert error"><mat-icon>error</mat-icon> {{ settingsError }}</div>
           }
 
+          @if (profileSaved) {
+            <div class="alert success" style="margin-bottom:16px"><mat-icon>check_circle</mat-icon> Profil mis a jour !</div>
+          }
+
           <div class="settings-grid">
 
-            <!-- Profil -->
+            <!-- Profil avec photo -->
             <div class="section-block">
               <div class="block-header"><h3><mat-icon>account_circle</mat-icon> Mon profil</h3></div>
               <div class="settings-profile">
-                <div class="big-avatar">{{ admin.name ? admin.name.charAt(0).toUpperCase() : 'A' }}</div>
-                <div>
-                  <h3>{{ admin.name }}</h3>
-                  <p>{{ admin.email }}</p>
-                  <span class="role-badge admin">Administrateur</span>
+                <div class="profile-photo-wrap">
+                  @if (profilePhoto) {
+                    <img [src]="profilePhoto" alt="photo" class="profile-photo" />
+                  } @else {
+                    <div class="profile-photo-placeholder">{{ admin.name ? admin.name.charAt(0).toUpperCase() : 'A' }}</div>
+                  }
+                  <label class="photo-edit-btn" matTooltip="Changer la photo">
+                    <mat-icon>photo_camera</mat-icon>
+                    <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden />
+                  </label>
+                </div>
+                <div style="flex:1">
+                  <mat-form-field appearance="outline" class="full-width" style="margin-bottom:8px">
+                    <mat-label>Nom complet</mat-label>
+                    <input matInput [(ngModel)]="editName" />
+                    <mat-icon matSuffix>person</mat-icon>
+                  </mat-form-field>
+                  <p style="margin:0 0 10px;font-size:13px;color:#6b7280">{{ admin.email }}</p>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <span class="role-badge admin">Administrateur</span>
+                    <button mat-flat-button class="btn-save-sm" (click)="saveAdminProfile()">
+                      <mat-icon>save</mat-icon> Sauvegarder
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -583,6 +606,48 @@
               <div class="settings-row"><mat-icon>dns</mat-icon><span>PostgreSQL</span><span class="status-on">Connecte</span></div>
               <div class="settings-row"><mat-icon>people</mat-icon><span>Utilisateurs</span><span>{{ stats?.total_users ?? 0 }}</span></div>
               <div class="settings-row"><mat-icon>receipt</mat-icon><span>Paiements</span><span>{{ stats?.total_payments ?? 0 }}</span></div>
+            </div>
+
+            <!-- Police -->
+            <div class="section-block full-settings-col">
+              <div class="block-header"><h3><mat-icon>text_fields</mat-icon> Police d'ecriture</h3></div>
+              <div class="font-grid">
+                @for (f of fonts; track f.name) {
+                  <button class="font-btn" [class.active]="currentFont === f.name"
+                    [style.font-family]="f.name + ', sans-serif'"
+                    (click)="applyFont(f.name)">
+                    <span class="font-preview">Aa</span>
+                    <span class="font-name">{{ f.label }}</span>
+                    @if (currentFont === f.name) { <mat-icon class="font-check">check_circle</mat-icon> }
+                  </button>
+                }
+              </div>
+            </div>
+
+            <!-- Couleur -->
+            <div class="section-block full-settings-col">
+              <div class="block-header"><h3><mat-icon>palette</mat-icon> Couleur du dashboard</h3></div>
+              <p class="picker-label">Palette</p>
+              <div class="palette-grid">
+                @for (s of palette; track s.color) {
+                  <button class="swatch" [style.background]="s.color"
+                    [class.active]="themeColor === s.color"
+                    (click)="applyTheme(s.color)" [matTooltip]="s.name">
+                    @if (themeColor === s.color) { <mat-icon>check</mat-icon> }
+                  </button>
+                }
+              </div>
+              <p class="picker-label" style="margin-top:16px">Couleur personnalisee</p>
+              <div class="custom-color-row">
+                <div class="color-preview" [style.background]="themeColor"></div>
+                <input type="color" [value]="themeColor"
+                  (input)="applyTheme(($any($event.target)).value)"
+                  class="color-native-input" />
+                <span class="color-hex">{{ themeColor }}</span>
+                <button mat-stroked-button class="btn-reset" (click)="applyTheme('#1a237e')" matTooltip="Reinitialiser">
+                  <mat-icon>restart_alt</mat-icon>
+                </button>
+              </div>
             </div>
 
           </div>

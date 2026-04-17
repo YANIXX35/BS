@@ -1,7 +1,21 @@
 * { box-sizing: border-box; }
 
+// ── HOST CSS CUSTOM PROPERTIES (live theming) ──────────────────────────────────
+:host {
+  --p:        #1a237e;
+  --p-light:  rgba(26,35,126,0.10);
+  --p-medium: rgba(26,35,126,0.18);
+  --p-dark:   #0d1757;
+  --p-shift:  #2b3ea6;
+  --dash-font: 'Inter', sans-serif;
+  font-family: var(--dash-font);
+  display: block;
+}
+
+* { font-family: var(--dash-font) !important; }
+
 // ── VARIABLES ──────────────────────────────────────────────────────────────────
-$blue:    #1a237e;
+// $blue → var(--p) (CSS custom property, see :host above)
 $orange:  #f97316;
 $bg:      #f4f6f9;
 $white:   #ffffff;
@@ -39,7 +53,7 @@ $panel-w:   300px;
 
     .logo-icon {
       width: 32px; height: 32px;
-      background: linear-gradient(135deg, $blue, #0288d1);
+      background: linear-gradient(135deg, var(--p), #0288d1);
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       mat-icon { color: white; font-size: 18px; width: 18px; height: 18px; }
@@ -90,9 +104,9 @@ $panel-w:   300px;
 
     &.active {
       background: #eff6ff;
-      color: $blue;
+      color: var(--p);
       font-weight: 600;
-      mat-icon { color: $blue; }
+      mat-icon { color: var(--p); }
     }
 
     &.logout {
@@ -173,7 +187,7 @@ $panel-w:   300px;
       padding: 7px 14px;
       transition: border-color 0.15s;
 
-      &:focus-within { border-color: $blue; background: $white; }
+      &:focus-within { border-color: var(--p); background: $white; }
 
       mat-icon { color: $muted; font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
 
@@ -311,7 +325,7 @@ $panel-w:   300px;
       display: flex;
       align-items: center;
       gap: 8px;
-      mat-icon { font-size: 18px; width: 18px; height: 18px; color: $blue; }
+      mat-icon { font-size: 18px; width: 18px; height: 18px; color: var(--p); }
     }
 
     .block-actions {
@@ -396,7 +410,7 @@ $panel-w:   300px;
       display: flex;
       align-items: center;
       gap: 6px;
-      &.bold { color: $blue; }
+      &.bold { color: var(--p); }
     }
 
     .file-sub {
@@ -416,7 +430,7 @@ $panel-w:   300px;
   .col-more .td-actions {
     display: flex;
     gap: 0;
-    .edit-icon  { color: $blue; font-size: 16px; }
+    .edit-icon  { color: var(--p); font-size: 16px; }
     .delete-icon { color: #ef4444; font-size: 16px; }
   }
 
@@ -471,7 +485,7 @@ $panel-w:   300px;
 
 // ── BUTTONS ────────────────────────────────────────────────────────────────────
 .btn-primary {
-  background: $blue;
+  background: var(--p);
   color: white;
   border-radius: 8px;
   font-size: 13px;
@@ -485,7 +499,7 @@ $panel-w:   300px;
 
 .btn-sm {
   font-size: 12px;
-  color: $blue;
+  color: var(--p);
   border-color: $border;
   border-radius: 8px;
   display: flex;
@@ -496,14 +510,14 @@ $panel-w:   300px;
 }
 
 // ── CHIPS ──────────────────────────────────────────────────────────────────────
-.new-chip  { background: #eff6ff; color: $blue; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.new-chip  { background: #eff6ff; color: var(--p); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
 .read-chip { background: #f3f4f6; color: $muted; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
 
 // ── BADGES ─────────────────────────────────────────────────────────────────────
 .role-badge {
   padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
   &.admin { background: #fbe9e7; color: #bf360c; }
-  &.user  { background: #e8eaf6; color: $blue; }
+  &.user  { background: #e8eaf6; color: var(--p); }
 }
 
 .plan-badge {
@@ -562,7 +576,7 @@ $panel-w:   300px;
     }
 
     h4 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: $text; }
-    .plan-price { font-size: 20px; font-weight: 900; color: $blue; margin: 6px 0 14px; }
+    .plan-price { font-size: 20px; font-weight: 900; color: var(--p); margin: 6px 0 14px; }
 
     .plan-features {
       list-style: none; padding: 0; margin: 0;
@@ -890,7 +904,7 @@ $panel-w:   300px;
 
   .full-width { width: 100%; }
   .btn-save {
-    background: $blue; color: white; border-radius: 8px;
+    background: var(--p); color: white; border-radius: 8px;
     ::ng-deep .mdc-button__label { display: flex; align-items: center; gap: 6px; }
     mat-icon { font-size: 16px; width: 16px; height: 16px; }
   }
@@ -919,7 +933,7 @@ $panel-w:   300px;
 }
 .step-num {
   min-width: 26px; height: 26px; border-radius: 50%;
-  background: $blue; color: white;
+  background: var(--p); color: white;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700;
 }
@@ -929,4 +943,184 @@ $panel-w:   300px;
   padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 8px;
   &.success { background: #e8f5e9; color: #2e7d32; }
   &.error   { background: #ffebee; color: #c62828; }
+}
+
+// ── SETTINGS FULL-WIDTH COLUMN ─────────────────────────────────────────────────
+.full-settings-col {
+  grid-column: 1 / -1;
+}
+
+// ── PROFILE PHOTO ──────────────────────────────────────────────────────────────
+.profile-photo-wrap {
+  position: relative;
+  width: 72px; height: 72px;
+  flex-shrink: 0;
+
+  .profile-photo {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--p);
+  }
+
+  .profile-photo-placeholder {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $orange, #ef4444);
+    color: white;
+    font-size: 28px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    border: 3px solid var(--p);
+  }
+
+  .photo-edit-btn {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--p);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    mat-icon { font-size: 13px; width: 13px; height: 13px; }
+  }
+}
+
+// ── PICKER LABEL ───────────────────────────────────────────────────────────────
+.picker-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: $muted;
+  margin: 0 0 10px;
+}
+
+// ── FONT PICKER ────────────────────────────────────────────────────────────────
+.font-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+
+.font-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border: 1.5px solid $border;
+  border-radius: 10px;
+  background: #fafbfc;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  min-width: 72px;
+
+  .font-aa {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text;
+    line-height: 1;
+  }
+
+  .font-name {
+    font-size: 10px;
+    color: $muted;
+    white-space: nowrap;
+  }
+
+  &:hover { border-color: var(--p); background: var(--p-light, rgba(26,35,126,0.07)); }
+
+  &.active {
+    border-color: var(--p);
+    background: var(--p-light, rgba(26,35,126,0.10));
+    .font-aa  { color: var(--p); }
+    .font-name { color: var(--p); font-weight: 700; }
+  }
+}
+
+// ── COLOR PALETTE PICKER ───────────────────────────────────────────────────────
+.palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+
+.swatch {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+  outline: none;
+
+  &:hover { transform: scale(1.15); }
+
+  &.active {
+    border-color: #1f2937;
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px white, 0 0 0 5px #1f2937;
+  }
+}
+
+.custom-color-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+
+  .color-preview {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid $border;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .color-native-input {
+    width: 0; height: 0; opacity: 0; position: absolute; pointer-events: none;
+  }
+
+  .color-hex {
+    flex: 1;
+    font-size: 13px;
+    font-family: monospace;
+    border: 1px solid $border;
+    border-radius: 8px;
+    padding: 6px 10px;
+    outline: none;
+    color: $text;
+    background: #fafbfc;
+    &:focus { border-color: var(--p); }
+  }
+}
+
+// ── SETTINGS SAVE BUTTONS ──────────────────────────────────────────────────────
+.btn-save-sm {
+  background: var(--p);
+  color: white;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 0 14px;
+  height: 34px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: opacity 0.15s;
+  &:hover { opacity: 0.88; }
+}
+
+.btn-reset {
+  font-size: 12px;
+  color: $muted;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0 12px;
+  height: 34px;
+  background: transparent;
+  cursor: pointer;
+  &:hover { background: #f3f4f6; color: $text; }
 }
