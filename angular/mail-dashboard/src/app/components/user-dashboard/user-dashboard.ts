@@ -106,6 +106,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   ];
 
   private _clockInterval: any;
+  private _syncInterval: any;
 
   constructor(
     private emailService: EmailService,
@@ -159,10 +160,16 @@ export class UserDashboard implements OnInit, OnDestroy {
     // 2. Load from server — SERVER IS ALWAYS THE SOURCE OF TRUTH
     //    Server values will OVERWRITE any localStorage values above
     this.loadUserSettings();
+
+    // 3. Sync automatique toutes les 30 secondes pour garantir la synchronisation PC/mobile
+    this._syncInterval = setInterval(() => {
+      this.loadUserSettings();
+    }, 30000);
   }
 
   ngOnDestroy() {
     clearInterval(this._clockInterval);
+    clearInterval(this._syncInterval);
     // Flush any pending debounced saves before component destroys
     this._flushPending();
   }
