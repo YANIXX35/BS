@@ -394,6 +394,7 @@ export class AdminDashboard implements OnInit {
     this.activeSection = s;
     this.selectedUser = null;
     this.mobileMenuOpen = false;
+    this.cdr.detectChanges();
   }
 
   toggleMobileMenu() {
