@@ -176,6 +176,10 @@ export class AdminDashboard implements OnInit {
     reader.onload = (e) => {
       this.profilePhoto = e.target?.result as string;
       localStorage.setItem('profilePhoto_' + this.admin.email, this.profilePhoto);
+      // Sync to backend so photo works across all devices
+      this.emailService.updateUserSettings({
+        ...this.adminSettings, email: this.admin.email, avatar: this.profilePhoto
+      }).subscribe();
       this.cdr.detectChanges();
     };
     reader.readAsDataURL(file);
@@ -239,7 +243,15 @@ export class AdminDashboard implements OnInit {
   loadAdminGmailStatus() {
     if (!this.admin.email) return;
     this.emailService.getUserSettings(this.admin.email).subscribe({
-      next: (s) => { this.adminSettings = s; this.cdr.detectChanges(); },
+      next: (s) => {
+        this.adminSettings = s;
+        // Avatar from server takes priority over localStorage
+        if (s.avatar) {
+          this.profilePhoto = s.avatar;
+          localStorage.setItem('profilePhoto_' + this.admin.email, s.avatar);
+        }
+        this.cdr.detectChanges();
+      },
       error: () => {}
     });
     this.emailService.getGmailStatus(this.admin.email).subscribe({

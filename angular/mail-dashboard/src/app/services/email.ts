@@ -35,6 +35,7 @@ export interface UserSettings {
   green_api_token: string;
   app_password?: string;
   app_password_set?: boolean;
+  avatar?: string;
 }
 
 @Injectable({ providedIn: 'root' })

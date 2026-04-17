@@ -193,6 +193,10 @@ export class UserDashboard implements OnInit {
     reader.onload = (e) => {
       this.profilePhoto = e.target?.result as string;
       localStorage.setItem('profilePhoto_' + this.user.email, this.profilePhoto);
+      // Sync to backend so photo works across all devices
+      this.emailService.updateUserSettings({
+        ...this.settings, email: this.user.email, avatar: this.profilePhoto
+      }).subscribe();
       this.cdr.detectChanges();
     };
     reader.readAsDataURL(file);
@@ -214,6 +218,11 @@ export class UserDashboard implements OnInit {
     this.emailService.getUserSettings(this.user.email).subscribe({
       next: (s) => {
         this.settings = s;
+        // Avatar from server takes priority over localStorage
+        if (s.avatar) {
+          this.profilePhoto = s.avatar;
+          localStorage.setItem('profilePhoto_' + this.user.email, s.avatar);
+        }
         this.refreshChannels();
         this.cdr.detectChanges();
       },

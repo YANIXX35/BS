@@ -12,7 +12,9 @@
   display: block;
 }
 
-* { font-family: var(--dash-font) !important; }
+*:not(mat-icon):not(.material-icons):not([class*="material-icons"]) {
+  font-family: var(--dash-font) !important;
+}
 
 // ── STATIC VARIABLES ───────────────────────────────────────────────────────────
 $bg:     #f4f5fb;

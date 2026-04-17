@@ -12,7 +12,9 @@
   display: block;
 }
 
-* { font-family: var(--dash-font) !important; }
+*:not(mat-icon):not(.material-icons):not([class*="material-icons"]) {
+  font-family: var(--dash-font) !important;
+}
 
 // ── VARIABLES ──────────────────────────────────────────────────────────────────
 // $blue → var(--p) (CSS custom property, see :host above)
