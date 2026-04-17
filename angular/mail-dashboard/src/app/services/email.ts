@@ -59,9 +59,11 @@ export class EmailService {
   }
 
   getUserSettings(email: string): Observable<UserSettings> {
+    // Ajouter timestamp pour casser le cache navigateur et garantir la synchronisation
+    const timestamp = Date.now();
     return this.http.get<UserSettings>(`${this.apiUrl}/user/settings`, {
-      params: { email },
-      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+      params: { email, _t: timestamp },
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache', 'Expires': '0' }
     });
   }
 

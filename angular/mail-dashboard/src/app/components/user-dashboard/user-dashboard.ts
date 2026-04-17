@@ -200,7 +200,13 @@ export class UserDashboard implements OnInit, OnDestroy {
     this._pendingTheme = null;
     // Save immediately — user made a definitive choice
     this.emailService.savePreferences(this.user.email, { theme_color: color })
-      .subscribe({ error: (e) => console.error('[theme save]', e) });
+      .subscribe({ 
+        next: () => {
+          // Forcer le rechargement pour garantir la synchronisation entre appareils
+          setTimeout(() => this.loadUserSettings(), 500);
+        },
+        error: (e) => console.error('[theme save]', e) 
+      });
   }
 
   /** Called by color picker (input) → instant visual, debounced server save */
@@ -223,7 +229,13 @@ export class UserDashboard implements OnInit, OnDestroy {
     this._applyThemeCSS(color);
     localStorage.setItem('dashTheme_' + this.user.email, color);
     this.emailService.savePreferences(this.user.email, { theme_color: color })
-      .subscribe({ error: (e) => console.error('[theme save final]', e) });
+      .subscribe({ 
+        next: () => {
+          // Forcer le rechargement pour garantir la synchronisation entre appareils
+          setTimeout(() => this.loadUserSettings(), 500);
+        },
+        error: (e) => console.error('[theme save final]', e) 
+      });
   }
 
   /** Pure CSS application — no server call, no localStorage write */
