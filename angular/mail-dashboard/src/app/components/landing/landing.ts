@@ -309,8 +309,13 @@ export class Landing implements OnInit {
   }
 
   sendResetCode() {
-    if (!this.forgotEmail || !this.forgotEmail.includes('@')) {
-      this.forgotError = 'Adresse email invalide';
+    if (!this.forgotEmail || !this.forgotEmail.includes('@') || !this.forgotEmail.includes('.')) {
+      this.forgotError = 'Adresse email invalide (ex: exemple@gmail.com)';
+      return;
+    }
+    
+    if (this.forgotEmail.length < 6) {
+      this.forgotError = 'Adresse email trop courte';
       return;
     }
 
