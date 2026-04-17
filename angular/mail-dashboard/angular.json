@@ -77,6 +77,17 @@
               ],
               "outputHashing": "all"
             },
+            "staging": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.staging.ts"
+                }
+              ],
+              "optimization": true,
+              "extractLicenses": true,
+              "sourceMap": true
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -90,6 +101,9 @@
           "configurations": {
             "production": {
               "buildTarget": "mail-dashboard:build:production"
+            },
+            "staging": {
+              "buildTarget": "mail-dashboard:build:staging"
             },
             "development": {
               "buildTarget": "mail-dashboard:build:development"
