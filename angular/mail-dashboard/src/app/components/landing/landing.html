@@ -326,6 +326,12 @@
                       </ng-container>
                     }
                   </button>
+
+                  <div class="forgot-password">
+                    <button mat-button class="forgot-link" (click)="showForgotPassword()">
+                      <mat-icon>help_outline</mat-icon> Mot de passe oublié ?
+                    </button>
+                  </div>
                 </div>
               }
             </div>
@@ -461,6 +467,115 @@
     </mat-card>
   </div>
 </section>
+
+<!-- MODAL MOT DE PASSE OUBLIÉ -->
+@if (showForgotModal) {
+  <div class="modal-overlay" (click)="showForgotModal = false">
+    <div class="forgot-modal" (click)="$event.stopPropagation()">
+      <button class="modal-close-btn" (click)="showForgotModal = false">
+        <mat-icon>close</mat-icon>
+      </button>
+
+      <!-- ETAPE 1 : DEMANDE EMAIL -->
+      @if (forgotStep === 'email') {
+        <div class="forgot-header">
+          <div class="forgot-icon">
+            <mat-icon>help_outline</mat-icon>
+          </div>
+          <h3>Mot de passe oublié ?</h3>
+          <p>Entre ton adresse email et nous t'enverrons un code de réinitialisation.</p>
+        </div>
+
+        @if (forgotError) {
+          <div class="alert error">
+            <mat-icon>error</mat-icon> {{ forgotError }}
+          </div>
+        }
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Adresse email</mat-label>
+          <input matInput type="email" [(ngModel)]="forgotEmail" placeholder="exemple@gmail.com"
+            (keyup.enter)="sendResetCode()" />
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+
+        <button mat-flat-button class="btn-submit" (click)="sendResetCode()" [disabled]="forgotLoading">
+          @if (forgotLoading) {
+            <mat-spinner diameter="20" />
+          } @else {
+            <ng-container>
+              <mat-icon>send</mat-icon> Envoyer le code
+            </ng-container>
+          }
+        </button>
+      }
+
+      <!-- ETAPE 2 : CODE OTP + NOUVEAU MOT DE PASSE -->
+      @if (forgotStep === 'reset') {
+        <div class="forgot-header">
+          <div class="forgot-icon">
+            <mat-icon>lock_reset</mat-icon>
+          </div>
+          <h3>Réinitialiser le mot de passe</h3>
+          <p>Entre le code reçu et ton nouveau mot de passe pour <strong>{{ forgotEmail }}</strong>.</p>
+        </div>
+
+        @if (forgotError) {
+          <div class="alert error">
+            <mat-icon>error</mat-icon> {{ forgotError }}
+          </div>
+        }
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Code de réinitialisation</mat-label>
+          <input matInput [(ngModel)]="resetCode" placeholder="123456"
+            style="font-size:20px;letter-spacing:6px;text-align:center;" />
+          <mat-icon matSuffix>verified</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nouveau mot de passe</mat-label>
+          <input matInput type="password" [(ngModel)]="newPassword" />
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmer le mot de passe</mat-label>
+          <input matInput type="password" [(ngModel)]="confirmPassword" (keyup.enter)="resetPassword()" />
+          <mat-icon matSuffix>lock</mat-icon>
+        </mat-form-field>
+
+        <button mat-flat-button class="btn-submit" (click)="resetPassword()" [disabled]="forgotLoading">
+          @if (forgotLoading) {
+            <mat-spinner diameter="20" />
+          } @else {
+            <ng-container>
+              <mat-icon>check_circle</mat-icon> Réinitialiser le mot de passe
+            </ng-container>
+          }
+        </button>
+
+        <button mat-button class="resend-btn" (click)="sendResetCode()">
+          Renvoyer le code
+        </button>
+      }
+
+      <!-- ETAPE 3 : SUCCES -->
+      @if (forgotStep === 'success') {
+        <div class="success-screen">
+          <div class="success-icon">
+            <mat-icon>check_circle</mat-icon>
+          </div>
+          <h3>Mot de passe réinitialisé !</h3>
+          <p>Ton mot de passe a été modifié avec succès. Tu peux maintenant te connecter.</p>
+          <button mat-flat-button class="btn-submit" (click)="showForgotModal = false">
+            <mat-icon>login</mat-icon> Retour à la connexion
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}
 
 <!-- FOOTER -->
 <footer class="footer">

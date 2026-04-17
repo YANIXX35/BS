@@ -31,4 +31,14 @@ export class AuthService {
     return this.http.post(`${this.api}/login`, { email, password }, { headers: this.headers })
       .pipe(timeout(15000));
   }
+
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(`${this.api}/forgot-password`, { email }, { headers: this.headers })
+      .pipe(timeout(15000));
+  }
+
+  resetPassword(email: string, code: string, newPassword: string): Observable<any> {
+    return this.http.post(`${this.api}/reset-password`, { email, code, newPassword }, { headers: this.headers })
+      .pipe(timeout(15000));
+  }
 }

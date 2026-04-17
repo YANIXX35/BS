@@ -61,6 +61,16 @@ export class Landing implements OnInit {
   paymentSuccess = false;
   paymentSuccessPlan = '';
 
+  // ── Forgot Password ────────────────────────────────────────────────────────
+  showForgotModal = false;
+  forgotStep: 'email' | 'reset' | 'success' = 'email';
+  forgotEmail = '';
+  resetCode = '';
+  newPassword = '';
+  confirmPassword = '';
+  forgotError = '';
+  forgotLoading = false;
+
   // ── Content ────────────────────────────────────────────────────────────────
   features = [
     { icon: 'email',     title: 'Surveillance Gmail',     desc: 'Connexion securisee via OAuth2 Google. Chaque nouveau mail est detecte en temps reel.' },
@@ -284,6 +294,75 @@ export class Landing implements OnInit {
     this.otpCode = '';
     this.otpError = '';
     this.register();
+  }
+
+  // ── Forgot Password Methods ───────────────────────────────────────────────
+  showForgotPassword() {
+    this.showForgotModal = true;
+    this.forgotStep = 'email';
+    this.forgotEmail = '';
+    this.resetCode = '';
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.forgotError = '';
+    this.forgotLoading = false;
+  }
+
+  sendResetCode() {
+    if (!this.forgotEmail || !this.forgotEmail.includes('@')) {
+      this.forgotError = 'Adresse email invalide';
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotError = '';
+
+    // Utiliser le même endpoint que register pour générer un OTP
+    this.authService.requestPasswordReset(this.forgotEmail).subscribe({
+      next: () => {
+        this.forgotLoading = false;
+        this.forgotStep = 'reset';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        this.forgotError = err.error?.error || "Erreur lors de l'envoi du code";
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  resetPassword() {
+    if (this.resetCode.length !== 6) {
+      this.forgotError = 'Le code doit contenir 6 chiffres';
+      return;
+    }
+
+    if (this.newPassword.length < 6) {
+      this.forgotError = 'Le mot de passe doit contenir au moins 6 caractères';
+      return;
+    }
+
+    if (this.newPassword !== this.confirmPassword) {
+      this.forgotError = 'Les mots de passe ne correspondent pas';
+      return;
+    }
+
+    this.forgotLoading = true;
+    this.forgotError = '';
+
+    this.authService.resetPassword(this.forgotEmail, this.resetCode, this.newPassword).subscribe({
+      next: () => {
+        this.forgotLoading = false;
+        this.forgotStep = 'success';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.forgotLoading = false;
+        this.forgotError = err.error?.error || 'Erreur lors de la réinitialisation';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   scrollTo(id: string) {
