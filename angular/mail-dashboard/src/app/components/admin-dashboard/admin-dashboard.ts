@@ -135,6 +135,18 @@ export class AdminDashboard implements OnInit {
   userEmails: Email[] = [];
   loadingUserEmails = false;
 
+  get pageTitle(): string {
+    const titles: Record<string, string> = {
+      overview:    'Vue generale',
+      emails:      'Mes mails',
+      'user-emails': 'Mails utilisateurs',
+      users:       'Utilisateurs',
+      payments:    'Paiements',
+      settings:    'Parametres',
+    };
+    return titles[this.activeSection] ?? '';
+  }
+
   navItems: NavItem[] = [
     { id: 'overview',    icon: 'dashboard',     label: 'Vue generale' },
     { id: 'emails',      icon: 'email',         label: 'Mes mails' },

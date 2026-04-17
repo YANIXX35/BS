@@ -50,16 +50,7 @@
         <mat-icon>menu</mat-icon>
       </button>
       <div class="topbar-left">
-        <h2 class="page-title">
-          @switch (activeSection) {
-            @case ('overview')    { Vue generale }
-            @case ('emails')      { Mes mails }
-            @case ('user-emails') { Mails utilisateurs }
-            @case ('users')       { Utilisateurs }
-            @case ('payments')    { Paiements }
-            @case ('settings')    { Parametres }
-          }
-        </h2>
+        <h2 class="page-title">{{ pageTitle }}</h2>
       </div>
       <div class="topbar-center">
         <div class="search-box">
