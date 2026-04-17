@@ -461,6 +461,40 @@
       </div>
     </div>
 
+    <!-- THEME -->
+    <div class="card theme-card">
+      <div class="card-header">
+        <div class="card-title"><mat-icon>palette</mat-icon><span>Couleur du dashboard</span></div>
+      </div>
+      <div class="card-body">
+        <p class="theme-label">Choisis une couleur prédéfinie</p>
+        <div class="palette-grid">
+          @for (swatch of palette; track swatch.color) {
+            <button
+              class="swatch"
+              [style.background]="swatch.color"
+              [class.active]="themeColor === swatch.color"
+              (click)="applyTheme(swatch.color)"
+              [matTooltip]="swatch.name">
+              @if (themeColor === swatch.color) {
+                <mat-icon>check</mat-icon>
+              }
+            </button>
+          }
+        </div>
+        <mat-divider style="margin:16px 0" />
+        <p class="theme-label">Ou entre une couleur personnalisée</p>
+        <div class="custom-color-row">
+          <div class="color-preview" [style.background]="themeColor"></div>
+          <input type="color" [value]="themeColor" (input)="applyTheme(($any($event.target)).value)" class="color-native-input" />
+          <span class="color-hex">{{ themeColor }}</span>
+          <button mat-stroked-button class="btn-reset" (click)="applyTheme('#1a237e')" matTooltip="Réinitialiser">
+            <mat-icon>restart_alt</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- INFOS COMPTE -->
     <div class="card">
       <div class="card-header">

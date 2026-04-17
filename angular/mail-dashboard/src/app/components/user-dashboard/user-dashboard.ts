@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -47,6 +47,23 @@ export class UserDashboard implements OnInit {
   editName = '';
   profileSaved = false;
 
+  // Theme
+  themeColor = '#1a237e';
+  palette = [
+    { name: 'Marine',   color: '#1a237e' },
+    { name: 'Indigo',   color: '#4f46e5' },
+    { name: 'Violet',   color: '#7c3aed' },
+    { name: 'Rose',     color: '#e11d48' },
+    { name: 'Orange',   color: '#ea580c' },
+    { name: 'Vert',     color: '#059669' },
+    { name: 'Cyan',     color: '#0284c7' },
+    { name: 'Ardoise',  color: '#475569' },
+    { name: 'Corail',   color: '#db2777' },
+    { name: 'Dore',     color: '#d97706' },
+    { name: 'Noir',     color: '#111827' },
+    { name: 'Bordeaux', color: '#9f1239' },
+  ];
+
   // QR WhatsApp
   qrLoading = false;
   qrImage = '';
@@ -72,7 +89,8 @@ export class UserDashboard implements OnInit {
     private emailService: EmailService,
     private router: Router,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private el: ElementRef
   ) {}
 
   ngOnInit() {
@@ -104,6 +122,35 @@ export class UserDashboard implements OnInit {
     this.loadUserSettings();
     this.profilePhoto = localStorage.getItem('profilePhoto_' + this.user.email) || '';
     this.editName = this.user.name || '';
+    const saved = localStorage.getItem('dashTheme_' + this.user.email);
+    if (saved) this.applyTheme(saved);
+  }
+
+  private hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
+  private shiftColor(hex: string, amount: number): string {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
+    const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
+    return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+  }
+
+  applyTheme(color: string) {
+    this.themeColor = color;
+    localStorage.setItem('dashTheme_' + this.user.email, color);
+    const host = this.el.nativeElement as HTMLElement;
+    host.style.setProperty('--p', color);
+    host.style.setProperty('--p-light', this.hexToRgba(color, 0.1));
+    host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
+    host.style.setProperty('--p-dark', this.shiftColor(color, -30));
+    host.style.setProperty('--p-shift', this.shiftColor(color, 40));
+    this.cdr.detectChanges();
   }
 
   onPhotoSelected(event: Event) {

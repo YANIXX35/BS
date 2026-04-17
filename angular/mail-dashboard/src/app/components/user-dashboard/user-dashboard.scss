@@ -1,15 +1,22 @@
 * { box-sizing: border-box; }
 
-// ── VARIABLES ──────────────────────────────────────────────────────────────────
-$primary:  #1a237e;
-$primary-light: #e8eaf6;
-$bg:       #f4f5fb;
-$white:    #ffffff;
-$border:   #ebebf0;
-$text:     #111827;
-$muted:    #6b7280;
-$radius:   16px;
-$shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+// ── DEFAULTS (overridden at runtime via ElementRef) ────────────────────────────
+:host {
+  --p:       #1a237e;
+  --p-light: rgba(26,35,126,0.10);
+  --p-medium:rgba(26,35,126,0.18);
+  --p-dark:  #0d1757;
+  --p-shift: #2b3ea6;
+}
+
+// ── STATIC VARIABLES ───────────────────────────────────────────────────────────
+$bg:     #f4f5fb;
+$white:  #ffffff;
+$border: #ebebf0;
+$text:   #111827;
+$muted:  #6b7280;
+$radius: 16px;
+$shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
 // ── NAVBAR ─────────────────────────────────────────────────────────────────────
 .dash-navbar {
@@ -24,7 +31,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .nav-logo-wrap {
     width: 36px; height: 36px;
-    background: linear-gradient(135deg, $primary, #0288d1);
+    background: linear-gradient(135deg, var(--p), var(--p-shift));
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
@@ -56,10 +63,10 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
       &.active {
         background: $white;
-        color: $primary;
+        color: var(--p);
         font-weight: 600;
         box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        mat-icon { color: $primary; }
+        mat-icon { color: var(--p); }
       }
       &:not(.active):hover { color: $text; }
     }
@@ -79,13 +86,13 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   .nav-avatar {
     width: 34px; height: 34px;
     border-radius: 50%;
-    background: linear-gradient(135deg, $primary, #0288d1);
+    background: linear-gradient(135deg, var(--p), var(--p-shift));
     color: white; font-weight: 700; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
     border: 2px solid $border;
     transition: border-color 0.15s;
-    &:hover { border-color: $primary; }
+    &:hover { border-color: var(--p); }
     .nav-avatar-img { width: 100%; height: 100%; object-fit: cover; }
   }
 
@@ -109,7 +116,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(130deg, #1a237e 0%, #1565c0 60%, #0288d1 100%);
+  background: linear-gradient(130deg, var(--p) 0%, var(--p-shift) 60%, var(--p-dark) 100%);
   border-radius: $radius;
   padding: 22px 28px;
   margin-bottom: 20px;
@@ -176,7 +183,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       mat-icon { font-size: 24px; }
-      &.blue   { background: #e8eaf6; mat-icon { color: $primary; } }
+      &.blue   { background: var(--p-light); mat-icon { color: var(--p); } }
       &.orange { background: #fff3e0; mat-icon { color: #f57c00; } }
       &.green  { background: #e8f5e9; mat-icon { color: #2e7d32; } }
       &.purple { background: #f3e5f5; mat-icon { color: #7b1fa2; } }
@@ -230,16 +237,16 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   .card-title {
     display: flex; align-items: center; gap: 8px;
     font-size: 15px; font-weight: 700; color: $text;
-    mat-icon { font-size: 18px; color: $primary; }
+    mat-icon { font-size: 18px; color: var(--p); }
   }
 
   .badge {
     font-size: 12px; font-weight: 600;
     padding: 2px 9px; border-radius: 8px;
-    background: $primary-light; color: $primary;
+    background: var(--p-light); color: var(--p);
   }
 
-  .card-action { color: $muted; &:hover { color: $primary; } }
+  .card-action { color: $muted; &:hover { color: var(--p); } }
 }
 
 .card-body { padding: 14px 20px 18px; }
@@ -279,7 +286,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     .email-subject {
       margin: 2px 0 1px; font-size: 13px; color: #374151;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      &.bold { font-weight: 700; color: $primary; }
+      &.bold { font-weight: 700; color: var(--p); }
     }
     .email-snippet {
       margin: 0; font-size: 12px; color: #9ca3af;
@@ -289,7 +296,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .unread-dot {
     width: 8px; height: 8px; min-width: 8px;
-    border-radius: 50%; background: $primary;
+    border-radius: 50%; background: var(--p);
     margin-top: 6px;
   }
 }
@@ -345,7 +352,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .acc-avatar {
     width: 50px; height: 50px; border-radius: 50%;
-    background: linear-gradient(135deg, $primary, #0288d1);
+    background: linear-gradient(135deg, var(--p), var(--p-shift));
     color: white; font-size: 20px; font-weight: 800;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
@@ -372,7 +379,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .acc-stat {
     display: flex; flex-direction: column; align-items: center;
-    .acc-val { font-size: 18px; font-weight: 800; color: $primary;
+    .acc-val { font-size: 18px; font-weight: 800; color: var(--p);
       &.on { color: #10b981; }
     }
     .acc-lbl { font-size: 11px; color: $muted; margin-top: 1px; }
@@ -462,7 +469,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
 .step-num {
   min-width: 26px; height: 26px; border-radius: 50%;
-  background: $primary; color: white;
+  background: var(--p); color: white;
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 700; flex-shrink: 0;
 }
@@ -488,7 +495,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 .save-row {
   display: flex; justify-content: flex-end;
   .btn-save {
-    background: $primary !important; color: white !important;
+    background: var(--p) !important; color: white !important;
     height: 44px; padding: 0 28px; border-radius: 10px !important;
     ::ng-deep .mdc-button__label { display:flex; align-items:center; gap:8px; }
     mat-icon { font-size:18px; }
@@ -501,6 +508,9 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   grid-template-columns: 380px 1fr;
   gap: 16px;
   align-items: start;
+
+  // La theme card prend toute la largeur
+  .theme-card { grid-column: 1 / -1; }
 }
 
 .profile-card .card-body { padding: 24px 28px; }
@@ -515,11 +525,11 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
     .profile-photo, .profile-photo-placeholder {
       width: 110px; height: 110px; border-radius: 50%;
-      border: 3px solid $primary-light;
+      border: 3px solid var(--p-light);
     }
     .profile-photo { object-fit: cover; display: block; }
     .profile-photo-placeholder {
-      background: linear-gradient(135deg, $primary, #0288d1);
+      background: linear-gradient(135deg, var(--p), var(--p-shift));
       color: white; font-size: 40px; font-weight: 800;
       display: flex; align-items: center; justify-content: center;
     }
@@ -527,11 +537,11 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     .photo-edit-btn {
       position: absolute; bottom: 4px; right: 4px;
       width: 30px; height: 30px; border-radius: 50%;
-      background: $primary; color: white;
+      background: var(--p); color: white;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       transition: background 0.15s;
-      &:hover { background: #3949ab; }
+      &:hover { background: var(--p-dark); }
       mat-icon { font-size: 16px; width:16px; height:16px; }
     }
   }
@@ -543,7 +553,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   display: flex; flex-direction: column; gap: 8px;
   .btn-save {
     margin-top: 8px;
-    background: $primary !important; color: white !important;
+    background: var(--p) !important; color: white !important;
     border-radius: 10px !important; height: 44px;
     ::ng-deep .mdc-button__label { display:flex; align-items:center; gap:8px; }
     mat-icon { font-size:18px; }
@@ -554,7 +564,7 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   display: flex; align-items: center; gap: 14px;
   padding: 11px 0; border-bottom: 1px solid #f3f4f6;
   &:last-child { border-bottom: none; }
-  mat-icon { font-size: 18px; color: $primary; }
+  mat-icon { font-size: 18px; color: var(--p); }
   .info-label  { display: block; font-size: 11px; color: $muted; text-transform: uppercase; letter-spacing: 0.5px; }
   .info-value  { display: block; font-size: 13.5px; font-weight: 600; color: $text; margin-top: 1px;
     &.verified { color: #065f46; } }
@@ -604,4 +614,66 @@ $shadow:   0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   .stats-grid { .stat-icon-wrap { width: 38px; height: 38px; mat-icon { font-size: 20px; } } }
   .email-row .email-meta .email-date { display: none; }
   .welcome-banner .welcome-left { flex-direction: column; align-items: flex-start; }
+}
+
+// ── THEME PICKER ───────────────────────────────────────────────────────────────
+.theme-card { grid-column: 1 / -1; }
+
+.theme-label {
+  font-size: 12px; font-weight: 600; color: $muted;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin: 0 0 10px;
+}
+
+.palette-grid {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+
+.swatch {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  outline: none;
+
+  mat-icon { color: white; font-size: 16px; width: 16px; height: 16px; }
+
+  &:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
+
+  &.active {
+    border-color: $text;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+    transform: scale(1.1);
+  }
+}
+
+.custom-color-row {
+  display: flex; align-items: center; gap: 12px;
+
+  .color-preview {
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 2px solid $border; flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .color-native-input {
+    width: 38px; height: 38px;
+    border: none; border-radius: 8px;
+    cursor: pointer; padding: 0;
+    background: none; overflow: hidden;
+    flex-shrink: 0;
+    &::-webkit-color-swatch-wrapper { padding: 0; }
+    &::-webkit-color-swatch { border: none; border-radius: 8px; }
+  }
+
+  .color-hex {
+    font-size: 14px; font-weight: 600; color: $text;
+    font-family: monospace; letter-spacing: 0.5px;
+    flex: 1;
+  }
+
+  .btn-reset {
+    color: $muted; border-radius: 8px !important;
+    &:hover { color: $text; }
+  }
 }
