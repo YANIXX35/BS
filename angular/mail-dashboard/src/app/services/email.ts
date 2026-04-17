@@ -36,6 +36,8 @@ export interface UserSettings {
   app_password?: string;
   app_password_set?: boolean;
   avatar?: string;
+  theme_color?: string;
+  font_family?: string;
 }
 
 @Injectable({ providedIn: 'root' })

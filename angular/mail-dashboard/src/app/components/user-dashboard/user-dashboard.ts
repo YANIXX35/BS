@@ -132,13 +132,15 @@ export class UserDashboard implements OnInit {
       error: () => { this.loadingEmails = false; }
     });
 
-    this.loadUserSettings();
+    // Apply localStorage immediately (fast, offline-first)
     this.profilePhoto = localStorage.getItem('profilePhoto_' + this.user.email) || '';
     this.editName = this.user.name || '';
-    const saved = localStorage.getItem('dashTheme_' + this.user.email);
-    if (saved) this.applyTheme(saved);
+    const savedTheme = localStorage.getItem('dashTheme_' + this.user.email);
+    if (savedTheme) this.applyTheme(savedTheme, false);
     const savedFont = localStorage.getItem('dashFont_' + this.user.email);
-    if (savedFont) this.applyFont(savedFont);
+    if (savedFont) this.applyFont(savedFont, false);
+    // Then load from server (overrides localStorage with server truth)
+    this.loadUserSettings();
   }
 
   private hexToRgba(hex: string, alpha: number): string {
@@ -156,7 +158,7 @@ export class UserDashboard implements OnInit {
     return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
   }
 
-  applyTheme(color: string) {
+  applyTheme(color: string, sync = true) {
     this.themeColor = color;
     localStorage.setItem('dashTheme_' + this.user.email, color);
     const host = this.el.nativeElement as HTMLElement;
@@ -165,10 +167,15 @@ export class UserDashboard implements OnInit {
     host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
     host.style.setProperty('--p-dark', this.shiftColor(color, -30));
     host.style.setProperty('--p-shift', this.shiftColor(color, 40));
+    if (sync) {
+      this.emailService.updateUserSettings({
+        ...this.settings, email: this.user.email, theme_color: color
+      }).subscribe();
+    }
     this.cdr.detectChanges();
   }
 
-  applyFont(fontName: string) {
+  applyFont(fontName: string, sync = true) {
     this.currentFont = fontName;
     localStorage.setItem('dashFont_' + this.user.email, fontName);
     const font = this.fonts.find(f => f.name === fontName);
@@ -176,13 +183,16 @@ export class UserDashboard implements OnInit {
       const id = 'gfont-' + fontName.replace(/\s/g, '-');
       if (!document.getElementById(id)) {
         const link = document.createElement('link');
-        link.id = id;
-        link.rel = 'stylesheet';
-        link.href = font.url;
+        link.id = id; link.rel = 'stylesheet'; link.href = font.url;
         document.head.appendChild(link);
       }
     }
     (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
+    if (sync) {
+      this.emailService.updateUserSettings({
+        ...this.settings, email: this.user.email, font_family: fontName
+      }).subscribe();
+    }
     this.cdr.detectChanges();
   }
 
@@ -218,10 +228,18 @@ export class UserDashboard implements OnInit {
     this.emailService.getUserSettings(this.user.email).subscribe({
       next: (s) => {
         this.settings = s;
-        // Avatar from server takes priority over localStorage
+        // Server is the source of truth — override localStorage
         if (s.avatar) {
           this.profilePhoto = s.avatar;
           localStorage.setItem('profilePhoto_' + this.user.email, s.avatar);
+        }
+        if (s.theme_color) {
+          this.applyTheme(s.theme_color, false);
+          localStorage.setItem('dashTheme_' + this.user.email, s.theme_color);
+        }
+        if (s.font_family) {
+          this.applyFont(s.font_family, false);
+          localStorage.setItem('dashFont_' + this.user.email, s.font_family);
         }
         this.refreshChannels();
         this.cdr.detectChanges();
