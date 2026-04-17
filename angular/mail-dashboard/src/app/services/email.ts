@@ -59,7 +59,10 @@ export class EmailService {
   }
 
   getUserSettings(email: string): Observable<UserSettings> {
-    return this.http.get<UserSettings>(`${this.apiUrl}/user/settings`, { params: { email } });
+    return this.http.get<UserSettings>(`${this.apiUrl}/user/settings`, {
+      params: { email },
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
   }
 
   updateUserSettings(settings: Partial<UserSettings> & { email: string }): Observable<any> {

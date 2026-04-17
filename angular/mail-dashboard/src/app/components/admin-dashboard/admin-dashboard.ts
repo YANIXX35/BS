@@ -171,17 +171,35 @@ export class AdminDashboard implements OnInit {
   }
 
   // ── PROFILE ──
+  private compressImage(dataUrl: string, maxSize = 180): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ratio = Math.min(maxSize / img.width, maxSize / img.height);
+        canvas.width  = Math.round(img.width  * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.src = dataUrl;
+    });
+  }
+
   onPhotoSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (e) => {
-      this.profilePhoto = e.target?.result as string;
-      localStorage.setItem('profilePhoto_' + this.admin.email, this.profilePhoto);
-      // Sync to backend so photo works across all devices
+    reader.onload = async (e) => {
+      const raw = e.target?.result as string;
+      const compressed = await this.compressImage(raw);
+      this.profilePhoto = compressed;
+      localStorage.setItem('profilePhoto_' + this.admin.email, compressed);
       this.emailService.updateUserSettings({
-        ...this.adminSettings, email: this.admin.email, avatar: this.profilePhoto
-      }).subscribe();
+        ...this.adminSettings, email: this.admin.email, avatar: compressed
+      }).subscribe({
+        error: (err) => console.error('[avatar save]', err)
+      });
       this.cdr.detectChanges();
     };
     reader.readAsDataURL(file);
