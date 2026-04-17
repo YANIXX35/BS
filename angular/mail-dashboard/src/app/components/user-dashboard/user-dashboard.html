@@ -476,7 +476,7 @@
               [style.font-family]="f.name + ', sans-serif'"
               (click)="applyFont(f.name)">
               <span class="font-preview">Aa</span>
-              <span class="font-name">{{ f.label }}</span>
+              <span class="font-name">{{ f.name }}</span>
               @if (currentFont === f.name) {
                 <mat-icon class="font-check">check_circle</mat-icon>
               }
@@ -511,7 +511,10 @@
         <p class="theme-label">Ou entre une couleur personnalisée</p>
         <div class="custom-color-row">
           <div class="color-preview" [style.background]="themeColor"></div>
-          <input type="color" [value]="themeColor" (input)="applyTheme(($any($event.target)).value)" class="color-native-input" />
+          <input type="color" [value]="themeColor"
+                 (input)="applyThemePreview(($any($event.target)).value)"
+                 (change)="saveThemeFinal(($any($event.target)).value)"
+                 class="color-native-input" />
           <span class="color-hex">{{ themeColor }}</span>
           <button mat-stroked-button class="btn-reset" (click)="applyTheme('#1a237e')" matTooltip="Réinitialiser">
             <mat-icon>restart_alt</mat-icon>
