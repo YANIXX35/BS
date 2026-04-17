@@ -12,11 +12,6 @@
   display: block;
 }
 
-// Font cascade via :host — mat-icon restored explicitly below
-mat-icon, .material-icons, [class*="material-icons"] {
-  font-family: 'Material Icons' !important;
-  font-style: normal;
-}
 
 // ── VARIABLES ──────────────────────────────────────────────────────────────────
 // $blue → var(--p) (CSS custom property, see :host above)

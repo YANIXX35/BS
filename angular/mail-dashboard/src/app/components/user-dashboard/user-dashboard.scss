@@ -12,11 +12,6 @@
   display: block;
 }
 
-// Font cascade via :host — mat-icon restored explicitly below
-mat-icon, .material-icons, [class*="material-icons"] {
-  font-family: 'Material Icons' !important;
-  font-style: normal;
-}
 
 // ── STATIC VARIABLES ───────────────────────────────────────────────────────────
 $bg:     #f4f5fb;
@@ -35,8 +30,13 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   border-bottom: 1px solid $border;
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 16px;
+  padding: 0 20px;
+  gap: 12px;
+
+  .nav-left {
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
 
   .nav-logo-wrap {
     width: 36px; height: 36px;
@@ -44,16 +44,16 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    mat-icon { color: white; font-size: 20px; }
+    mat-icon { color: white; font-size: 20px; width: 20px; height: 20px; }
   }
 
   .nav-brand {
-    font-size: 16px; font-weight: 700; color: $text;
+    font-size: 15px; font-weight: 700; color: $text;
     white-space: nowrap;
   }
 
   .nav-tabs {
-    display: flex; align-items: center; gap: 4px;
+    display: flex; align-items: center; gap: 2px;
     margin: 0 auto;
     background: #f3f4f6;
     padding: 4px;
@@ -61,14 +61,22 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
     .nav-tab {
       display: flex; align-items: center; gap: 6px;
-      padding: 7px 16px;
+      padding: 7px 14px;
       border: none; border-radius: 9px;
       background: transparent;
       color: $muted;
       font-size: 13px; font-weight: 500;
       cursor: pointer; transition: all 0.18s;
       white-space: nowrap;
-      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+
+      mat-icon {
+        font-size: 18px; width: 18px; height: 18px;
+        flex-shrink: 0;
+        line-height: 1;
+        vertical-align: middle;
+      }
+
+      .tab-label { display: inline; }
 
       &.active {
         background: $white;
@@ -82,8 +90,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   }
 
   .nav-right {
-    display: flex; align-items: center; gap: 12px;
-    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
 
     .live-clock {
       display: flex; align-items: center; gap: 5px;
@@ -106,8 +114,44 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   }
 
   .logout-btn {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
     color: $muted;
-    &:hover { color: #ef4444; }
+    background: transparent;
+    border: 1px solid $border;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; }
+    &:hover { color: #ef4444; background: #fef2f2; border-color: #fecaca; }
+  }
+}
+
+// ── NAVBAR RESPONSIVE ──────────────────────────────────────────────────────────
+@media (max-width: 640px) {
+  .dash-navbar {
+    padding: 0 12px; gap: 8px; height: 56px;
+
+    .nav-brand { display: none; }
+
+    .nav-tabs {
+      flex: 1;
+      justify-content: center;
+      .nav-tab {
+        padding: 7px 10px;
+        .tab-label { display: none; }
+        mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      }
+    }
+
+    .live-clock { display: none; }
+  }
+}
+
+@media (max-width: 400px) {
+  .dash-navbar {
+    .nav-tabs .nav-tab { padding: 7px 8px; }
   }
 }
 

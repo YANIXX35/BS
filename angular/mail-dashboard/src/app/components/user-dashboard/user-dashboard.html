@@ -9,13 +9,13 @@
 
   <div class="nav-tabs">
     <button class="nav-tab" [class.active]="activeView==='dashboard'" (click)="activeView='dashboard'">
-      <mat-icon>dashboard</mat-icon><span>Dashboard</span>
+      <mat-icon>dashboard</mat-icon><span class="tab-label">Dashboard</span>
     </button>
     <button class="nav-tab" [class.active]="activeView==='settings'" (click)="activeView='settings'">
-      <mat-icon>settings</mat-icon><span>Parametres</span>
+      <mat-icon>settings</mat-icon><span class="tab-label">Parametres</span>
     </button>
     <button class="nav-tab" [class.active]="activeView==='profile'" (click)="activeView='profile'">
-      <mat-icon>person</mat-icon><span>Profil</span>
+      <mat-icon>person</mat-icon><span class="tab-label">Profil</span>
     </button>
   </div>
 
@@ -31,7 +31,7 @@
         {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
       }
     </div>
-    <button mat-icon-button (click)="logout()" matTooltip="Deconnexion" class="logout-btn">
+    <button class="logout-btn" (click)="logout()" matTooltip="Deconnexion">
       <mat-icon>logout</mat-icon>
     </button>
   </div>

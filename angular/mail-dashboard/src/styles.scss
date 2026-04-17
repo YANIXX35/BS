@@ -36,3 +36,21 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+/* ── MATERIAL ICONS — force restore (prevents component font overrides) ─────── */
+mat-icon,
+.material-icons,
+[class*="material-icons"] {
+  font-family: 'Material Icons' !important;
+  font-style: normal !important;
+  font-weight: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  display: inline-block;
+  line-height: 1;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
