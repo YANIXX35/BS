@@ -2,12 +2,17 @@
 
 // ── DEFAULTS (overridden at runtime via ElementRef) ────────────────────────────
 :host {
-  --p:       #1a237e;
-  --p-light: rgba(26,35,126,0.10);
-  --p-medium:rgba(26,35,126,0.18);
-  --p-dark:  #0d1757;
-  --p-shift: #2b3ea6;
+  --p:         #1a237e;
+  --p-light:   rgba(26,35,126,0.10);
+  --p-medium:  rgba(26,35,126,0.18);
+  --p-dark:    #0d1757;
+  --p-shift:   #2b3ea6;
+  --dash-font: 'Inter', sans-serif;
+  font-family: var(--dash-font);
+  display: block;
 }
+
+* { font-family: var(--dash-font) !important; }
 
 // ── STATIC VARIABLES ───────────────────────────────────────────────────────────
 $bg:     #f4f5fb;
@@ -615,6 +620,45 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   .email-row .email-meta .email-date { display: none; }
   .welcome-banner .welcome-left { flex-direction: column; align-items: flex-start; }
 }
+
+// ── FONT PICKER ────────────────────────────────────────────────────────────────
+.font-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.font-btn {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 10px 12px;
+  border: 2px solid $border; border-radius: 12px;
+  background: #f9fafb; cursor: pointer;
+  transition: all 0.18s;
+
+  .font-preview {
+    font-size: 26px; font-weight: 700; color: $text; line-height: 1;
+  }
+  .font-name {
+    font-size: 11px; font-weight: 500; color: $muted; text-align: center;
+    font-family: inherit !important;
+  }
+  .font-check {
+    position: absolute; top: 6px; right: 6px;
+    font-size: 14px; width: 14px; height: 14px;
+    color: var(--p);
+  }
+
+  &:hover { border-color: var(--p); background: var(--p-light); }
+  &.active {
+    border-color: var(--p);
+    background: var(--p-light);
+    .font-preview { color: var(--p); }
+  }
+}
+
+@media (max-width: 768px) { .font-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .font-grid { grid-template-columns: repeat(2, 1fr); } }
 
 // ── THEME PICKER ───────────────────────────────────────────────────────────────
 .theme-card { grid-column: 1 / -1; }

@@ -64,6 +64,19 @@ export class UserDashboard implements OnInit {
     { name: 'Bordeaux', color: '#9f1239' },
   ];
 
+  // Font
+  currentFont = 'Inter';
+  fonts = [
+    { name: 'Inter',      label: 'Inter',        url: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap' },
+    { name: 'Poppins',    label: 'Poppins',       url: 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap' },
+    { name: 'Raleway',    label: 'Raleway',       url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap' },
+    { name: 'Nunito',     label: 'Nunito',        url: 'https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap' },
+    { name: 'Montserrat', label: 'Montserrat',    url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap' },
+    { name: 'DM Sans',    label: 'DM Sans',       url: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap' },
+    { name: 'Outfit',     label: 'Outfit',        url: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap' },
+    { name: 'Space Grotesk', label: 'Space Grotesk', url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap' },
+  ];
+
   // QR WhatsApp
   qrLoading = false;
   qrImage = '';
@@ -124,6 +137,8 @@ export class UserDashboard implements OnInit {
     this.editName = this.user.name || '';
     const saved = localStorage.getItem('dashTheme_' + this.user.email);
     if (saved) this.applyTheme(saved);
+    const savedFont = localStorage.getItem('dashFont_' + this.user.email);
+    if (savedFont) this.applyFont(savedFont);
   }
 
   private hexToRgba(hex: string, alpha: number): string {
@@ -150,6 +165,24 @@ export class UserDashboard implements OnInit {
     host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
     host.style.setProperty('--p-dark', this.shiftColor(color, -30));
     host.style.setProperty('--p-shift', this.shiftColor(color, 40));
+    this.cdr.detectChanges();
+  }
+
+  applyFont(fontName: string) {
+    this.currentFont = fontName;
+    localStorage.setItem('dashFont_' + this.user.email, fontName);
+    const font = this.fonts.find(f => f.name === fontName);
+    if (font) {
+      const id = 'gfont-' + fontName.replace(/\s/g, '-');
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = font.url;
+        document.head.appendChild(link);
+      }
+    }
+    (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
     this.cdr.detectChanges();
   }
 

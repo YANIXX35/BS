@@ -461,6 +461,31 @@
       </div>
     </div>
 
+    <!-- FONT PICKER -->
+    <div class="card theme-card">
+      <div class="card-header">
+        <div class="card-title"><mat-icon>text_fields</mat-icon><span>Police d'ecriture</span></div>
+      </div>
+      <div class="card-body">
+        <p class="theme-label">Choisis une police pour ton dashboard</p>
+        <div class="font-grid">
+          @for (f of fonts; track f.name) {
+            <button
+              class="font-btn"
+              [class.active]="currentFont === f.name"
+              [style.font-family]="f.name + ', sans-serif'"
+              (click)="applyFont(f.name)">
+              <span class="font-preview">Aa</span>
+              <span class="font-name">{{ f.label }}</span>
+              @if (currentFont === f.name) {
+                <mat-icon class="font-check">check_circle</mat-icon>
+              }
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
     <!-- THEME -->
     <div class="card theme-card">
       <div class="card-header">
