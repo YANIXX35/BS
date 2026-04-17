@@ -69,6 +69,10 @@ export class EmailService {
     return this.http.put(`${this.apiUrl}/user/settings`, settings);
   }
 
+  savePreferences(email: string, prefs: { theme_color?: string; font_family?: string; avatar?: string }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/user/settings`, { email, ...prefs });
+  }
+
   getWhatsappQr(email: string): Observable<{ type: string; message: string }> {
     return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
   }

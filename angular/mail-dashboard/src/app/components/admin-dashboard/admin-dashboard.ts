@@ -81,6 +81,9 @@ export class AdminDashboard implements OnInit {
   editName = '';
   profileSaved = false;
 
+  private _themeDebounce: any = null;
+  private _fontDebounce: any = null;
+
   // Theme
   themeColor = '#1a237e';
   palette = [
@@ -240,12 +243,13 @@ export class AdminDashboard implements OnInit {
     host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
     host.style.setProperty('--p-dark', this.shiftColor(color, -30));
     host.style.setProperty('--p-shift', this.shiftColor(color, 40));
-    if (sync) {
-      this.emailService.updateUserSettings({
-        ...this.adminSettings, email: this.admin.email, theme_color: color
-      }).subscribe();
-    }
     this.cdr.detectChanges();
+    if (!sync) return;
+    clearTimeout(this._themeDebounce);
+    this._themeDebounce = setTimeout(() => {
+      this.emailService.savePreferences(this.admin.email, { theme_color: color })
+        .subscribe({ error: (e) => console.error('[theme save]', e) });
+    }, 600);
   }
 
   // ── FONT ──
@@ -262,12 +266,13 @@ export class AdminDashboard implements OnInit {
       }
     }
     (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
-    if (sync) {
-      this.emailService.updateUserSettings({
-        ...this.adminSettings, email: this.admin.email, font_family: fontName
-      }).subscribe();
-    }
     this.cdr.detectChanges();
+    if (!sync) return;
+    clearTimeout(this._fontDebounce);
+    this._fontDebounce = setTimeout(() => {
+      this.emailService.savePreferences(this.admin.email, { font_family: fontName })
+        .subscribe({ error: (e) => console.error('[font save]', e) });
+    }, 400);
   }
 
   loadAdminGmailStatus() {

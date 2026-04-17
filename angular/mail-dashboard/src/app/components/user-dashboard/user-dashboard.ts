@@ -77,6 +77,10 @@ export class UserDashboard implements OnInit {
     { name: 'Space Grotesk', label: 'Space Grotesk', url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap' },
   ];
 
+  // Debounce timers for preferences sync
+  private _themeDebounce: any = null;
+  private _fontDebounce: any = null;
+
   // QR WhatsApp
   qrLoading = false;
   qrImage = '';
@@ -159,6 +163,7 @@ export class UserDashboard implements OnInit {
   }
 
   applyTheme(color: string, sync = true) {
+    // Visual update immediately — no wait
     this.themeColor = color;
     localStorage.setItem('dashTheme_' + this.user.email, color);
     const host = this.el.nativeElement as HTMLElement;
@@ -167,15 +172,19 @@ export class UserDashboard implements OnInit {
     host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
     host.style.setProperty('--p-dark', this.shiftColor(color, -30));
     host.style.setProperty('--p-shift', this.shiftColor(color, 40));
-    if (sync) {
-      this.emailService.updateUserSettings({
-        ...this.settings, email: this.user.email, theme_color: color
-      }).subscribe();
-    }
     this.cdr.detectChanges();
+    if (!sync) return;
+    // Debounce: wait 600ms after last change before saving to backend
+    // Prevents flooding the server when dragging the color picker
+    clearTimeout(this._themeDebounce);
+    this._themeDebounce = setTimeout(() => {
+      this.emailService.savePreferences(this.user.email, { theme_color: color })
+        .subscribe({ error: (e) => console.error('[theme save]', e) });
+    }, 600);
   }
 
   applyFont(fontName: string, sync = true) {
+    // Visual update immediately
     this.currentFont = fontName;
     localStorage.setItem('dashFont_' + this.user.email, fontName);
     const font = this.fonts.find(f => f.name === fontName);
@@ -188,12 +197,14 @@ export class UserDashboard implements OnInit {
       }
     }
     (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
-    if (sync) {
-      this.emailService.updateUserSettings({
-        ...this.settings, email: this.user.email, font_family: fontName
-      }).subscribe();
-    }
     this.cdr.detectChanges();
+    if (!sync) return;
+    // Debounce: 400ms for font clicks
+    clearTimeout(this._fontDebounce);
+    this._fontDebounce = setTimeout(() => {
+      this.emailService.savePreferences(this.user.email, { font_family: fontName })
+        .subscribe({ error: (e) => console.error('[font save]', e) });
+    }, 400);
   }
 
   private compressImage(dataUrl: string, maxSize = 180): Promise<string> {
