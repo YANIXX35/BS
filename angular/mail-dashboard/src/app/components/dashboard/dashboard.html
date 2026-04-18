@@ -68,6 +68,11 @@
         <app-email-list />
       }
 
+      <!-- ── ADVANCED DASHBOARD ── -->
+      @if (activeSection === 'advanced') {
+        <app-advanced-dashboard />
+      }
+
       <!-- ── PARAMETRES ── -->
       @if (activeSection === 'settings') {
         <div class="page-header">

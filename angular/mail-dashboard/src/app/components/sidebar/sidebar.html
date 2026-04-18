@@ -15,6 +15,10 @@
       <mat-icon matListItemIcon>inbox</mat-icon>
       <span matListItemTitle>Boite de reception</span>
     </mat-list-item>
+    <mat-list-item [class.active]="activeSection === 'advanced'" (click)="navigate('advanced')">
+      <mat-icon matListItemIcon>analytics</mat-icon>
+      <span matListItemTitle>Dashboard Avancé</span>
+    </mat-list-item>
     <mat-list-item [class.active]="activeSection === 'settings'" (click)="navigate('settings')">
       <mat-icon matListItemIcon>settings</mat-icon>
       <span matListItemTitle>Parametres</span>

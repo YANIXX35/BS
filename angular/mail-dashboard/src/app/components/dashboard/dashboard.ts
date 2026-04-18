@@ -11,12 +11,16 @@ import { MatInputModule } from '@angular/material/input';
 import { EmailService, Stats, UserSettings } from '../../services/email';
 import { EmailList } from '../email-list/email-list';
 import { Sidebar } from '../sidebar/sidebar';
+import { AdvancedDashboardComponent } from '../advanced-dashboard/advanced-dashboard';
+
+type DashboardSection = 'overview' | 'advanced' | 'settings';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule,
-    MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, EmailList, Sidebar
+    MatProgressSpinnerModule, MatFormFieldModule, MatInputModule, EmailList, Sidebar,
+    AdvancedDashboardComponent
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss'
@@ -24,7 +28,7 @@ import { Sidebar } from '../sidebar/sidebar';
 export class Dashboard implements OnInit {
   stats: Stats | null = null;
   loading = true;
-  activeSection = 'overview';
+  activeSection: DashboardSection = 'overview';
 
   // Settings
   settings: UserSettings = { name: '', email: '', phone: '', gmail_address: '', telegram_chat_id: '', green_api_instance: '', green_api_token: '' };
@@ -43,7 +47,7 @@ export class Dashboard implements OnInit {
     });
   }
 
-  onSectionChange(section: string) {
+  onSectionChange(section: DashboardSection) {
     this.activeSection = section;
     if (section === 'settings') {
       this.loadSettings();
