@@ -23,7 +23,7 @@ export class EmailList implements OnInit {
     const stored = localStorage.getItem('user');
     const email = stored ? JSON.parse(stored).email : '';
     this.emailService.getEmails(email).subscribe({
-      next: (data) => { this.emails = data; this.loading = false; },
+      next: (data) => { this.emails = data.emails; this.loading = false; },
       error: () => { this.error = true; this.loading = false; }
     });
   }

@@ -143,7 +143,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     });
 
     this.emailService.getEmails(this.user.email).subscribe({
-      next:  (e) => { this.emails = e.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
+      next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
       error: ()  => { this.loadingEmails = false; }
     });
 
@@ -435,7 +435,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     } else if (action === 'refresh') {
       this.loadingEmails = true;
       this.emailService.getEmails(this.user.email).subscribe({
-        next:  (e) => { this.emails = e.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
+        next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
         error: ()  => { this.loadingEmails = false; }
       });
     }

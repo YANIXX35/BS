@@ -385,7 +385,7 @@ export class AdminDashboard implements OnInit {
       next: s => { this.gmailStats = s; this.cdr.detectChanges(); }
     });
     this.emailService.getEmails(this.admin.email).subscribe({
-      next: e => { this.emails = e; this.loading.emails = false; this.cdr.detectChanges(); },
+      next: e => { this.emails = e.emails; this.loading.emails = false; this.cdr.detectChanges(); },
       error: () => this.loading.emails = false
     });
   }
@@ -410,7 +410,7 @@ export class AdminDashboard implements OnInit {
     this.loadingUserEmails = true;
     this.userEmails = [];
     this.emailService.getEmails(this.selectedUserEmail).subscribe({
-      next: (e) => { this.userEmails = e; this.loadingUserEmails = false; this.cdr.detectChanges(); },
+      next: (e) => { this.userEmails = e.emails; this.loadingUserEmails = false; this.cdr.detectChanges(); },
       error: () => { this.loadingUserEmails = false; this.cdr.detectChanges(); }
     });
   }

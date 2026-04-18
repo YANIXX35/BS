@@ -12,6 +12,14 @@ export interface Email {
   unread: boolean;
 }
 
+export interface EmailsPage {
+  emails: Email[];
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
 export interface Status {
   running: boolean;
   email: string;
@@ -46,8 +54,10 @@ export class EmailService {
 
   constructor(private http: HttpClient) {}
 
-  getEmails(email: string): Observable<Email[]> {
-    return this.http.get<Email[]>(`${this.apiUrl}/emails`, { params: { email } });
+  getEmails(email: string, page = 1, limit = 20): Observable<EmailsPage> {
+    return this.http.get<EmailsPage>(`${this.apiUrl}/emails`, {
+      params: { email, page: String(page), limit: String(limit) }
+    });
   }
 
   getStatus(): Observable<Status> {
