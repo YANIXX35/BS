@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, fromEvent, merge } from 'rxjs';
-import { map, takeUntil, filter } from 'rxjs/operators';
+import { Observable, BehaviorSubject, fromEvent, merge, timer, interval } from 'rxjs';
+import { map, takeUntil, filter, retry, switchMap } from 'rxjs/operators';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 
@@ -16,6 +16,8 @@ export interface UserPreferences {
 export interface PreferenceUpdate {
   user_id: string;
   preferences: UserPreferences;
+  version?: number;
+  updated_at?: string;
 }
 
 interface ThemeColors {
@@ -42,46 +44,198 @@ export class PreferencesService {
   // État de connexion
   private isOnline = navigator.onLine;
   private pendingUpdates: UserPreferences = {};
+  
+  // JWT token et versioning
+  private jwtToken: string | null = null;
+  private currentVersion: number = 0;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+  private reconnectDelay: number = 1000; // 1 seconde
+  private keepAliveInterval: any = null;
 
   constructor(private http: HttpClient) {
+    this.loadToken();
     this.initWebSocket();
     this.initOnlineStatus();
+    this.initKeepAlive();
+  }
+
+  /**
+   * Charge le token JWT depuis localStorage
+   */
+  private loadToken(): void {
+    try {
+      const stored = localStorage.getItem('auth_token');
+      this.jwtToken = stored;
+    } catch (error) {
+      console.error('[PREFERENCES] Erreur chargement token:', error);
+    }
+  }
+
+  /**
+   * Sauvegarde le token JWT dans localStorage
+   */
+  private saveToken(token: string): void {
+    try {
+      localStorage.setItem('auth_token', token);
+      this.jwtToken = token;
+    } catch (error) {
+      console.error('[PREFERENCES] Erreur sauvegarde token:', error);
+    }
+  }
+
+  /**
+   * Initialise le système de keep-alive WebSocket
+   */
+  private initKeepAlive(): void {
+    // Envoyer un ping toutes les 30 secondes
+    this.keepAliveInterval = interval(30000).subscribe(() => {
+      if (this.socket && this.socket.connected) {
+        this.socket.emit('keep_alive');
+      }
+    });
   }
 
   /**
    * Initialise la connexion WebSocket pour la synchronisation temps réel
    */
   private initWebSocket(): void {
-    const user = this.getCurrentUser();
-    if (!user?.id) return;
+    if (!this.jwtToken) {
+      console.log('[WEBSOCKET] Pas de token JWT, connexion WebSocket annulée');
+      return;
+    }
 
     this.socket = io(environment.apiUrl, {
-      query: { user_id: user.id },
-      transports: ['websocket', 'polling']
+      query: { token: this.jwtToken },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: this.maxReconnectAttempts,
+      reconnectionDelay: this.reconnectDelay
     });
+
+    this.setupWebSocketListeners();
+  }
+
+  /**
+   * Configure les écouteurs WebSocket
+   */
+  private setupWebSocketListeners(): void {
+    if (!this.socket) return;
 
     // Écouter les mises à jour en temps réel
     this.socket.on('preference_updated', (data: PreferenceUpdate) => {
       console.log('[PREFERENCES] Mise à jour reçue:', data);
       
-      if (data.user_id === user.id) {
-        this.preferencesSubject.next(data.preferences);
-        
-        // Mettre à jour localStorage comme cache
-        this.saveToLocalStorage(data.preferences, true);
-        
-        // Appliquer immédiatement les changements UI
-        this.applyPreferences(data.preferences);
+      // Mettre à jour la version courante
+      if (data.version) {
+        this.currentVersion = data.version;
       }
+      
+      // Mettre à jour le BehaviorSubject
+      this.preferencesSubject.next(data.preferences);
+      
+      // Mettre à jour localStorage comme cache
+      this.saveToLocalStorage(data.preferences, true);
+      
+      // Appliquer immédiatement les changements UI
+      this.applyPreferences(data.preferences);
     });
 
     this.socket.on('connected', (data: any) => {
       console.log('[WEBSOCKET] Connecté:', data.message);
+      this.reconnectAttempts = 0; // Réinitialiser les tentatives de reconnexion
+      
+      // Rejoindre la room utilisateur
+      const user = this.getCurrentUser();
+      if (user?.id && this.socket) {
+        this.socket.emit('join_user_room', {
+          user_id: user.id,
+          token: this.jwtToken
+        });
+      }
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('[WEBSOCKET] Déconnecté');
+    this.socket.on('error', (error: any) => {
+      console.error('[WEBSOCKET] Erreur:', error);
+      this.handleWebSocketError(error);
     });
+
+    this.socket.on('disconnect', (reason: string) => {
+      console.log('[WEBSOCKET] Déconnecté:', reason);
+      if (reason === 'io server disconnect') {
+        // Le serveur a déconnecté, on essaye de se reconnecter
+        this.attemptReconnect();
+      }
+    });
+
+    this.socket.on('pong', (data: any) => {
+      console.log('[WEBSOCKET] Pong reçu:', data.timestamp);
+    });
+
+    this.socket.on('keep_alive_response', (data: any) => {
+      console.log('[WEBSOCKET] Keep-alive response:', data.timestamp);
+    });
+  }
+
+  /**
+   * Gère les erreurs WebSocket et tente de se reconnecter
+   */
+  private handleWebSocketError(error: any): void {
+    console.error('[WEBSOCKET] Erreur de connexion:', error);
+    
+    if (error.message === 'Token expiré') {
+      this.refreshToken();
+    } else if (error.message === 'Token invalide') {
+      this.logout();
+    } else {
+      this.attemptReconnect();
+    }
+  }
+
+  /**
+   * Tente de se reconnecter au WebSocket
+   */
+  private attemptReconnect(): void {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.error('[WEBSOCKET] Nombre maximum de tentatives de reconnexion atteint');
+      return;
+    }
+
+    this.reconnectAttempts++;
+    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
+    
+    console.log(`[WEBSOCKET] Tentative de reconnexion ${this.reconnectAttempts}/${this.maxReconnectAttempts} dans ${delay}ms`);
+    
+    setTimeout(() => {
+      if (this.socket) {
+        this.socket.connect();
+      }
+    }, delay);
+  }
+
+  /**
+   * Rafraîchit le token JWT
+   */
+  private refreshToken(): void {
+    // Implémenter la logique de rafraîchissement du token
+    console.log('[PREFERENCES] Token expiré, nécessite une reconnexion');
+    this.logout();
+  }
+
+  /**
+   * Déconnecte l'utilisateur
+   */
+  private logout(): void {
+    this.jwtToken = null;
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user');
+    
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
+    }
+    
+    console.log('[PREFERENCES] Utilisateur déconnecté');
   }
 
   /**
@@ -100,18 +254,17 @@ export class PreferencesService {
   }
 
   /**
-   * Charge les préférences depuis le backend
+   * Charge les préférences depuis le backend avec JWT
    */
   loadPreferences(): Observable<UserPreferences> {
-    const user = this.getCurrentUser();
-    if (!user?.id) {
-      console.error('[PREFERENCES] User ID non trouvé');
+    if (!this.jwtToken) {
+      console.error('[PREFERENCES] Token JWT non trouvé');
       return new Observable();
     }
 
-    return this.http.get<{ preferences: any[] }>(`${this.api}?user_id=${user.id}`, {
-      headers: this.headers
-    }).pipe(
+    const headers = this.headers.set('Authorization', `Bearer ${this.jwtToken}`);
+
+    return this.http.get<{ preferences: any[] }>(this.api, { headers }).pipe(
       map(response => {
         const preferences: UserPreferences = {};
         response.preferences.forEach(pref => {
@@ -131,18 +284,18 @@ export class PreferencesService {
   }
 
   /**
-   * Met à jour les préférences (backend + temps réel)
+   * Met à jour les préférences (backend + temps réel) avec JWT et versioning
    */
   updatePreferences(preferences: UserPreferences): Observable<any> {
-    const user = this.getCurrentUser();
-    if (!user?.id) {
-      console.error('[PREFERENCES] User ID non trouvé pour la mise à jour');
+    if (!this.jwtToken) {
+      console.error('[PREFERENCES] Token JWT non trouvé pour la mise à jour');
       return new Observable();
     }
 
+    const headers = this.headers.set('Authorization', `Bearer ${this.jwtToken}`);
     const updateData = {
-      user_id: user.id,
-      preferences: preferences
+      preferences: preferences,
+      version: this.currentVersion
     };
 
     // Si offline, stocker pour synchronisation plus tard
@@ -153,9 +306,7 @@ export class PreferencesService {
       return new Observable();
     }
 
-    return this.http.post(this.api, updateData, {
-      headers: this.headers
-    }).pipe(
+    return this.http.post(this.api, updateData, { headers }).pipe(
       map(response => {
         console.log('[PREFERENCES] Mise à jour envoyée:', preferences);
         
@@ -167,6 +318,29 @@ export class PreferencesService {
         
         // Appliquer les changements UI
         this.applyPreferences(preferences);
+        
+        return response;
+      })
+    );
+  }
+
+  /**
+   * Authentifie l'utilisateur et génère un token JWT
+   */
+  authenticate(email: string, password: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/auth/token`, {
+      email: email,
+      password: password
+    }, { headers: this.headers }).pipe(
+      map((response: any) => {
+        this.saveToken(response.token);
+        localStorage.setItem('user', JSON.stringify({
+          id: response.user_id,
+          email: response.email
+        }));
+        
+        // Réinitialiser la connexion WebSocket
+        this.initWebSocket();
         
         return response;
       })
@@ -256,7 +430,7 @@ export class PreferencesService {
       orange: { primary: '#f57c00', secondary: '#fb8c00' }
     };
 
-    const colors = themeColors[theme] || themeColors.blue;
+    const colors = themeColors[theme] || themeColors['blue'];
     
     document.documentElement.style.setProperty('--primary-color', colors.primary);
     document.documentElement.style.setProperty('--secondary-color', colors.secondary);
