@@ -2,6 +2,7 @@
 
 // ── DEFAULTS (overridden at runtime via ElementRef) ────────────────────────────
 :host {
+  // Fallback defaults (overridden by ThemeService at runtime via :root)
   --p:         #1a237e;
   --p-light:   rgba(26,35,126,0.10);
   --p-medium:  rgba(26,35,126,0.18);
@@ -10,24 +11,22 @@
   --dash-font: 'Inter', sans-serif;
   font-family: var(--dash-font);
   display: block;
+  // Smooth mode transition
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 
 // ── STATIC VARIABLES ───────────────────────────────────────────────────────────
-$bg:     #f4f5fb;
-$white:  #ffffff;
-$border: #ebebf0;
-$text:   #111827;
-$muted:  #6b7280;
+// Colors are now driven by CSS custom properties defined in styles.scss.
+// Only non-color tokens remain as Sass variables.
 $radius: 16px;
-$shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
 // ── NAVBAR ─────────────────────────────────────────────────────────────────────
 .dash-navbar {
   position: sticky; top: 0; z-index: 200;
   height: 60px;
-  background: $white;
-  border-bottom: 1px solid $border;
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -48,14 +47,14 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   }
 
   .nav-brand {
-    font-size: 15px; font-weight: 700; color: $text;
+    font-size: 15px; font-weight: 700; color: var(--text-color);
     white-space: nowrap;
   }
 
   .nav-tabs {
     display: flex; align-items: center; gap: 2px;
     margin: 0 auto;
-    background: #f3f4f6;
+    background: var(--subtle-bg);
     padding: 4px;
     border-radius: 12px;
 
@@ -64,7 +63,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
       padding: 7px 14px;
       border: none; border-radius: 9px;
       background: transparent;
-      color: $muted;
+      color: var(--muted-color);
       font-size: 13px; font-weight: 500;
       cursor: pointer; transition: all 0.18s;
       white-space: nowrap;
@@ -79,13 +78,13 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
       .tab-label { display: inline; }
 
       &.active {
-        background: $white;
+        background: var(--surface-color);
         color: var(--p);
         font-weight: 600;
         box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         mat-icon { color: var(--p); }
       }
-      &:not(.active):hover { color: $text; }
+      &:not(.active):hover { color: var(--text-color); }
     }
   }
 
@@ -95,7 +94,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
     .live-clock {
       display: flex; align-items: center; gap: 5px;
-      font-size: 13px; color: $muted; font-weight: 500;
+      font-size: 13px; color: var(--muted-color); font-weight: 500;
       mat-icon { font-size: 15px; width: 15px; height: 15px; }
     }
   }
@@ -107,7 +106,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     color: white; font-weight: 700; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
     overflow: hidden; flex-shrink: 0;
-    border: 2px solid $border;
+    border: 2px solid var(--border-color);
     transition: border-color 0.15s;
     &:hover { border-color: var(--p); }
     .nav-avatar-img { width: 100%; height: 100%; object-fit: cover; }
@@ -117,9 +116,9 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     width: 34px; height: 34px;
     display: flex; align-items: center; justify-content: center;
     border-radius: 8px;
-    color: $muted;
+    color: var(--muted-color);
     background: transparent;
-    border: 1px solid $border;
+    border: 1px solid var(--border-color);
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
@@ -158,7 +157,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 // ── CONTAINER ──────────────────────────────────────────────────────────────────
 .dash-container {
   min-height: calc(100vh - 60px);
-  background: $bg;
+  background: var(--bg-color);
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
@@ -220,15 +219,15 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   margin-bottom: 20px;
 
   .stat-card {
-    background: $white;
+    background: var(--surface-color);
     border-radius: $radius;
     padding: 18px 20px;
-    box-shadow: $shadow;
+    box-shadow: var(--shadow);
     display: flex;
     align-items: center;
     gap: 14px;
     transition: transform 0.18s, box-shadow 0.18s;
-    border: 1px solid $border;
+    border: 1px solid var(--border-color);
     &:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.1); }
 
     .stat-icon-wrap {
@@ -245,19 +244,19 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     .stat-body {
       flex: 1;
       display: flex; flex-direction: column;
-      .stat-value { font-size: 24px; font-weight: 800; color: $text; line-height: 1; }
-      .stat-label { font-size: 12px; color: $muted; margin-top: 3px; }
+      .stat-value { font-size: 24px; font-weight: 800; color: var(--text-color); line-height: 1; }
+      .stat-label { font-size: 12px; color: var(--muted-color); margin-top: 3px; }
     }
 
     .stat-arrow {
-      mat-icon { font-size: 18px; color: #d1d5db; }
+      mat-icon { font-size: 18px; color: var(--border-color); }
       &.up mat-icon { color: #10b981; }
     }
 
     .stat-chip {
       font-size: 11px; font-weight: 600;
       padding: 3px 9px; border-radius: 8px;
-      background: #f3f4f6; color: $muted;
+      background: var(--subtle-bg); color: var(--muted-color);
       white-space: nowrap;
       &.has-unread { background: #fff3e0; color: #f57c00; }
     }
@@ -276,10 +275,10 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
 // ── CARD BASE ──────────────────────────────────────────────────────────────────
 .card {
-  background: $white;
+  background: var(--surface-color);
   border-radius: $radius;
-  box-shadow: $shadow;
-  border: 1px solid $border;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
   overflow: hidden;
 }
 
@@ -289,7 +288,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .card-title {
     display: flex; align-items: center; gap: 8px;
-    font-size: 15px; font-weight: 700; color: $text;
+    font-size: 15px; font-weight: 700; color: var(--text-color);
     mat-icon { font-size: 18px; color: var(--p); }
   }
 
@@ -299,7 +298,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     background: var(--p-light); color: var(--p);
   }
 
-  .card-action { color: $muted; &:hover { color: var(--p); } }
+  .card-action { color: var(--muted-color); &:hover { color: var(--p); } }
 }
 
 .card-body { padding: 14px 20px 18px; }
@@ -307,10 +306,10 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 // ── EMAILS ─────────────────────────────────────────────────────────────────────
 .emails-card .card-body { padding: 8px 16px 16px; }
 
-.loading-state { text-align: center; padding: 32px; color: $muted;
+.loading-state { text-align: center; padding: 32px; color: var(--muted-color);
   mat-progress-bar { margin-bottom: 12px; } }
 .empty-state { display: flex; flex-direction: column; align-items: center;
-  padding: 48px 0; color: #d1d5db;
+  padding: 48px 0; color: var(--border-color);
   mat-icon { font-size: 48px; width: 48px; height: 48px; } }
 
 .email-list { display: flex; flex-direction: column; }
@@ -319,8 +318,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   display: flex; align-items: flex-start; gap: 12px;
   padding: 11px 8px; border-radius: 10px;
   cursor: pointer; transition: background 0.15s;
-  &:hover { background: #f9fafb; }
-  &.unread { background: #f0f2ff; }
+  &:hover { background: var(--hover-bg); }
+  &.unread { background: var(--p-light); }
 
   .email-avatar {
     width: 38px; height: 38px; min-width: 38px;
@@ -333,16 +332,16 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     flex: 1; min-width: 0;
     .email-meta {
       display: flex; justify-content: space-between; align-items: center;
-      .email-sender { font-weight: 600; font-size: 13.5px; color: $text; }
-      .email-date   { font-size: 11px; color: #9ca3af; }
+      .email-sender { font-weight: 600; font-size: 13.5px; color: var(--text-color); }
+      .email-date   { font-size: 11px; color: var(--text-faint); }
     }
     .email-subject {
-      margin: 2px 0 1px; font-size: 13px; color: #374151;
+      margin: 2px 0 1px; font-size: 13px; color: var(--text-sub);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       &.bold { font-weight: 700; color: var(--p); }
     }
     .email-snippet {
-      margin: 0; font-size: 12px; color: #9ca3af;
+      margin: 0; font-size: 12px; color: var(--text-faint);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
   }
@@ -357,7 +356,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 // ── CHANNELS ───────────────────────────────────────────────────────────────────
 .channel-row {
   display: flex; align-items: center; gap: 12px;
-  padding: 9px 0; border-bottom: 1px solid #f3f4f6;
+  padding: 9px 0; border-bottom: 1px solid var(--subtle-bg);
   &:last-child { border-bottom: none; }
 
   .ch-icon {
@@ -368,19 +367,19 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .ch-info {
     flex: 1;
-    .ch-name   { display: block; font-size: 13.5px; font-weight: 600; color: $text; }
-    .ch-handle { display: block; font-size: 11.5px; color: $muted; }
+    .ch-name   { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-color); }
+    .ch-handle { display: block; font-size: 11.5px; color: var(--muted-color); }
   }
 
   .ch-badge {
     font-size: 11px; font-weight: 600;
     padding: 3px 10px; border-radius: 8px;
-    background: #f3f4f6; color: $muted;
+    background: var(--subtle-bg); color: var(--muted-color);
     &.active { background: #d1fae5; color: #065f46; }
   }
 }
 
-.empty-text { text-align: center; color: $muted; font-size: 13px; padding: 8px 0; }
+.empty-text { text-align: center; color: var(--muted-color); font-size: 13px; padding: 8px 0; }
 
 // ── ACTIONS ────────────────────────────────────────────────────────────────────
 .actions-body {
@@ -390,8 +389,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 .action-btn {
   display: flex; flex-direction: column; align-items: center; gap: 5px;
   padding: 14px 6px; border: none; border-radius: 12px;
-  background: #f9fafb; cursor: pointer; transition: all 0.18s;
-  font-size: 11px; font-weight: 600; color: $muted;
+  background: var(--hover-bg); cursor: pointer; transition: all 0.18s;
+  font-size: 11px; font-weight: 600; color: var(--muted-color);
   mat-icon { font-size: 22px; color: var(--c); }
   &:hover {
     background: var(--c); color: white; transform: scale(1.04);
@@ -414,8 +413,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .acc-info {
     display: flex; flex-direction: column;
-    .acc-name  { font-size: 15px; font-weight: 700; color: $text; }
-    .acc-email { font-size: 12px; color: $muted; margin: 1px 0 5px; }
+    .acc-name  { font-size: 15px; font-weight: 700; color: var(--text-color); }
+    .acc-email { font-size: 12px; color: var(--muted-color); margin: 1px 0 5px; }
     .acc-verified {
       display: inline-flex; align-items: center; gap: 3px;
       font-size: 11px; font-weight: 600;
@@ -435,18 +434,18 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     .acc-val { font-size: 18px; font-weight: 800; color: var(--p);
       &.on { color: #10b981; }
     }
-    .acc-lbl { font-size: 11px; color: $muted; margin-top: 1px; }
+    .acc-lbl { font-size: 11px; color: var(--muted-color); margin-top: 1px; }
   }
 
-  .acc-divider { width: 1px; height: 32px; background: $border; }
+  .acc-divider { width: 1px; height: 32px; background: var(--border-color); }
 }
 
 // ── SETTINGS ───────────────────────────────────────────────────────────────────
 .section-header {
   display: flex; align-items: center; gap: 14px;
   margin-bottom: 22px;
-  h2 { margin: 0; font-size: 20px; font-weight: 700; color: $text; }
-  p  { margin: 2px 0 0; font-size: 13px; color: $muted; }
+  h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-color); }
+  p  { margin: 2px 0 0; font-size: 13px; color: var(--muted-color); }
 }
 
 .alert {
@@ -477,8 +476,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
       mat-icon { color: white; font-size: 20px; }
     }
 
-    .config-title { margin: 0; font-size: 14px; font-weight: 700; color: $text; }
-    .config-sub   { margin: 2px 0 0; font-size: 12px; color: $muted; }
+    .config-title { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-color); }
+    .config-sub   { margin: 2px 0 0; font-size: 12px; color: var(--muted-color); }
   }
 }
 
@@ -511,13 +510,13 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 }
 
 .gmail-modal {
-  background: #f9fafb; border: 1px solid $border;
+  background: var(--hover-bg); border: 1px solid var(--border-color);
   border-radius: 12px; padding: 16px; margin-top: 10px;
   display: flex; flex-direction: column; gap: 12px;
 }
 
 .gmail-step {
-  display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: $text;
+  display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: var(--text-color);
 }
 
 .step-num {
@@ -530,18 +529,18 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 .gmail-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 .steps-box {
-  background: #f3f4f6; border-radius: 10px; padding: 14px;
+  background: var(--subtle-bg); border-radius: 10px; padding: 14px;
   display: flex; flex-direction: column; gap: 10px;
 
   .step-row {
     display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: $text;
+    font-size: 13px; color: var(--text-color);
   }
 }
 
 .hint {
   display: flex; align-items: center; gap: 5px;
-  font-size: 12px; color: $muted; margin-top: 4px;
+  font-size: 12px; color: var(--muted-color); margin-top: 4px;
   mat-icon { font-size: 14px; width:14px; height:14px; }
 }
 
@@ -599,7 +598,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
     }
   }
 
-  .photo-hint { font-size: 12px; color: $muted; }
+  .photo-hint { font-size: 12px; color: var(--muted-color); }
 }
 
 .profile-fields {
@@ -615,11 +614,11 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
 .info-row {
   display: flex; align-items: center; gap: 14px;
-  padding: 11px 0; border-bottom: 1px solid #f3f4f6;
+  padding: 11px 0; border-bottom: 1px solid var(--subtle-bg);
   &:last-child { border-bottom: none; }
   mat-icon { font-size: 18px; color: var(--p); }
-  .info-label  { display: block; font-size: 11px; color: $muted; text-transform: uppercase; letter-spacing: 0.5px; }
-  .info-value  { display: block; font-size: 13.5px; font-weight: 600; color: $text; margin-top: 1px;
+  .info-label  { display: block; font-size: 11px; color: var(--muted-color); text-transform: uppercase; letter-spacing: 0.5px; }
+  .info-value  { display: block; font-size: 13.5px; font-weight: 600; color: var(--text-color); margin-top: 1px;
     &.verified { color: #065f46; } }
 }
 
@@ -680,15 +679,15 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   padding: 14px 10px 12px;
-  border: 2px solid $border; border-radius: 12px;
-  background: #f9fafb; cursor: pointer;
+  border: 2px solid var(--border-color); border-radius: 12px;
+  background: var(--hover-bg); cursor: pointer;
   transition: all 0.18s;
 
   .font-preview {
-    font-size: 26px; font-weight: 700; color: $text; line-height: 1;
+    font-size: 26px; font-weight: 700; color: var(--text-color); line-height: 1;
   }
   .font-name {
-    font-size: 11px; font-weight: 500; color: $muted; text-align: center;
+    font-size: 11px; font-weight: 500; color: var(--muted-color); text-align: center;
     font-family: inherit !important;
   }
   .font-check {
@@ -708,17 +707,39 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 @media (max-width: 768px) { .font-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px)  { .font-grid { grid-template-columns: repeat(2, 1fr); } }
 
+// ── DARK MODE TOGGLE ──────────────────────────────────────────────────────────
+.mode-toggle-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1.5px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-color);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover {
+    background: var(--p-light);
+    border-color: var(--p);
+    color: var(--p);
+  }
+}
+
 // ── THEME PICKER ───────────────────────────────────────────────────────────────
 .theme-card { grid-column: 1 / -1; }
 
 .theme-label {
-  font-size: 12px; font-weight: 600; color: $muted;
+  font-size: 12px; font-weight: 600; color: var(--muted-color);
   text-transform: uppercase; letter-spacing: 0.6px;
   margin: 0 0 10px;
 }
 
-.palette-grid {
+.palette-grid,
+.secondary-palette-grid {
   display: flex; flex-wrap: wrap; gap: 10px;
+}
+
+.secondary-swatch {
+  border-radius: 8px !important;  // carrés arrondis pour distinguer de la primaire
 }
 
 .swatch {
@@ -733,8 +754,8 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   &:hover { transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
 
   &.active {
-    border-color: $text;
-    box-shadow: 0 0 0 2px white, 0 0 0 4px currentColor;
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 2px var(--surface-color), 0 0 0 4px currentColor;
     transform: scale(1.1);
   }
 }
@@ -744,7 +765,7 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
 
   .color-preview {
     width: 38px; height: 38px; border-radius: 10px;
-    border: 2px solid $border; flex-shrink: 0;
+    border: 2px solid var(--border-color); flex-shrink: 0;
     transition: background 0.2s;
   }
 
@@ -759,13 +780,13 @@ $shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
   }
 
   .color-hex {
-    font-size: 14px; font-weight: 600; color: $text;
+    font-size: 14px; font-weight: 600; color: var(--text-color);
     font-family: monospace; letter-spacing: 0.5px;
     flex: 1;
   }
 
   .btn-reset {
-    color: $muted; border-radius: 8px !important;
-    &:hover { color: $text; }
+    color: var(--muted-color); border-radius: 8px !important;
+    &:hover { color: var(--text-color); }
   }
 }

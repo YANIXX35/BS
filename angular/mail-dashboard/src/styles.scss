@@ -4,10 +4,59 @@
 // ── SOURCE DE VÉRITÉ : thème TOUJOURS clair, jamais auto-dark ──────────────────
 // theme-type: light → Angular Material NE génère PAS de @media (prefers-color-scheme: dark)
 // Sans ce flag, Material bascule automatiquement vers le noir sur mobile dark mode OS.
-:root {
+
+// ── DESIGN TOKENS — mode clair (défaut) ──────────────────────────────────────
+:root,
+:root[data-theme='light'] {
   // Bloque le basculement automatique du navigateur sur tous les éléments natifs
-  // (scrollbars, inputs, selects…). Doit être sur :root, pas seulement body.
   color-scheme: light;
+
+  // Couleurs de fond
+  --bg-color:      #f4f5fb;
+  --surface-color: #ffffff;
+  --hover-bg:      #f9fafb;
+  --subtle-bg:     #f3f4f6;
+
+  // Bordures / ombres
+  --border-color:  #ebebf0;
+  --shadow:        0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+
+  // Texte
+  --text-color:    #111827;
+  --muted-color:   #6b7280;
+  --text-sub:      #374151;
+  --text-faint:    #9ca3af;
+
+  // Primaire (remplacé dynamiquement par ThemeService)
+  --p:             #1a237e;
+  --p-light:       rgba(26,35,126,0.10);
+  --p-medium:      rgba(26,35,126,0.18);
+  --p-dark:        #0d1757;
+  --p-shift:       #2b3ea6;
+  --color-primary:   #1a237e;
+  --color-secondary: #2b3ea6;
+  --color-accent:    rgba(26,35,126,0.18);
+
+  // Police (remplacée dynamiquement par ThemeService)
+  --dash-font: 'Inter', sans-serif;
+}
+
+// ── DESIGN TOKENS — mode sombre ───────────────────────────────────────────────
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-color:      #0f172a;
+  --surface-color: #1e293b;
+  --hover-bg:      #1e2d40;
+  --subtle-bg:     #1e293b;
+
+  --border-color:  #334155;
+  --shadow:        0 1px 4px rgba(0,0,0,0.35), 0 4px 20px rgba(0,0,0,0.45);
+
+  --text-color:    #f1f5f9;
+  --muted-color:   #94a3b8;
+  --text-sub:      #cbd5e1;
+  --text-faint:    #64748b;
 }
 
 html {
@@ -24,11 +73,39 @@ html {
 }
 
 body {
-  background-color: var(--mat-sys-surface);
-  color:            var(--mat-sys-on-surface);
+  background-color: var(--bg-color, var(--mat-sys-surface));
+  color:            var(--text-color, var(--mat-sys-on-surface));
   font:             var(--mat-sys-body-medium);
   margin: 0;
   height: 100%;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+// ── TRANSITIONS MODE SOMBRE ───────────────────────────────────────────────────
+//
+// Stratégie : on n'applique les transitions couleur que pendant le changement
+// de mode (classe `theme-transitioning` posée par ThemeService._withModeTransition).
+//
+// Pourquoi pas `* { transition }`?
+//   → S'applique à chaque nœud DOM (Angular Material inclus)
+//   → Crée des conflits avec les animations Material
+//   → Force un style-recalc complet à chaque render
+//   → Ralentit hover/focus/active sur TOUS les éléments
+//
+// Avec `html.theme-transitioning *` :
+//   → Actif seulement 280 ms lors du toggle light/dark
+//   → Zéro coût en dehors de ces 280 ms
+//   → Ciblage chirurgical, pas d'effet de bord
+//
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition:
+    background-color 0.25s ease,
+    border-color     0.25s ease,
+    color            0.25s ease,
+    box-shadow       0.25s ease !important;
 }
 /* You can add global styles to this file, and also import other style files */
 

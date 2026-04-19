@@ -46,6 +46,9 @@ export interface UserSettings {
   avatar?: string;
   theme_color?: string;
   font_family?: string;
+  theme_mode?: string;
+  theme_secondary?: string;
+  theme_updated_at?: string;   // ISO timestamp — used for conflict detection
 }
 
 @Injectable({ providedIn: 'root' })
@@ -81,7 +84,7 @@ export class EmailService {
     return this.http.put(`${this.apiUrl}/user/settings`, settings);
   }
 
-  savePreferences(email: string, prefs: { theme_color?: string; font_family?: string; avatar?: string }): Observable<any> {
+  savePreferences(email: string, prefs: { theme_color?: string; font_family?: string; avatar?: string; theme_mode?: string; theme_secondary?: string }): Observable<any> {
     return this.http.put(`${this.apiUrl}/user/settings`, { email, ...prefs });
   }
 

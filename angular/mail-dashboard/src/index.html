@@ -5,14 +5,53 @@
   <title>MailNotifier</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bloque le dark mode système AVANT le chargement des CSS.
-       Sans ça, le navigateur peut appliquer un thème sombre pendant le flash initial. -->
-  <meta name="color-scheme" content="light">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!--
+    ANTI-FOUC — exécuté de façon synchrone AVANT le premier paint.
+    Applique le thème sauvegardé depuis localStorage sur <html>
+    → zéro flash visuel pendant le chargement du bundle Angular.
+  -->
+  <script>
+    (function () {
+      try {
+        var user  = JSON.parse(localStorage.getItem('user') || 'null');
+        var email = user && user.email;
+        if (!email) return;
+
+        var raw = localStorage.getItem('dashTheme2_' + email);
+        if (!raw) return;
+
+        var cfg  = JSON.parse(raw);
+        var root = document.documentElement;
+
+        // 1. Mode light/dark → active les blocs CSS [data-theme='dark']
+        if (cfg.mode) root.setAttribute('data-theme', cfg.mode);
+
+        // 2. Couleur primaire → évite le flash de couleur par défaut
+        if (cfg.primary) {
+          root.style.setProperty('--p',             cfg.primary);
+          root.style.setProperty('--color-primary', cfg.primary);
+        }
+
+        // 3. Couleur secondaire
+        if (cfg.secondary) {
+          root.style.setProperty('--color-secondary', cfg.secondary);
+        }
+
+        // 4. Police → évite le swap de police visible
+        if (cfg.font) {
+          root.style.setProperty('--dash-font', "'" + cfg.font + "', sans-serif");
+        }
+      } catch (e) {
+        // localStorage inaccessible (mode privé restreint) — non bloquant
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

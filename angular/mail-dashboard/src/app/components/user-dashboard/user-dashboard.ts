@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -12,7 +12,9 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { Subscription } from 'rxjs';
 import { EmailService, Stats, Email, UserSettings } from '../../services/email';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -48,8 +50,22 @@ export class UserDashboard implements OnInit, OnDestroy {
   editName     = '';
   profileSaved = false;
 
-  // Theme
-  themeColor = '#1a237e';
+  // Theme — state mirrors ThemeService observables
+  themeColor      = '#1a237e';
+  secondaryColor  = '#7c3aed';
+  darkMode        = false;
+
+  secondaryPalette = [
+    { name: 'Violet',   color: '#7c3aed' },
+    { name: 'Rose',     color: '#db2777' },
+    { name: 'Cyan',     color: '#0891b2' },
+    { name: 'Vert',     color: '#059669' },
+    { name: 'Orange',   color: '#ea580c' },
+    { name: 'Dore',     color: '#d97706' },
+    { name: 'Rouge',    color: '#dc2626' },
+    { name: 'Fuschia',  color: '#c026d3' },
+  ];
+
   palette = [
     { name: 'Marine',   color: '#1a237e' },
     { name: 'Indigo',   color: '#4f46e5' },
@@ -78,11 +94,11 @@ export class UserDashboard implements OnInit, OnDestroy {
     { name: 'Space Grotesk', url: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap' },
   ];
 
-  // Debounce (only for color picker drag — swatch click saves immediately)
-  private _pickerDebounce: any = null;
-  // Track pending unsaved color (for beforeunload flush)
-  private _pendingTheme: string | null = null;
-  private _pendingFont:  string | null = null;
+  // Debounce for color picker drag (swatch clicks save immediately)
+  private _pickerDebounce:   any = null;
+  private _secondaryDebounce: any = null;
+  private _pendingTheme:     string | null = null;
+  private _pendingSecondary: string | null = null;
 
   // QR WhatsApp
   qrLoading = false;
@@ -107,13 +123,15 @@ export class UserDashboard implements OnInit, OnDestroy {
 
   private _clockInterval: any;
   private _syncInterval: any;
+  private _themeSub!: Subscription;
+  private _visibilityHandler!: () => void;
 
   constructor(
     private emailService: EmailService,
+    private themeService: ThemeService,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private el: ElementRef
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -123,6 +141,15 @@ export class UserDashboard implements OnInit, OnDestroy {
   ngOnInit() {
     const stored = localStorage.getItem('user');
     if (stored) this.user = JSON.parse(stored);
+
+    // Sync local state with ThemeService observable
+    this._themeSub = this.themeService.config$.subscribe(config => {
+      this.themeColor     = config.primary;
+      this.secondaryColor = config.secondary;
+      this.currentFont    = config.font;
+      this.darkMode       = config.mode === 'dark';
+      this.cdr.detectChanges();
+    });
 
     this.route.queryParams.subscribe(params => {
       if (params['gmail'] === 'connected') {
@@ -149,153 +176,113 @@ export class UserDashboard implements OnInit, OnDestroy {
 
     this.editName = this.user.name || '';
 
-    // 1. Apply localStorage as instant visual cache (0ms perceived latency)
-    const cachedTheme = localStorage.getItem('dashTheme_' + this.user.email);
-    const cachedFont  = localStorage.getItem('dashFont_'  + this.user.email);
+    // Apply cached photo immediately
     const cachedPhoto = localStorage.getItem('profilePhoto_' + this.user.email);
-    if (cachedTheme) this._applyThemeCSS(cachedTheme);
-    if (cachedFont)  this._applyFontCSS(cachedFont);
     if (cachedPhoto) this.profilePhoto = cachedPhoto;
 
-    // 2. Load from server — SERVER IS ALWAYS THE SOURCE OF TRUTH
-    //    Server values will OVERWRITE any localStorage values above
+    // ThemeService.loadAndApply() already called in app.ts (server is source of truth).
+    // Here we just load non-theme settings (channels, avatar, gmail status).
     this.loadUserSettings();
 
-    // 3. Sync automatique toutes les 30 secondes pour garantir la synchronisation PC/mobile
-    this._syncInterval = setInterval(() => {
-      this.loadUserSettings();
-    }, 30000);
+    // Auto-sync toutes les 30 s pour cohérence multi-appareils
+    this._syncInterval = setInterval(() => this.loadUserSettings(), 30000);
+
+    // Page Visibility API — resync immédiat quand l'utilisateur revient sur l'onglet
+    // (couvre le cas : changement thème sur mobile → retour sur PC)
+    this._visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        this.themeService.loadAndApply(this.user.email);
+        this.loadUserSettings();
+      }
+    };
+    document.addEventListener('visibilitychange', this._visibilityHandler);
   }
 
   ngOnDestroy() {
     clearInterval(this._clockInterval);
     clearInterval(this._syncInterval);
-    // Flush any pending debounced saves before component destroys
+    this._themeSub?.unsubscribe();
+    document.removeEventListener('visibilitychange', this._visibilityHandler);
     this._flushPending();
   }
 
-  // If user closes tab / navigates away, flush pending saves via sendBeacon
   @HostListener('window:beforeunload')
-  onBeforeUnload() {
-    this._flushPending();
-  }
+  onBeforeUnload() { this._flushPending(); }
 
   private _flushPending() {
-    if (this._pendingTheme || this._pendingFont) {
-      clearTimeout(this._pickerDebounce);
-      const payload: any = { email: this.user.email };
-      if (this._pendingTheme) payload.theme_color = this._pendingTheme;
-      if (this._pendingFont)  payload.font_family  = this._pendingFont;
-      // sendBeacon survives page close — fires even when window is unloading
-      const url = `https://backend-mail-1.onrender.com/api/user/settings`;
-      navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-      this._pendingTheme = null;
-      this._pendingFont  = null;
-    }
+    const hasPrimary   = !!this._pendingTheme;
+    const hasSecondary = !!this._pendingSecondary;
+    if (!hasPrimary && !hasSecondary) return;
+
+    clearTimeout(this._pickerDebounce);
+    clearTimeout(this._secondaryDebounce);
+    const url = `https://backend-mail-1.onrender.com/api/user/settings`;
+    const payload: Record<string, string> = { email: this.user.email };
+    if (hasPrimary)   payload['theme_color']     = this._pendingTheme!;
+    if (hasSecondary) payload['theme_secondary']  = this._pendingSecondary!;
+    navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+    this._pendingTheme     = null;
+    this._pendingSecondary = null;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // THEME — 2 public methods for 2 use cases
+  // THEME — delegates entirely to ThemeService
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Called by swatch click → immediate visual + immediate server save */
+  /** Swatch click → immediate apply + immediate server save */
   applyTheme(color: string) {
-    this._applyThemeCSS(color);
-    localStorage.setItem('dashTheme_' + this.user.email, color);
-    // Cancel any pending debounced save (swatch wins)
     clearTimeout(this._pickerDebounce);
     this._pendingTheme = null;
-    // Save immediately — user made a definitive choice
-    this.emailService.savePreferences(this.user.email, { theme_color: color })
-      .subscribe({ 
-        next: () => {
-          // Forcer le rechargement pour garantir la synchronisation entre appareils
-          setTimeout(() => this.loadUserSettings(), 500);
-        },
-        error: (e) => console.error('[theme save]', e) 
-      });
+    this.themeService.applyColor(this.user.email, color);
   }
 
-  /** Called by color picker (input) → instant visual, debounced server save */
+  /** Color picker drag → instant visual preview, debounced save */
   applyThemePreview(color: string) {
-    this._applyThemeCSS(color);
-    localStorage.setItem('dashTheme_' + this.user.email, color);
     this._pendingTheme = color;
+    this.themeService.applyColor(this.user.email, color, false); // no save yet
     clearTimeout(this._pickerDebounce);
     this._pickerDebounce = setTimeout(() => {
-      this.emailService.savePreferences(this.user.email, { theme_color: color })
-        .subscribe({ error: (e) => console.error('[theme save]', e) });
+      this.themeService.applyColor(this.user.email, color);
       this._pendingTheme = null;
     }, 800);
   }
 
-  /** Called by color picker (change) = user released → save immediately */
+  /** Color picker release → save immediately */
   saveThemeFinal(color: string) {
     clearTimeout(this._pickerDebounce);
     this._pendingTheme = null;
-    this._applyThemeCSS(color);
-    localStorage.setItem('dashTheme_' + this.user.email, color);
-    this.emailService.savePreferences(this.user.email, { theme_color: color })
-      .subscribe({ 
-        next: () => {
-          // Forcer le rechargement pour garantir la synchronisation entre appareils
-          setTimeout(() => this.loadUserSettings(), 500);
-        },
-        error: (e) => console.error('[theme save final]', e) 
-      });
+    this.themeService.applyColor(this.user.email, color);
   }
 
-  /** Pure CSS application — no server call, no localStorage write */
-  private _applyThemeCSS(color: string) {
-    this.themeColor = color;
-    const light  = this._hexToRgba(color, 0.10);
-    const medium = this._hexToRgba(color, 0.18);
-    const dark   = this._shiftColor(color, -30);
-    const shift  = this._shiftColor(color, +40);
-    // Apply GLOBALLY on :root so ALL components see the theme
-    const root = document.documentElement;
-    root.style.setProperty('--p',        color);
-    root.style.setProperty('--p-light',  light);
-    root.style.setProperty('--p-medium', medium);
-    root.style.setProperty('--p-dark',   dark);
-    root.style.setProperty('--p-shift',  shift);
-    // Also on host element (overrides :host SCSS default)
-    const host = this.el.nativeElement as HTMLElement;
-    host.style.setProperty('--p',        color);
-    host.style.setProperty('--p-light',  light);
-    host.style.setProperty('--p-medium', medium);
-    host.style.setProperty('--p-dark',   dark);
-    host.style.setProperty('--p-shift',  shift);
-    this.cdr.detectChanges();
+  /** Color picker drag (secondary) → instant preview, debounced save */
+  applySecondaryPreview(color: string) {
+    this._pendingSecondary = color;
+    this.themeService.applySecondary(this.user.email, color, false);
+    clearTimeout(this._secondaryDebounce);
+    this._secondaryDebounce = setTimeout(() => {
+      this.themeService.applySecondary(this.user.email, color);
+      this._pendingSecondary = null;
+    }, 800);
+  }
+
+  /** Color picker release (secondary) → save immediately */
+  saveSecondaryFinal(color: string) {
+    clearTimeout(this._secondaryDebounce);
+    this._pendingSecondary = null;
+    this.themeService.applySecondary(this.user.email, color);
+  }
+
+  /** Toggle between light / dark mode */
+  toggleDarkMode() {
+    this.themeService.toggleMode(this.user.email);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // FONT
+  // FONT — delegates to ThemeService
   // ─────────────────────────────────────────────────────────────────────────────
 
   applyFont(fontName: string) {
-    this._applyFontCSS(fontName);
-    localStorage.setItem('dashFont_' + this.user.email, fontName);
-    this._pendingFont = null;
-    this.emailService.savePreferences(this.user.email, { font_family: fontName })
-      .subscribe({ error: (e) => console.error('[font save]', e) });
-  }
-
-  private _applyFontCSS(fontName: string) {
-    this.currentFont = fontName;
-    const font = this.fonts.find(f => f.name === fontName);
-    if (font) {
-      const id = 'gfont-' + fontName.replace(/\s/g, '-');
-      if (!document.getElementById(id)) {
-        const link = document.createElement('link');
-        link.id = id; link.rel = 'stylesheet'; link.href = font.url;
-        document.head.appendChild(link);
-      }
-    }
-    const val = `'${fontName}', sans-serif`;
-    document.documentElement.style.setProperty('--dash-font', val);
-    (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', val);
-    this.cdr.detectChanges();
+    this.themeService.applyFont(this.user.email, fontName);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -308,15 +295,24 @@ export class UserDashboard implements OnInit, OnDestroy {
       next: (s) => {
         this.settings = s;
 
-        // ✅ SERVER ALWAYS WINS — overwrite localStorage cache
-        if (s.theme_color) {
-          this._applyThemeCSS(s.theme_color);
-          localStorage.setItem('dashTheme_' + this.user.email, s.theme_color);
+        // Delegate theme to ThemeService — server wins, no round-trip save.
+        // Skip if ThemeService already synced < 5 s ago (avoid double-apply
+        // when loadAndApply in app.ts and loadUserSettings fire close together).
+        if (!this.themeService.isRecentlySynced) {
+          const serverTs = s.theme_updated_at
+            ? new Date(s.theme_updated_at).getTime()
+            : 0;
+          this.themeService.applyServerConfig(this.user.email, {
+            ...(s.theme_mode === 'dark' || s.theme_mode === 'light'
+                ? { mode: s.theme_mode as 'light' | 'dark' }
+                : {}),
+            ...(s.theme_color     ? { primary:   s.theme_color     } : {}),
+            ...(s.theme_secondary ? { secondary: s.theme_secondary } : {}),
+            ...(s.font_family     ? { font:      s.font_family     } : {}),
+            ...(serverTs          ? { updatedAt: serverTs          } : {}),
+          });
         }
-        if (s.font_family) {
-          this._applyFontCSS(s.font_family);
-          localStorage.setItem('dashFont_' + this.user.email, s.font_family);
-        }
+
         if (s.avatar) {
           this.profilePhoto = s.avatar;
           localStorage.setItem('profilePhoto_' + this.user.email, s.avatar);
@@ -493,21 +489,6 @@ export class UserDashboard implements OnInit, OnDestroy {
   // ─────────────────────────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────────────────────────
-
-  private _hexToRgba(hex: string, alpha: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-
-  private _shiftColor(hex: string, amount: number): string {
-    const num = parseInt(hex.replace('#', ''), 16);
-    const r = Math.min(255, Math.max(0, (num >> 16) + amount));
-    const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
-    const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
-    return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
-  }
 
   private _compressImage(dataUrl: string, maxSize = 180): Promise<string> {
     return new Promise(resolve => {

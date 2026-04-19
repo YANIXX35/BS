@@ -490,6 +490,12 @@
     <div class="card theme-card">
       <div class="card-header">
         <div class="card-title"><mat-icon>palette</mat-icon><span>Couleur du dashboard</span></div>
+        <!-- Dark mode toggle -->
+        <button class="mode-toggle-btn" (click)="toggleDarkMode()"
+                [matTooltip]="darkMode ? 'Passer en mode clair' : 'Passer en mode sombre'">
+          <mat-icon>{{ darkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          <span>{{ darkMode ? 'Clair' : 'Sombre' }}</span>
+        </button>
       </div>
       <div class="card-body">
         <p class="theme-label">Choisis une couleur prédéfinie</p>
@@ -517,6 +523,34 @@
                  class="color-native-input" />
           <span class="color-hex">{{ themeColor }}</span>
           <button mat-stroked-button class="btn-reset" (click)="applyTheme('#1a237e')" matTooltip="Réinitialiser">
+            <mat-icon>restart_alt</mat-icon>
+          </button>
+        </div>
+
+        <mat-divider style="margin:20px 0" />
+        <p class="theme-label">Couleur secondaire (accents &amp; badges)</p>
+        <div class="secondary-palette-grid">
+          @for (s of secondaryPalette; track s.color) {
+            <button
+              class="swatch secondary-swatch"
+              [style.background]="s.color"
+              [class.active]="secondaryColor === s.color"
+              (click)="saveSecondaryFinal(s.color)"
+              [matTooltip]="s.name">
+              @if (secondaryColor === s.color) {
+                <mat-icon>check</mat-icon>
+              }
+            </button>
+          }
+        </div>
+        <div class="custom-color-row" style="margin-top:12px">
+          <div class="color-preview" [style.background]="secondaryColor"></div>
+          <input type="color" [value]="secondaryColor"
+                 (input)="applySecondaryPreview(($any($event.target)).value)"
+                 (change)="saveSecondaryFinal(($any($event.target)).value)"
+                 class="color-native-input" />
+          <span class="color-hex">{{ secondaryColor }}</span>
+          <button mat-stroked-button class="btn-reset" (click)="saveSecondaryFinal('#7c3aed')" matTooltip="Réinitialiser">
             <mat-icon>restart_alt</mat-icon>
           </button>
         </div>
