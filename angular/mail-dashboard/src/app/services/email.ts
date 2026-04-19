@@ -33,6 +33,12 @@ export interface Stats {
   email: string;
 }
 
+export interface GmailStatus {
+  connected: boolean;
+  gmail_email: string | null;
+  expired: boolean;
+}
+
 export interface UserSettings {
   name: string;
   email: string;
@@ -41,7 +47,6 @@ export interface UserSettings {
   telegram_chat_id: string;
   green_api_instance: string;
   green_api_token: string;
-  app_password?: string;
   app_password_set?: boolean;
   avatar?: string;
   theme_color?: string;
@@ -72,7 +77,6 @@ export class EmailService {
   }
 
   getUserSettings(email: string): Observable<UserSettings> {
-    // Ajouter timestamp pour casser le cache navigateur et garantir la synchronisation
     const timestamp = Date.now();
     return this.http.get<UserSettings>(`${this.apiUrl}/user/settings`, {
       params: { email, _t: timestamp },
@@ -92,18 +96,20 @@ export class EmailService {
     return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
   }
 
-  getGmailConnectUrl(email: string): Observable<{ auth_url: string }> {
-    return this.http.get<{ auth_url: string }>(`${this.apiUrl}/auth/gmail-connect`, { params: { email } });
+  // ─── GMAIL OAUTH 2.0 ─────────────────────────────────────────────────────────
+
+  /** Redirige le navigateur vers Google pour l'autorisation OAuth. */
+  connectGmail(userEmail: string): void {
+    window.location.href = `${environment.apiUrl}/api/gmail/connect?email=${encodeURIComponent(userEmail)}`;
   }
 
-  getGmailStatus(email: string): Observable<{ connected: boolean }> {
-    return this.http.get<{ connected: boolean }>(`${this.apiUrl}/auth/gmail-status`, { params: { email } });
+  /** Statut de connexion OAuth Gmail (connected, gmail_email, expired). */
+  getGmailStatus(email: string): Observable<GmailStatus> {
+    return this.http.get<GmailStatus>(`${this.apiUrl}/gmail/status`, { params: { email } });
   }
 
-  testGmailImap(gmail_address: string, app_password: string): Observable<{ success: boolean; message?: string; error?: string }> {
-    return this.http.post<{ success: boolean; message?: string; error?: string }>(
-      `${this.apiUrl}/auth/gmail-test`,
-      { gmail_address, app_password }
-    );
+  /** Révoque les tokens et déconnecte Gmail. */
+  disconnectGmail(email: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/gmail/disconnect`, { email });
   }
 }

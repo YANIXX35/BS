@@ -105,13 +105,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   qrImage   = '';
   qrStatus  = '';
 
-  // Gmail IMAP
-  gmailConnected    = false;
-  showGmailModal    = false;
-  appPassword       = '';
-  gmailTestLoading  = false;
-  gmailTestSuccess  = '';
-  gmailTestError    = '';
+  // Gmail OAuth
+  gmailConnected      = false;
+  gmailConnectedEmail = '';
+  gmailExpired        = false;
+  gmailConnecting     = false;
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -152,10 +150,18 @@ export class UserDashboard implements OnInit, OnDestroy {
     });
 
     this.route.queryParams.subscribe(params => {
-      if (params['gmail'] === 'connected') {
-        this.activeView = 'settings';
+      if (params['gmail_connected'] === '1') {
+        // Retour du callback OAuth Google
+        this.gmailConnected      = true;
+        this.gmailConnectedEmail = params['gmail_email'] || '';
+        this.gmailConnecting     = false;
+        this.activeView          = 'settings';
         this.router.navigate([], { queryParams: {}, replaceUrl: true });
         this.loadUserSettings();
+      } else if (params['gmail_error']) {
+        this.gmailConnecting = false;
+        this.activeView      = 'settings';
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
       }
     });
 
@@ -325,7 +331,13 @@ export class UserDashboard implements OnInit, OnDestroy {
     });
 
     this.emailService.getGmailStatus(this.user.email).subscribe({
-      next:  (res) => { this.gmailConnected = res.connected; this.cdr.detectChanges(); },
+      next: (res) => {
+        this.gmailConnected      = res.connected;
+        this.gmailConnectedEmail = res.gmail_email || '';
+        this.gmailExpired        = res.expired;
+        this.refreshChannels();
+        this.cdr.detectChanges();
+      },
       error: () => {}
     });
   }
@@ -364,38 +376,23 @@ export class UserDashboard implements OnInit, OnDestroy {
   // SETTINGS (channels)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  testGmailImap() {
-    if (!this.settings.gmail_address || !this.appPassword) {
-      this.gmailTestError = 'Renseigne ton adresse Gmail et le code';
-      return;
-    }
-    this.gmailTestLoading = true;
-    this.gmailTestSuccess = '';
-    this.gmailTestError   = '';
-    this.emailService.testGmailImap(this.settings.gmail_address, this.appPassword).subscribe({
-      next: (res) => {
-        this.gmailTestLoading = false;
-        if (res.success) {
-          this.gmailTestSuccess = 'Gmail connecte avec succes !';
-          this.emailService.updateUserSettings({
-            ...this.settings, email: this.user.email, app_password: this.appPassword
-          }).subscribe({ next: () => {
-            this.gmailConnected   = true;
-            this.showGmailModal   = false;
-            this.appPassword      = '';
-            this.refreshChannels();
-            this.cdr.detectChanges();
-          }});
-        } else {
-          this.gmailTestError = res.error || 'Code incorrect';
-        }
+  /** Lance le flow OAuth Google (redirection navigateur). */
+  connectGmail() {
+    this.gmailConnecting = true;
+    this.emailService.connectGmail(this.user.email);
+  }
+
+  /** Déconnecte Gmail et supprime les tokens OAuth. */
+  disconnectGmail() {
+    this.emailService.disconnectGmail(this.user.email).subscribe({
+      next: () => {
+        this.gmailConnected      = false;
+        this.gmailConnectedEmail = '';
+        this.gmailExpired        = false;
+        this.refreshChannels();
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.gmailTestLoading = false;
-        this.gmailTestError   = err.error?.error || 'Erreur de connexion';
-        this.cdr.detectChanges();
-      }
+      error: () => {}
     });
   }
 
@@ -418,9 +415,9 @@ export class UserDashboard implements OnInit, OnDestroy {
       {
         name:   'Gmail',
         icon:   'email',
-        active: !!this.settings.gmail_address,
+        active: this.gmailConnected,
         color:  '#ea4335',
-        handle: this.settings.gmail_address || 'Non configure'
+        handle: this.gmailConnectedEmail || this.settings.gmail_address || 'Non configure'
       },
     ];
   }
