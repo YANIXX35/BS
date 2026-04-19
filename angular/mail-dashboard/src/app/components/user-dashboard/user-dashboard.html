@@ -137,7 +137,7 @@
         } @else {
           <div class="email-list">
             @for (email of emails; track email.id) {
-              <div class="email-row" [class.unread]="email.unread">
+              <div class="email-row" [class.unread]="email.unread" (click)="openEmail(email)" role="button" tabindex="0">
                 <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
                   {{ getSenderInitial(email.sender) }}
                 </div>
@@ -152,6 +152,7 @@
                 @if (email.unread) {
                   <span class="unread-dot"></span>
                 }
+                <mat-icon class="email-open-icon">chevron_right</mat-icon>
               </div>
             }
           </div>
@@ -378,6 +379,55 @@
       @if (settingsLoading) { <mat-spinner diameter="20" /> }
       @else { <ng-container><mat-icon>save</mat-icon> Sauvegarder</ng-container> }
     </button>
+  </div>
+</div>
+}
+
+<!-- ══════════════════════ EMAIL READER ══════════════════════ -->
+@if (selectedEmail) {
+<div class="reader-backdrop" (click)="closeEmail()">
+  <div class="reader-panel" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="reader-header">
+      <button class="reader-close" (click)="closeEmail()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="reader-header-info">
+        <h2 class="reader-subject">{{ selectedEmail.subject }}</h2>
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="reader-meta">
+      <div class="reader-avatar" [style.background]="getAvatarColor(selectedEmail.sender)">
+        {{ getSenderInitial(selectedEmail.sender) }}
+      </div>
+      <div class="reader-meta-text">
+        <div class="reader-from">
+          <strong>{{ getSenderName(selectedEmail.sender) }}</strong>
+          <span class="reader-from-email">&lt;{{ selectedEmail.sender | slice:selectedEmail.sender.indexOf('<')+1:selectedEmail.sender.length-1 }}&gt;</span>
+        </div>
+        <div class="reader-date">{{ selectedEmail.date }}</div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="reader-body">
+      @if (emailDetailLoading) {
+        <div class="reader-loading">
+          <mat-progress-bar mode="indeterminate" />
+          <p>Chargement du message...</p>
+        </div>
+      } @else if (selectedEmail.body_type === 'text/html') {
+        <div class="reader-html-body" [innerHTML]="emailDetailBody"></div>
+      } @else if (selectedEmail.body) {
+        <pre class="reader-text-body">{{ selectedEmail.body }}</pre>
+      } @else {
+        <p class="reader-snippet">{{ selectedEmail.snippet }}</p>
+      }
+    </div>
+
   </div>
 </div>
 }

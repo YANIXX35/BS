@@ -34,3 +34,8 @@ api_output.log
 # OS
 .DS_Store
 Thumbs.db
+mailnotifier-d92d1-firebase-adminsdk-fbsvc-e89bcee3a6.json
+perf_report.json
+perf_test.py
+backend_mail/test_connection.py
+tests/

@@ -13,7 +13,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Subscription } from 'rxjs';
-import { EmailService, Stats, Email, UserSettings } from '../../services/email';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { EmailService, Stats, Email, EmailDetail, UserSettings } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
 
@@ -106,6 +107,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   qrImage   = '';
   qrStatus  = '';
 
+  // Email reader
+  selectedEmail: EmailDetail | null = null;
+  emailDetailLoading = false;
+  emailDetailBody: SafeHtml = '';
+
   // Gmail OAuth
   gmailConnected      = false;
   gmailConnectedEmail = '';
@@ -130,6 +136,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     private emailService: EmailService,
     private themeService: ThemeService,
     private pushNotif: PushNotificationService,
+    private sanitizer: DomSanitizer,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
@@ -434,6 +441,35 @@ export class UserDashboard implements OnInit, OnDestroy {
         handle: this.gmailConnectedEmail || this.settings.gmail_address || 'Non configure'
       },
     ];
+  }
+
+  openEmail(email: Email) {
+    this.selectedEmail = { ...email, to: '', body: '', body_type: '' };
+    this.emailDetailLoading = true;
+    this.emailDetailBody = '';
+    // Mark as read locally
+    email.unread = false;
+    this.emailService.getEmailDetail(this.user.email, email.id).subscribe({
+      next: (detail) => {
+        this.selectedEmail = detail;
+        this.emailDetailLoading = false;
+        if (detail.body_type === 'text/html') {
+          this.emailDetailBody = this.sanitizer.bypassSecurityTrustHtml(detail.body);
+        } else {
+          this.emailDetailBody = detail.body;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.emailDetailLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeEmail() {
+    this.selectedEmail = null;
+    this.emailDetailBody = '';
   }
 
   runAction(action: string) {

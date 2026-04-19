@@ -12,6 +12,12 @@ export interface Email {
   unread: boolean;
 }
 
+export interface EmailDetail extends Email {
+  to: string;
+  body: string;
+  body_type: string;
+}
+
 export interface EmailsPage {
   emails: Email[];
   page: number;
@@ -111,5 +117,11 @@ export class EmailService {
   /** Révoque les tokens et déconnecte Gmail. */
   disconnectGmail(email: string): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/gmail/disconnect`, { email });
+  }
+
+  getEmailDetail(userEmail: string, messageId: string): Observable<EmailDetail> {
+    return this.http.get<EmailDetail>(`${this.apiUrl}/email/${messageId}`, {
+      params: { email: userEmail }
+    });
   }
 }
