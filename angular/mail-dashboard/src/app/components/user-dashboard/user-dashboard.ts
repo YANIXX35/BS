@@ -15,6 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { Subscription } from 'rxjs';
 import { EmailService, Stats, Email, UserSettings } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
+import { PushNotificationService } from '../../services/push-notification.service';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -128,6 +129,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   constructor(
     private emailService: EmailService,
     private themeService: ThemeService,
+    private pushNotif: PushNotificationService,
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
@@ -140,6 +142,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   ngOnInit() {
     const stored = localStorage.getItem('user');
     if (stored) this.user = JSON.parse(stored);
+
+    // Initialiser les push notifications FCM
+    if (this.user.email) {
+      this.pushNotif.init(this.user.email);
+    }
 
     // Sync local state with ThemeService observable
     this._themeSub = this.themeService.config$.subscribe(config => {
