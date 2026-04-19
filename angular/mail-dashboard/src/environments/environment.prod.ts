@@ -8,6 +8,6 @@ export const environment = {
     storageBucket: 'mailnotifier-d92d1.firebasestorage.app',
     messagingSenderId: '735656671658',
     appId: '1:735656671658:web:1b77dca19f935d9c1293d3',
-    vapidKey: 'VAPID_KEY_PLACEHOLDER',
+    vapidKey: 'BPpVwfL3fDevAG0Ms01IfFtjb3IzA4jF_rOxQPyZtg1LcqXqIejkuDAiILM8zWONbckTZhrkrC3NdTWIx6VOUd4',
   }
 };
