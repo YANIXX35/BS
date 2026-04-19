@@ -296,7 +296,7 @@
               </div>
             </div>
             <div class="gmail-connected-actions">
-              <button mat-flat-button class="btn-gmail-reconnect" (click)="connectGmail()" [disabled]="gmailConnecting">
+              <button mat-flat-button class="btn-gmail-reconnect" (click)="openGmailModal()" [disabled]="gmailConnecting">
                 <mat-icon>refresh</mat-icon> Reconnecter
               </button>
               <button mat-stroked-button class="btn-gmail-disconnect" (click)="disconnectGmail()">
