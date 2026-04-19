@@ -367,6 +367,23 @@ export class AdminDashboard implements OnInit {
       next: e => { this.emails = e.emails; this.loading.emails = false; this.cdr.detectChanges(); },
       error: () => this.loading.emails = false
     });
+    // Charger les settings admin depuis le serveur
+    this.emailService.getUserSettings(this.admin.email).subscribe({
+      next: s => {
+        this.adminSettings = { ...this.adminSettings, ...s };
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
+    // Charger le statut Gmail
+    this.emailService.getGmailStatus(this.admin.email).subscribe({
+      next: res => {
+        this.gmailConnected      = res.connected;
+        this.gmailConnectedEmail = res.gmail_email || '';
+        this.cdr.detectChanges();
+      },
+      error: () => {}
+    });
   }
 
   setSection(s: Section) {
