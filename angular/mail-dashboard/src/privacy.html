@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Politique de confidentialité — MailNotifier</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f4f5fb;
+      color: #111827;
+      line-height: 1.7;
+    }
+    header {
+      background: #1a237e;
+      color: white;
+      padding: 24px 0;
+      text-align: center;
+    }
+    header h1 { font-size: 24px; font-weight: 700; }
+    header p  { font-size: 14px; opacity: 0.8; margin-top: 4px; }
+    .container {
+      max-width: 760px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px 48px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+    h2 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1a237e;
+      margin: 32px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #e8eaf6;
+    }
+    h2:first-child { margin-top: 0; }
+    p, li { font-size: 15px; color: #374151; margin-bottom: 8px; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 6px; }
+    .badge {
+      display: inline-block;
+      background: #e8eaf6;
+      color: #1a237e;
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .contact-box {
+      background: #f4f5fb;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 12px;
+    }
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 24px 20px; margin: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MailNotifier</h1>
+  <p>Politique de confidentialité</p>
+</header>
+
+<div class="container">
+
+  <span class="badge">Dernière mise à jour : avril 2026</span>
+
+  <h2>1. Introduction</h2>
+  <p>MailNotifier est une application de surveillance d'e-mails qui envoie des notifications sur Telegram et WhatsApp lorsque vous recevez de nouveaux messages. Cette politique explique comment nous collectons, utilisons et protégeons vos données.</p>
+
+  <h2>2. Données collectées</h2>
+  <ul>
+    <li><strong>Compte Google / Gmail :</strong> via OAuth 2.0, nous accédons à votre boîte de réception en lecture seule pour détecter les nouveaux e-mails.</li>
+    <li><strong>Informations de profil :</strong> nom, adresse e-mail principale.</li>
+    <li><strong>Identifiants de notification :</strong> Telegram Chat ID, numéro de téléphone WhatsApp.</li>
+    <li><strong>Tokens OAuth :</strong> access token et refresh token Google, stockés de façon sécurisée en base de données.</li>
+  </ul>
+
+  <h2>3. Utilisation des données</h2>
+  <ul>
+    <li>Détecter les nouveaux e-mails dans votre boîte Gmail.</li>
+    <li>Envoyer des notifications sur vos canaux configurés (Telegram, WhatsApp).</li>
+    <li>Afficher le contenu de vos e-mails dans le dashboard.</li>
+  </ul>
+  <p>Nous <strong>n'utilisons pas</strong> vos données à des fins publicitaires et ne les partageons avec aucun tiers.</p>
+
+  <h2>4. Accès Gmail (Google API)</h2>
+  <p>L'application utilise le scope <code>gmail.readonly</code> — accès en <strong>lecture seule</strong>. Nous ne pouvons pas envoyer, supprimer ou modifier vos e-mails. L'accès peut être révoqué à tout moment depuis votre compte Google : <a href="https://myaccount.google.com/permissions" target="_blank">myaccount.google.com/permissions</a>.</p>
+
+  <h2>5. Stockage et sécurité</h2>
+  <ul>
+    <li>Les données sont stockées dans une base de données PostgreSQL sécurisée (chiffrement en transit SSL).</li>
+    <li>Les tokens OAuth sont stockés côté serveur uniquement et jamais exposés au navigateur.</li>
+    <li>Les mots de passe sont hachés avec bcrypt.</li>
+  </ul>
+
+  <h2>6. Conservation des données</h2>
+  <p>Vos données sont conservées tant que votre compte est actif. Vous pouvez demander la suppression de votre compte et de toutes vos données à tout moment en nous contactant.</p>
+
+  <h2>7. Vos droits</h2>
+  <ul>
+    <li>Accéder à vos données personnelles.</li>
+    <li>Demander la rectification ou la suppression de vos données.</li>
+    <li>Révoquer l'accès Gmail à tout moment.</li>
+    <li>Déconnecter votre compte depuis le dashboard.</li>
+  </ul>
+
+  <h2>8. Contact</h2>
+  <div class="contact-box">
+    <p>Pour toute question concernant cette politique de confidentialité :</p>
+    <p><strong>Email :</strong> kyliyanisse@gmail.com</p>
+    <p><strong>Application :</strong> MailNotifier — bs-mailnotif-nine.vercel.app</p>
+  </div>
+
+</div>
+
+<footer>
+  &copy; 2026 MailNotifier · Tous droits réservés
+</footer>
+
+</body>
+</html>

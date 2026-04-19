@@ -49,6 +49,11 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "privacy.html",
+                "input": "src",
+                "output": "/"
               }
             ],
             "styles": [
