@@ -110,6 +110,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   gmailConnectedEmail = '';
   gmailExpired        = false;
   gmailConnecting     = false;
+  showGmailModal      = false;
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -376,8 +377,14 @@ export class UserDashboard implements OnInit, OnDestroy {
   // SETTINGS (channels)
   // ─────────────────────────────────────────────────────────────────────────────
 
+  /** Ouvre le modal d'instruction avant la redirection Google. */
+  openGmailModal() {
+    this.showGmailModal = true;
+  }
+
   /** Lance le flow OAuth Google (redirection navigateur). */
   connectGmail() {
+    this.showGmailModal  = false;
     this.gmailConnecting = true;
     this.emailService.connectGmail(this.user.email);
   }

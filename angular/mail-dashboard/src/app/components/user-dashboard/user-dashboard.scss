@@ -561,6 +561,81 @@ $radius: 16px;
 }
 
 
+// ─── MODAL GMAIL AVERTISSEMENT ───────────────────────────────────────────────
+
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.5); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+
+.modal-box {
+  background: var(--surface-color); border-radius: 16px;
+  width: 100%; max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border-color);
+  h3 { flex: 1; font-size: 16px; font-weight: 700; color: var(--text-color); margin: 0; }
+  .modal-close {
+    background: none; border: none; cursor: pointer; color: var(--muted-color);
+    display: flex; align-items: center; padding: 4px;
+    border-radius: 6px;
+    &:hover { background: var(--subtle-bg); }
+  }
+}
+
+.modal-warning-banner {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: rgba(251, 188, 5, 0.1); border-bottom: 1px solid rgba(251, 188, 5, 0.25);
+  padding: 12px 20px; font-size: 13px; color: #92400e;
+  mat-icon { color: #f59e0b; flex-shrink: 0; font-size: 20px; margin-top: 1px; }
+}
+
+.modal-steps {
+  padding: 20px; display: flex; flex-direction: column; gap: 14px;
+}
+
+.modal-step {
+  display: flex; align-items: flex-start; gap: 14px;
+}
+
+.modal-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--p); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+
+.modal-step-text {
+  display: flex; flex-direction: column; gap: 2px;
+  strong { font-size: 13px; font-weight: 600; color: var(--text-color); }
+  span   { font-size: 12px; color: var(--muted-color); }
+}
+
+.modal-note {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 20px 16px;
+  font-size: 12px; color: var(--muted-color);
+  background: var(--subtle-bg); border-radius: 8px; padding: 10px 12px;
+  mat-icon { font-size: 16px; color: #34a853; flex-shrink: 0; }
+}
+
+.modal-actions {
+  display: flex; gap: 10px; justify-content: flex-end;
+  padding: 16px 20px; border-top: 1px solid var(--border-color);
+}
+
+.modal-confirm-btn {
+  display: flex; align-items: center; gap: 8px;
+}
+
+// ─── STEPS ───────────────────────────────────────────────────────────────────
+
 .steps-box {
   background: var(--subtle-bg); border-radius: 10px; padding: 14px;
   display: flex; flex-direction: column; gap: 10px;
