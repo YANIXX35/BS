@@ -519,57 +519,20 @@
                 }
               </div>
 
-              @if (!showGmailModal) {
-                <button mat-flat-button class="btn-gmail" (click)="showGmailModal = true">
-                  <mat-icon>vpn_key</mat-icon>
-                  {{ gmailConnected ? 'Modifier la connexion' : 'Connecter mon Gmail' }}
-                </button>
-              }
-
-              @if (showGmailModal) {
-                <div class="gmail-modal">
-                  <div class="gmail-modal-step">
-                    <span class="step-num">1</span>
-                    <div>
-                      <p style="margin:0;font-weight:600">Ouvre Google App Passwords</p>
-                      <a href="https://myaccount.google.com/apppasswords" target="_blank" mat-stroked-button class="btn-google-link">
-                        <mat-icon>open_in_new</mat-icon> Ouvrir
-                      </a>
-                    </div>
-                  </div>
-                  <div class="gmail-modal-step">
-                    <span class="step-num">2</span>
-                    <p style="margin:0">Cree un mot de passe pour <strong>Mail</strong> → copie le code de <strong>16 caracteres</strong></p>
-                  </div>
-                  <div class="gmail-modal-step">
-                    <span class="step-num">3</span>
-                    <div style="width:100%">
-                      <p style="margin:0 0 8px;font-weight:600">Colle le code ici</p>
-                      <mat-form-field appearance="outline" class="full-width">
-                        <mat-label>Code 16 caracteres</mat-label>
-                        <input matInput [(ngModel)]="appPassword" placeholder="xxxx xxxx xxxx xxxx" />
-                        <mat-icon matSuffix>key</mat-icon>
-                      </mat-form-field>
-                    </div>
-                  </div>
-
-                  @if (gmailTestSuccess) {
-                    <div class="alert success"><mat-icon>check_circle</mat-icon> {{ gmailTestSuccess }}</div>
-                  }
-                  @if (gmailTestError) {
-                    <div class="alert error"><mat-icon>error</mat-icon> {{ gmailTestError }}</div>
-                  }
-
-                  <div style="display:flex;gap:8px;margin-top:8px">
-                    <button mat-flat-button class="btn-gmail" (click)="testGmailImap()" [disabled]="gmailTestLoading || !appPassword">
-                      @if (gmailTestLoading) { <mat-spinner diameter="18" /> }
-                      @else { <ng-container><mat-icon>verified_user</mat-icon> Valider</ng-container> }
-                    </button>
-                    <button mat-stroked-button (click)="showGmailModal = false; gmailTestError = ''; gmailTestSuccess = ''">
-                      Annuler
-                    </button>
-                  </div>
+              @if (gmailConnected) {
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                  <button mat-flat-button class="btn-gmail" (click)="connectGmail()" [disabled]="gmailConnecting">
+                    <mat-icon>refresh</mat-icon> Reconnecter
+                  </button>
+                  <button mat-stroked-button style="color:#dc2626;border-color:#dc2626" (click)="disconnectGmail()">
+                    <mat-icon>logout</mat-icon> Déconnecter
+                  </button>
                 </div>
+              } @else {
+                <button mat-flat-button class="btn-gmail" (click)="connectGmail()" [disabled]="gmailConnecting" style="margin-top:8px">
+                  @if (gmailConnecting) { <mat-spinner diameter="18" /> }
+                  @else { <ng-container><mat-icon>link</mat-icon> Connecter avec Google</ng-container> }
+                </button>
               }
             </div>
 

@@ -61,17 +61,14 @@ export class AdminDashboard implements OnInit {
 
   loading = { stats: true, users: true, payments: true, emails: true };
 
-  // Gmail IMAP (admin settings)
+  // Gmail OAuth (admin settings)
   adminSettings: UserSettings = {
     name: '', email: '', phone: '', gmail_address: '',
     telegram_chat_id: '', green_api_instance: '', green_api_token: ''
   };
-  gmailConnected = false;
-  showGmailModal = false;
-  appPassword = '';
-  gmailTestLoading = false;
-  gmailTestSuccess = '';
-  gmailTestError = '';
+  gmailConnected      = false;
+  gmailConnectedEmail = '';
+  gmailConnecting     = false;
   settingsLoading = false;
   settingsSaved = false;
   settingsError = '';
@@ -315,37 +312,19 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  testGmailImap() {
-    if (!this.adminSettings.gmail_address || !this.appPassword) {
-      this.gmailTestError = 'Renseigne ton adresse Gmail et le code';
-      return;
-    }
-    this.gmailTestLoading = true;
-    this.gmailTestSuccess = '';
-    this.gmailTestError = '';
-    this.emailService.testGmailImap(this.adminSettings.gmail_address, this.appPassword).subscribe({
-      next: (res) => {
-        this.gmailTestLoading = false;
-        if (res.success) {
-          this.gmailTestSuccess = 'Gmail connecte avec succes !';
-          this.emailService.updateUserSettings({
-            ...this.adminSettings, email: this.admin.email, app_password: this.appPassword
-          }).subscribe({ next: () => {
-            this.gmailConnected = true;
-            this.showGmailModal = false;
-            this.appPassword = '';
-            this.cdr.detectChanges();
-          }});
-        } else {
-          this.gmailTestError = res.error || 'Code incorrect';
-        }
+  connectGmail() {
+    this.gmailConnecting = true;
+    this.emailService.connectGmail(this.admin.email);
+  }
+
+  disconnectGmail() {
+    this.emailService.disconnectGmail(this.admin.email).subscribe({
+      next: () => {
+        this.gmailConnected      = false;
+        this.gmailConnectedEmail = '';
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        this.gmailTestLoading = false;
-        this.gmailTestError = err.error?.error || 'Erreur de connexion';
-        this.cdr.detectChanges();
-      }
+      error: () => {}
     });
   }
 

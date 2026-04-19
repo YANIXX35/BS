@@ -13,7 +13,7 @@ import { EmailList } from '../email-list/email-list';
 import { Sidebar } from '../sidebar/sidebar';
 import { AdvancedDashboardComponent } from '../advanced-dashboard/advanced-dashboard';
 
-type DashboardSection = 'overview' | 'advanced' | 'settings';
+type DashboardSection = 'overview' | 'inbox' | 'advanced' | 'settings';
 
 @Component({
   selector: 'app-dashboard',
