@@ -307,10 +307,24 @@
 
         @if (showGmailModal) {
           <div class="gmail-modal">
+            <div class="gmail-step prereq">
+              <mat-icon class="prereq-icon">info</mat-icon>
+              <div>
+                <p style="margin:0;font-size:13px"><strong>Prérequis :</strong> active la validation en 2 étapes ET l'accès IMAP sur ton compte Google.</p>
+                <div class="prereq-links">
+                  <a href="https://myaccount.google.com/signinoptions/twosv" target="_blank" mat-stroked-button class="btn-google-link small">
+                    <mat-icon>security</mat-icon> 2 étapes
+                  </a>
+                  <a href="https://mail.google.com/mail/u/0/#settings/fwdandpop" target="_blank" mat-stroked-button class="btn-google-link small">
+                    <mat-icon>settings</mat-icon> Activer IMAP
+                  </a>
+                </div>
+              </div>
+            </div>
             <div class="gmail-step">
               <span class="step-num">1</span>
               <div>
-                <p>Ouvre Google App Passwords</p>
+                <p>Ouvre les mots de passe d'application Google</p>
                 <a href="https://myaccount.google.com/apppasswords" target="_blank" mat-stroked-button class="btn-google-link">
                   <mat-icon>open_in_new</mat-icon> Ouvrir
                 </a>
