@@ -10,12 +10,14 @@ export interface Email {
   date: string;
   snippet: string;
   unread: boolean;
+  category?: 'important' | 'newsletter' | 'normal';
 }
 
 export interface EmailDetail extends Email {
   to: string;
   body: string;
   body_type: string;
+  category: 'important' | 'newsletter' | 'normal';
 }
 
 export interface EmailsPage {

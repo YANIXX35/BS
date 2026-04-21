@@ -123,20 +123,41 @@
         </div>
         <span class="badge">{{ emails.length }}</span>
       </div>
+
+      <!-- FILTRES IA -->
+      <div class="email-filters">
+        <button class="filter-tab" [class.active]="activeFilter==='all'" (click)="activeFilter='all'">
+          <mat-icon>all_inbox</mat-icon> Tous
+          <span class="filter-count">{{ emails.length }}</span>
+        </button>
+        <button class="filter-tab important" [class.active]="activeFilter==='important'" (click)="activeFilter='important'">
+          <mat-icon>priority_high</mat-icon> Importants
+          <span class="filter-count">{{ countByCategory('important') }}</span>
+        </button>
+        <button class="filter-tab normal" [class.active]="activeFilter==='normal'" (click)="activeFilter='normal'">
+          <mat-icon>mail</mat-icon> Normaux
+          <span class="filter-count">{{ countByCategory('normal') }}</span>
+        </button>
+        <button class="filter-tab newsletter" [class.active]="activeFilter==='newsletter'" (click)="activeFilter='newsletter'">
+          <mat-icon>campaign</mat-icon> Newsletters
+          <span class="filter-count">{{ countByCategory('newsletter') }}</span>
+        </button>
+      </div>
+
       <div class="card-body">
         @if (loadingEmails) {
           <div class="loading-state">
             <mat-progress-bar mode="indeterminate" />
             <p>Chargement...</p>
           </div>
-        } @else if (emails.length === 0) {
+        } @else if (filteredEmails.length === 0) {
           <div class="empty-state">
             <mat-icon>inbox</mat-icon>
-            <p>Aucun mail</p>
+            <p>Aucun mail dans cette catégorie</p>
           </div>
         } @else {
           <div class="email-list">
-            @for (email of emails; track email.id) {
+            @for (email of filteredEmails; track email.id) {
               <div class="email-row" [class.unread]="email.unread" (click)="openEmail(email)" role="button" tabindex="0">
                 <div class="email-avatar" [style.background]="getAvatarColor(email.sender)">
                   {{ getSenderInitial(email.sender) }}
@@ -144,7 +165,14 @@
                 <div class="email-content">
                   <div class="email-meta">
                     <span class="email-sender">{{ getSenderName(email.sender) }}</span>
-                    <span class="email-date">{{ email.date | slice:5:11 }}</span>
+                    <div class="email-meta-right">
+                      <span class="cat-badge cat-{{ email.category }}">
+                        @if (email.category === 'important') { <mat-icon>priority_high</mat-icon> Important }
+                        @else if (email.category === 'newsletter') { <mat-icon>campaign</mat-icon> Newsletter }
+                        @else { <mat-icon>mail</mat-icon> Normal }
+                      </span>
+                      <span class="email-date">{{ email.date | slice:5:11 }}</span>
+                    </div>
                   </div>
                   <p class="email-subject" [class.bold]="email.unread">{{ email.subject }}</p>
                   <p class="email-snippet">{{ email.snippet }}</p>
@@ -407,6 +435,13 @@
         <div class="reader-from">
           <strong>{{ getSenderName(selectedEmail.sender) }}</strong>
           <span class="reader-from-email">&lt;{{ selectedEmail.sender | slice:selectedEmail.sender.indexOf('<')+1:selectedEmail.sender.length-1 }}&gt;</span>
+          @if (selectedEmail.category) {
+            <span class="cat-badge cat-{{ selectedEmail.category }}" style="margin-left:8px">
+              @if (selectedEmail.category === 'important') { <mat-icon>priority_high</mat-icon> Important }
+              @else if (selectedEmail.category === 'newsletter') { <mat-icon>campaign</mat-icon> Newsletter }
+              @else { <mat-icon>mail</mat-icon> Normal }
+            </span>
+          }
         </div>
         <div class="reader-date">{{ selectedEmail.date }}</div>
       </div>

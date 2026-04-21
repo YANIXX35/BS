@@ -359,6 +359,57 @@ $radius: 16px;
   }
 }
 
+// ── EMAIL FILTERS ─────────────────────────────────────────────────────────────
+
+.email-filters {
+  display: flex; gap: 6px; padding: 0 16px 12px;
+  flex-wrap: wrap;
+
+  .filter-tab {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--subtle-bg); color: var(--muted-color);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: all 0.18s;
+
+    mat-icon { font-size: 14px; width: 14px; height: 14px; }
+
+    .filter-count {
+      background: var(--border-color); color: var(--muted-color);
+      border-radius: 10px; padding: 0 6px; font-size: 11px; font-weight: 600;
+    }
+
+    &:hover { border-color: var(--p); color: var(--p); }
+
+    &.active {
+      background: var(--p); color: white; border-color: var(--p);
+      .filter-count { background: rgba(255,255,255,0.25); color: white; }
+    }
+
+    &.important.active  { background: #dc2626; border-color: #dc2626; }
+    &.newsletter.active { background: #f59e0b; border-color: #f59e0b; }
+    &.normal.active     { background: #2563eb; border-color: #2563eb; }
+  }
+}
+
+// ── CATEGORY BADGES ───────────────────────────────────────────────────────────
+
+.cat-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+  mat-icon { font-size: 11px; width: 11px; height: 11px; }
+
+  &.cat-important  { background: #fee2e2; color: #dc2626; }
+  &.cat-newsletter { background: #fef3c7; color: #d97706; }
+  &.cat-normal     { background: #dbeafe; color: #2563eb; }
+}
+
+.email-meta-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+
 // ── CHANNELS ───────────────────────────────────────────────────────────────────
 .channel-row {
   display: flex; align-items: center; gap: 12px;

@@ -112,6 +112,18 @@ export class UserDashboard implements OnInit, OnDestroy {
   emailDetailLoading = false;
   emailDetailBody: SafeHtml = '';
 
+  // Email filter
+  activeFilter: 'all' | 'important' | 'newsletter' | 'normal' = 'all';
+
+  get filteredEmails(): typeof this.emails {
+    if (this.activeFilter === 'all') return this.emails;
+    return this.emails.filter(e => e.category === this.activeFilter);
+  }
+
+  countByCategory(cat: string): number {
+    return this.emails.filter(e => e.category === cat).length;
+  }
+
   // Gmail OAuth
   gmailConnected      = false;
   gmailConnectedEmail = '';
@@ -444,7 +456,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   openEmail(email: Email) {
-    this.selectedEmail = { ...email, to: '', body: '', body_type: '' };
+    this.selectedEmail = { ...email, to: '', body: '', body_type: '', category: email.category ?? 'normal' };
     this.emailDetailLoading = true;
     this.emailDetailBody = '';
     // Mark as read locally
