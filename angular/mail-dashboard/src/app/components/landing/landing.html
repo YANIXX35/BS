@@ -21,6 +21,12 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <div class="particle p1"></div>
+    <div class="particle p2"></div>
+    <div class="particle p3"></div>
+    <div class="particle p4"></div>
+    <div class="particle p5"></div>
+    <div class="grid-overlay"></div>
   </div>
 
   <div class="hero-content">
@@ -40,19 +46,29 @@
         Comment ca marche
       </button>
     </div>
+    <div class="hero-social-proof">
+      <div class="proof-avatars">
+        <div class="proof-avatar av1">Y</div>
+        <div class="proof-avatar av2">A</div>
+        <div class="proof-avatar av3">K</div>
+        <div class="proof-avatar av4">M</div>
+        <div class="proof-avatar av5">+</div>
+      </div>
+      <p>Rejoins <strong>+500 utilisateurs</strong> actifs</p>
+    </div>
     <div class="hero-stats">
       <div class="stat">
-        <strong>30s</strong>
+        <strong>{{ statValues.delay }}<span class="stat-unit">s</span></strong>
         <span>Delai de detection</span>
       </div>
       <div class="stat-div"></div>
       <div class="stat">
-        <strong>2</strong>
+        <strong>{{ statValues.channels }}</strong>
         <span>Canaux de notification</span>
       </div>
       <div class="stat-div"></div>
       <div class="stat">
-        <strong>100%</strong>
+        <strong>{{ statValues.free }}<span class="stat-unit">%</span></strong>
         <span>Gratuit</span>
       </div>
     </div>
@@ -104,8 +120,8 @@
     <p>Un systeme complet pour ne jamais rater un mail</p>
   </div>
   <div class="features-grid">
-    @for (f of features; track f.title) {
-      <div class="feature-card">
+    @for (f of features; track f.title; let i = $index) {
+      <div class="feature-card anim-card" [style.transition-delay]="(i * 0.12) + 's'">
         <div class="feature-icon">
           <mat-icon>{{ f.icon }}</mat-icon>
         </div>
@@ -126,8 +142,8 @@
   <div class="steps-wrap">
     <div class="steps-connector"></div>
     <div class="steps">
-      @for (step of steps; track step.number) {
-        <div class="step">
+      @for (step of steps; track step.number; let i = $index) {
+        <div class="step anim-card" [style.transition-delay]="(i * 0.15) + 's'">
           <div class="step-bubble">
             <span>{{ step.number }}</span>
           </div>
@@ -157,8 +173,8 @@
   }
 
   <div class="pricing-grid">
-    @for (plan of plans; track plan.id) {
-      <div class="pricing-card" [class.featured]="plan.popular">
+    @for (plan of plans; track plan.id; let i = $index) {
+      <div class="pricing-card anim-card" [class.featured]="plan.popular" [style.transition-delay]="(i * 0.12) + 's'">
         @if (plan.popular) {
           <div class="popular-badge">Populaire</div>
         }

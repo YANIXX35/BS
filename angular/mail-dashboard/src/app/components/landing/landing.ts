@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, HostListener, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,8 +21,10 @@ type Step = 'form' | 'otp' | 'success';
   templateUrl: './landing.html',
   styleUrl: './landing.scss'
 })
-export class Landing implements OnInit {
+export class Landing implements OnInit, AfterViewInit {
   scrolled = false;
+  statValues = { delay: 0, channels: 0, free: 0 };
+  private statsAnimated = false;
 
   @HostListener('window:scroll')
   onScroll() { this.scrolled = window.scrollY > 20; }
@@ -368,6 +370,52 @@ export class Landing implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  ngAfterViewInit() {
+    const cardObs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement).classList.add('visible');
+          cardObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+
+    const statsObs = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !this.statsAnimated) {
+          this.statsAnimated = true;
+          this.animateStats();
+          statsObs.disconnect();
+        }
+      });
+    }, { threshold: 0.5 });
+
+    setTimeout(() => {
+      document.querySelectorAll('.anim-card').forEach(el => cardObs.observe(el));
+      const statsEl = document.querySelector('.hero-stats');
+      if (statsEl) statsObs.observe(statsEl);
+    }, 150);
+  }
+
+  private animateStats() {
+    this.animateValue('delay', 30, 1400);
+    this.animateValue('channels', 2, 900);
+    this.animateValue('free', 100, 1800);
+  }
+
+  private animateValue(key: 'delay' | 'channels' | 'free', target: number, duration: number) {
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      this.statValues[key] = Math.round(eased * target);
+      this.cdr.detectChanges();
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   scrollTo(id: string) {
