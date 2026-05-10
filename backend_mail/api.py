@@ -1925,7 +1925,7 @@ def _check_all_users():
             print(f"[Monitor] Erreur user {user['email']}: {e}")
 
 
-@app.route('/api/chat', methods=['POST'])
+@app.route('/api/chatbot', methods=['POST'])
 def chat_bot():
     """Chatbot IA MailNotifier — utilise Gemini REST API via requests."""
     data    = request.get_json() or {}

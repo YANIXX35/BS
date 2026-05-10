@@ -153,6 +153,6 @@ export class EmailService {
   }
 
   chat(message: string, history: Array<{role: string; text: string}>): Observable<{response: string}> {
-    return this.http.post<{response: string}>(`${this.apiUrl}/chat`, { message, history });
+    return this.http.post<{response: string}>(`${this.apiUrl}/chatbot`, { message, history });
   }
 }
