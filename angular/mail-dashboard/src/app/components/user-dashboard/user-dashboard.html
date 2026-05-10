@@ -452,12 +452,24 @@
         </div>
       </div>
       <div class="card-body">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Numero de telephone WhatsApp</mat-label>
-          <input matInput [(ngModel)]="settings.phone" placeholder="22543875302 (sans + ni espaces)" (ngModelChange)="whatsappCheckResult = 'none'" />
-          <mat-icon matSuffix>phone</mat-icon>
-        </mat-form-field>
-        <p class="hint"><mat-icon>info</mat-icon> Entre ton numero sans le + ni espaces.</p>
+        <div class="phone-row">
+          <mat-form-field appearance="outline" class="phone-code-field">
+            <mat-label>Pays</mat-label>
+            <mat-select [(ngModel)]="selectedDialCode" (ngModelChange)="whatsappCheckResult = 'none'">
+              @for (c of countryCodes; track c.code) {
+                <mat-option [value]="c.code">
+                  {{ c.flag }} {{ c.code }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="phone-local-field">
+            <mat-label>Numéro local</mat-label>
+            <input matInput [(ngModel)]="localPhone" placeholder="0708090001" (ngModelChange)="whatsappCheckResult = 'none'" />
+            <mat-icon matSuffix>phone</mat-icon>
+          </mat-form-field>
+        </div>
+        <p class="hint"><mat-icon>info</mat-icon> Selectionne ton pays puis entre le numero sans le 0 initial si necessaire.</p>
 
         <!-- Bouton vérifier + badge statut -->
         <div class="wa-verify-row">

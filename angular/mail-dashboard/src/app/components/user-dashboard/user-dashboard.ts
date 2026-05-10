@@ -12,6 +12,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis } from '../../services/email';
@@ -23,7 +24,7 @@ import { PushNotificationService } from '../../services/push-notification.servic
   imports: [
     CommonModule, FormsModule, MatCardModule, MatIconModule, MatButtonModule,
     MatChipsModule, MatProgressBarModule, MatProgressSpinnerModule,
-    MatDividerModule, MatTooltipModule, MatFormFieldModule, MatInputModule
+    MatDividerModule, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule
   ],
   templateUrl: './user-dashboard.html',
   styleUrl: './user-dashboard.scss'
@@ -101,6 +102,37 @@ export class UserDashboard implements OnInit, OnDestroy {
   private _secondaryDebounce: any = null;
   private _pendingTheme:     string | null = null;
   private _pendingSecondary: string | null = null;
+
+  // Country code selector (WhatsApp)
+  countryCodes = [
+    { code: '+225', flag: '🇨🇮', name: 'Côte d\'Ivoire' },
+    { code: '+221', flag: '🇸🇳', name: 'Sénégal' },
+    { code: '+223', flag: '🇲🇱', name: 'Mali' },
+    { code: '+226', flag: '🇧🇫', name: 'Burkina Faso' },
+    { code: '+233', flag: '🇬🇭', name: 'Ghana' },
+    { code: '+234', flag: '🇳🇬', name: 'Nigéria' },
+    { code: '+224', flag: '🇬🇳', name: 'Guinée' },
+    { code: '+228', flag: '🇹🇬', name: 'Togo' },
+  ];
+  selectedDialCode = '+225';
+  localPhone = '';
+
+  get fullPhone(): string {
+    const digits = this.selectedDialCode.replace('+', '');
+    return digits + this.localPhone.replace(/\D/g, '');
+  }
+
+  private parsePhone() {
+    const raw = (this.settings.phone || '').replace(/\D/g, '');
+    if (!raw) { this.localPhone = ''; return; }
+    const match = this.countryCodes.find(c => raw.startsWith(c.code.replace('+', '')));
+    if (match) {
+      this.selectedDialCode = match.code;
+      this.localPhone = raw.slice(match.code.replace('+', '').length);
+    } else {
+      this.localPhone = raw;
+    }
+  }
 
   // QR WhatsApp
   qrLoading = false;
@@ -339,6 +371,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.emailService.getUserSettings(this.user.email).subscribe({
       next: (s) => {
         this.settings = s;
+        this.parsePhone();
 
         // Delegate theme to ThemeService — server wins, no round-trip save.
         // Skip if ThemeService already synced < 5 s ago (avoid double-apply
@@ -529,6 +562,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   saveSettings() {
+    this.settings.phone  = this.fullPhone;
     this.settingsLoading = true;
     this.settingsSaved   = false;
     this.settingsError   = '';
@@ -569,8 +603,8 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   verifyWhatsapp() {
-    const phone = (this.settings.phone || '').trim();
-    if (!phone) {
+    const phone = this.fullPhone.trim();
+    if (!phone || !this.localPhone) {
       this.whatsappCheckResult  = 'error';
       this.whatsappCheckMessage = 'Entre ton numéro d\'abord.';
       return;
