@@ -121,6 +121,10 @@ export class EmailService {
     return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
   }
 
+  checkWhatsappNumber(phone: string): Observable<{ exists: boolean; chatId: string; phone: string }> {
+    return this.http.get<{ exists: boolean; chatId: string; phone: string }>(`${this.apiUrl}/user/whatsapp-check`, { params: { phone } });
+  }
+
   // ─── GMAIL OAUTH 2.0 ─────────────────────────────────────────────────────────
 
   /** Redirige le navigateur vers Google pour l'autorisation OAuth. */

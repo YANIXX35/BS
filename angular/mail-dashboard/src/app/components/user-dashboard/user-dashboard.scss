@@ -872,6 +872,24 @@ $radius: 16px;
   mat-icon { font-size: 14px; width:14px; height:14px; }
 }
 
+.wa-verify-row {
+  display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap;
+}
+
+.wa-verify-btn {
+  display: flex; align-items: center; gap: 6px;
+  border-color: #25d366 !important; color: #25d366 !important;
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.wa-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  &.ok    { background: #e8f5e9; color: #2e7d32; }
+  &.error { background: #fdecea; color: #c62828; }
+}
+
 .save-row {
   display: flex; justify-content: flex-end;
   .btn-save {

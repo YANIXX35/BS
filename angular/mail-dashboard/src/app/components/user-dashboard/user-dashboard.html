@@ -454,10 +454,24 @@
       <div class="card-body">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Numero de telephone WhatsApp</mat-label>
-          <input matInput [(ngModel)]="settings.phone" placeholder="22543875302 (sans + ni espaces)" />
+          <input matInput [(ngModel)]="settings.phone" placeholder="22543875302 (sans + ni espaces)" (ngModelChange)="whatsappCheckResult = 'none'" />
           <mat-icon matSuffix>phone</mat-icon>
         </mat-form-field>
         <p class="hint"><mat-icon>info</mat-icon> Entre ton numero sans le + ni espaces.</p>
+
+        <!-- Bouton vérifier + badge statut -->
+        <div class="wa-verify-row">
+          <button mat-stroked-button class="wa-verify-btn" (click)="verifyWhatsapp()" [disabled]="whatsappCheckLoading">
+            <mat-icon>{{ whatsappCheckLoading ? 'hourglass_empty' : 'verified' }}</mat-icon>
+            {{ whatsappCheckLoading ? 'Vérification...' : 'Vérifier le numéro' }}
+          </button>
+          <span *ngIf="whatsappCheckResult === 'ok'" class="wa-badge ok">
+            <mat-icon>check_circle</mat-icon> WhatsApp actif
+          </span>
+          <span *ngIf="whatsappCheckResult === 'error'" class="wa-badge error">
+            <mat-icon>cancel</mat-icon> {{ whatsappCheckMessage }}
+          </span>
+        </div>
       </div>
     </div>
 

@@ -107,6 +107,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   qrImage   = '';
   qrStatus  = '';
 
+  // Vérification numéro WhatsApp
+  whatsappCheckLoading = false;
+  whatsappCheckResult: 'none' | 'ok' | 'error' = 'none';
+  whatsappCheckMessage = '';
+
   // AI analysis
   aiAnalysis: AiAnalysis | null = null;
   aiLoading = false;
@@ -558,6 +563,37 @@ export class UserDashboard implements OnInit, OnDestroy {
       error: (err) => {
         this.qrLoading = false;
         this.qrStatus  = err.error?.error || 'Erreur WhatsApp indisponible';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  verifyWhatsapp() {
+    const phone = (this.settings.phone || '').trim();
+    if (!phone) {
+      this.whatsappCheckResult  = 'error';
+      this.whatsappCheckMessage = 'Entre ton numéro d\'abord.';
+      return;
+    }
+    this.whatsappCheckLoading = true;
+    this.whatsappCheckResult  = 'none';
+    this.whatsappCheckMessage = '';
+    this.emailService.checkWhatsappNumber(phone).subscribe({
+      next: (res) => {
+        this.whatsappCheckLoading = false;
+        if (res.exists) {
+          this.whatsappCheckResult  = 'ok';
+          this.whatsappCheckMessage = 'Numéro WhatsApp vérifié !';
+        } else {
+          this.whatsappCheckResult  = 'error';
+          this.whatsappCheckMessage = 'Ce numéro n\'est pas sur WhatsApp.';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.whatsappCheckLoading = false;
+        this.whatsappCheckResult  = 'error';
+        this.whatsappCheckMessage = 'Erreur lors de la vérification.';
         this.cdr.detectChanges();
       }
     });
