@@ -1939,8 +1939,8 @@ def chat_bot():
     if not message:
         return jsonify({'error': 'message requis'}), 400
 
-    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
-    if not ANTHROPIC_API_KEY:
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    if not GEMINI_API_KEY:
         return jsonify({'response': (
             "Bonjour ! Je suis l'assistant MailNotifier. 😊 "
             "MailNotifier surveille ta boîte Gmail et t'envoie des alertes instantanées sur Telegram et WhatsApp. "
@@ -1952,7 +1952,7 @@ def chat_bot():
 PRODUIT MAILNOTIFIER:
 - Surveillance Gmail via OAuth2 Google — chaque nouveau mail détecté en moins de 30 secondes
 - Notifications instantanées sur Telegram (gratuit) et WhatsApp (premium)
-- IA Claude intégrée: classe chaque email en important / newsletter / normal avec raison
+- IA intégrée: classe chaque email en important / newsletter / normal avec raison
 - Dashboard web: voir les derniers mails, stats, canaux, analyse IA de la boîte
 
 TARIFS:
@@ -1971,28 +1971,29 @@ RÈGLES:
 - Encourage l'inscription, guide techniquement si besoin
 - Si hors sujet, ramène poliment vers MailNotifier"""
 
-    messages = []
+    # Build Gemini history format
+    gemini_history = []
     for h in (history or [])[-6:]:
         role    = h.get('role', '')
         content = _str(h.get('text', ''), 400)
         if role == 'user' and content:
-            messages.append({'role': 'user',      'content': content})
+            gemini_history.append({'role': 'user',  'parts': [content]})
         elif role == 'bot' and content:
-            messages.append({'role': 'assistant', 'content': content})
-    messages.append({'role': 'user', 'content': message})
+            gemini_history.append({'role': 'model', 'parts': [content]})
 
     try:
-        import anthropic as _anthropic
-        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-        msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=250,
-            system=system_prompt,
-            messages=messages,
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel(
+            model_name='gemini-1.5-flash',
+            system_instruction=system_prompt,
+            generation_config={'max_output_tokens': 250, 'temperature': 0.7},
         )
-        return jsonify({'response': msg.content[0].text})
+        chat_session = model.start_chat(history=gemini_history)
+        response = chat_session.send_message(message)
+        return jsonify({'response': response.text})
     except Exception as e:
-        print(f"[Chat] Erreur: {e}")
+        print(f"[Chat] Erreur Gemini: {e}")
         return jsonify({'response': "Désolé, je rencontre une erreur momentanée. Réessaie dans un instant ! 😅"}), 200
 
 
