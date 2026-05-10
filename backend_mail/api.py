@@ -1326,34 +1326,41 @@ def ai_analyze():
             for i, e in enumerate(emails_data)
         )
 
-        prompt = f"""Tu es un assistant IA de gestion d'emails. Analyse ces {len(emails_data)} emails récents et réponds UNIQUEMENT en JSON valide, sans texte avant ni après.
+        prompt = f"""Tu es un assistant expert en gestion d'emails professionnels. Analyse ces {len(emails_data)} emails et réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ni après.
 
-EMAILS:
+EMAILS À ANALYSER:
 {emails_text}
 
-Réponds avec ce JSON exact:
+Réponds avec exactement ce JSON (tous les champs obligatoires):
 {{
-  "summary": "Résumé de 2 phrases max de l'état de la boîte mail",
-  "urgent_count": <nombre d'emails urgents/importants>,
-  "important_count": <nombre d'emails importants>,
-  "newsletter_count": <nombre de newsletters/promotions>,
-  "normal_count": <nombre d'emails normaux>,
-  "actions": ["action1 concrète à faire", "action2"],
+  "summary": "Résumé de 2 phrases percutantes sur l'état de la boîte mail",
+  "urgent_count": <entier: emails nécessitant une action immédiate>,
+  "important_count": <entier: emails importants au total>,
+  "newsletter_count": <entier: newsletters et promotions>,
+  "normal_count": <entier: emails courants>,
+  "actions": ["action concrète prioritaire 1", "action 2", "action 3 max"],
   "emails": [
-    {{"id": "<id>", "category": "important|newsletter|normal", "reason": "raison courte en français", "priority": "high|medium|low"}}
+    {{
+      "id": "<id exact>",
+      "category": "important|newsletter|normal",
+      "reason": "raison en 5 mots max en français",
+      "priority": "high|medium|low"
+    }}
   ]
 }}
 
-Règles de classification:
-- important: factures, paiements, sécurité, urgences, réunions, contrats, mots de passe, alertes compte
-- newsletter: promotions, publicités, désabonnement, marketing, offres commerciales
-- normal: tout le reste (emails de collègues, notifications informatives, etc.)"""
+Règles strictes:
+- important + priority=high: facture impayée, alerte sécurité, code OTP, urgence, deadline imminente
+- important + priority=medium: réunion, contrat, paiement, confirmation commande
+- newsletter: toute promo, pub, offre commerciale, digest, désabonnement
+- normal: collègues, info, notification courante, réponse email
+Classe TOUS les {len(emails_data)} emails dans la liste "emails"."""
 
         import anthropic as _anthropic
         client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
         message = client.messages.create(
-            model="claude-haiku-4-5",
-            max_tokens=1024,
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1500,
             messages=[{"role": "user", "content": prompt}]
         )
 
@@ -1364,6 +1371,13 @@ Règles de classification:
             if raw.startswith("json"):
                 raw = raw[4:]
         analysis = _json_ai.loads(raw)
+        # Ensure all required fields exist
+        analysis.setdefault('urgent_count', 0)
+        analysis.setdefault('important_count', 0)
+        analysis.setdefault('newsletter_count', 0)
+        analysis.setdefault('normal_count', 0)
+        analysis.setdefault('actions', [])
+        analysis.setdefault('emails', [])
         return jsonify(analysis)
 
     except Exception as e:
@@ -1664,21 +1678,60 @@ _NEWSLETTER_DOMAINS = [
 ]
 
 def _classify_email(sender: str, subject: str, snippet: str) -> str:
+    """Fast keyword-based fallback classifier."""
     sender_l  = sender.lower()
     subject_l = subject.lower()
     text      = f"{sender_l} {subject_l} {snippet.lower()}"
 
-    # Newsletter: sender domain or keywords
     if any(d in sender_l for d in _NEWSLETTER_DOMAINS):
         return 'newsletter'
     if any(k in text for k in _NEWSLETTER_KEYWORDS):
         return 'newsletter'
-    # Important: keywords in subject (higher weight) or text
     if any(k in subject_l for k in _IMPORTANT_KEYWORDS):
         return 'important'
     if any(k in text for k in _IMPORTANT_KEYWORDS):
         return 'important'
     return 'normal'
+
+
+def _ai_classify_email(sender: str, subject: str, snippet: str) -> tuple[str, str]:
+    """
+    Classify a single email with Claude Haiku.
+    Returns (category, reason). Falls back to keyword method if API key missing.
+    """
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+    if not ANTHROPIC_API_KEY:
+        return _classify_email(sender, subject, snippet), ''
+
+    prompt = (
+        "Classifie cet email en une seule catégorie parmi: important, newsletter, normal.\n"
+        "Réponds UNIQUEMENT avec ce JSON sur une ligne, sans texte avant ni après:\n"
+        '{"category": "important|newsletter|normal", "reason": "raison courte en français (max 10 mots)"}\n\n'
+        f"De: {sender[:100]}\n"
+        f"Objet: {subject[:120]}\n"
+        f"Aperçu: {snippet[:200]}\n\n"
+        "Règles:\n"
+        "- important: facture, paiement, sécurité, urgence, réunion, contrat, alerte compte, code OTP\n"
+        "- newsletter: promo, pub, marketing, désabonnement, offre commerciale, digest\n"
+        "- normal: collègue, info, notification courante"
+    )
+    try:
+        import anthropic as _anthropic
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=80,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        raw = msg.content[0].text.strip()
+        parsed = _json.loads(raw)
+        cat = parsed.get('category', 'normal')
+        if cat not in ('important', 'newsletter', 'normal'):
+            cat = 'normal'
+        return cat, parsed.get('reason', '')
+    except Exception as e:
+        print(f"[AI Classify] Erreur, fallback keywords: {e}")
+        return _classify_email(sender, subject, snippet), ''
 
 
 @app.route('/api/fcm/register', methods=['POST'])
@@ -1700,7 +1753,7 @@ def register_fcm_token():
         _return_db(db)
 
 
-def _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category='normal'):
+def _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category='normal', ai_reason=''):
     if not TELEGRAM_BOT_TOKEN:
         print("[Monitor] TELEGRAM_BOT_TOKEN manquant — notification ignoree")
         return
@@ -1712,10 +1765,11 @@ def _send_telegram_notification(chat_id, sender, subject, snippet, user_email, c
         'normal':     '🔵 Normal',
     }
     cat_label = cat_labels.get(category, '🔵 Normal')
+    ai_line = f"\n🤖 *IA :* _{ai_reason}_" if ai_reason else ''
     text = (
         f"📬 *MailNotifier*\n"
         f"━━━━━━━━━━━━━━━━━━\n"
-        f"Nouveau mail reçu — {cat_label}\n\n"
+        f"Nouveau mail — {cat_label}{ai_line}\n\n"
         f"👤 *De :* {sender_name}\n"
         f"📌 *Objet :* {subject}\n"
         f"💬 *Aperçu :*\n_{snippet[:200]}_\n\n"
@@ -1804,11 +1858,11 @@ def _check_user_emails_gmail(user):
                     subject  = hdrs.get('Subject', '(Sans objet)')
                     sender   = hdrs.get('From', 'Inconnu')
                     snippet  = msg.get('snippet', '')[:200]
-                    category = _classify_email(sender, subject, snippet)
-                    print(f"[Monitor] Email [{category}] : {subject[:60]}")
+                    category, ai_reason = _ai_classify_email(sender, subject, snippet)
+                    print(f"[Monitor] Email [{category}] : {subject[:60]}{' — ' + ai_reason if ai_reason else ''}")
 
                     if chat_id:
-                        _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category)
+                        _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category, ai_reason)
 
                     _send_whatsapp_notification(user, sender, subject, snippet, category)
 
@@ -1819,8 +1873,8 @@ def _check_user_emails_gmail(user):
                         emoji = '🔴' if category == 'important' else ('📰' if category == 'newsletter' else '✉️')
                         _send_fcm_notification(
                             fcm_token,
-                            title="MailNotifier — Nouveau mail",
-                            body=f"{emoji} {sender_name} : {subject[:80]}",
+                            title=f"MailNotifier — {emoji} {category.capitalize()}",
+                            body=f"{sender_name} : {subject[:80]}",
                         )
                 except HttpError as e:
                     print(f"[Monitor] Erreur lecture msg {msg_id}: {e}")
