@@ -41,6 +41,23 @@ export interface Stats {
   email: string;
 }
 
+export interface AiEmailItem {
+  id: string;
+  category: 'important' | 'newsletter' | 'normal';
+  reason: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface AiAnalysis {
+  summary: string;
+  urgent_count: number;
+  important_count: number;
+  newsletter_count: number;
+  normal_count: number;
+  actions: string[];
+  emails: AiEmailItem[];
+}
+
 export interface GmailStatus {
   connected: boolean;
   gmail_email: string | null;
@@ -119,6 +136,10 @@ export class EmailService {
   /** Révoque les tokens et déconnecte Gmail. */
   disconnectGmail(email: string): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/gmail/disconnect`, { email });
+  }
+
+  analyzeInbox(email: string): Observable<AiAnalysis> {
+    return this.http.get<AiAnalysis>(`${this.apiUrl}/ai/analyze`, { params: { email } });
   }
 
   getEmailDetail(userEmail: string, messageId: string): Observable<EmailDetail> {

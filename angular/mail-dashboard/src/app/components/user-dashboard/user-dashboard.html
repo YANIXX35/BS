@@ -235,6 +235,67 @@
         </div>
       </div>
 
+      <!-- IA ANALYSE -->
+      <div class="card ai-card">
+        <div class="card-header">
+          <div class="card-title">
+            <mat-icon class="ai-icon">psychology</mat-icon>
+            <span>Analyse IA</span>
+          </div>
+          <button mat-icon-button class="card-action" (click)="loadAiAnalysis()" [disabled]="aiLoading" matTooltip="Relancer l'analyse">
+            <mat-icon>{{ aiLoading ? 'hourglass_empty' : 'refresh' }}</mat-icon>
+          </button>
+        </div>
+        <div class="card-body ai-body">
+          @if (aiLoading) {
+            <div class="ai-loading">
+              <mat-progress-bar mode="indeterminate" />
+              <p>Analyse en cours...</p>
+            </div>
+          } @else if (aiError) {
+            <div class="ai-error">
+              <mat-icon>error_outline</mat-icon>
+              <p>{{ aiError }}</p>
+            </div>
+          } @else if (aiAnalysis) {
+            <p class="ai-summary">{{ aiAnalysis.summary }}</p>
+
+            <div class="ai-stats">
+              @if (aiAnalysis.urgent_count > 0) {
+                <div class="ai-stat urgent">
+                  <mat-icon>priority_high</mat-icon>
+                  <span>{{ aiAnalysis.urgent_count }} urgent{{ aiAnalysis.urgent_count > 1 ? 's' : '' }}</span>
+                </div>
+              }
+              <div class="ai-stat important">
+                <mat-icon>star</mat-icon>
+                <span>{{ aiAnalysis.important_count }} important{{ aiAnalysis.important_count > 1 ? 's' : '' }}</span>
+              </div>
+              <div class="ai-stat newsletter">
+                <mat-icon>campaign</mat-icon>
+                <span>{{ aiAnalysis.newsletter_count }} newsletter{{ aiAnalysis.newsletter_count > 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+
+            @if (aiAnalysis.actions && aiAnalysis.actions.length > 0) {
+              <div class="ai-actions-title">
+                <mat-icon>task_alt</mat-icon> Actions suggérées
+              </div>
+              <ul class="ai-actions">
+                @for (action of aiAnalysis.actions; track action) {
+                  <li>{{ action }}</li>
+                }
+              </ul>
+            }
+          } @else {
+            <div class="ai-empty">
+              <mat-icon>psychology</mat-icon>
+              <p>Connectez Gmail pour activer l'analyse IA</p>
+            </div>
+          }
+        </div>
+      </div>
+
       <!-- COMPTE -->
       <div class="card account-card">
         <div class="card-header">

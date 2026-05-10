@@ -14,7 +14,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EmailService, Stats, Email, EmailDetail, UserSettings } from '../../services/email';
+import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
 
@@ -107,6 +107,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   qrImage   = '';
   qrStatus  = '';
 
+  // AI analysis
+  aiAnalysis: AiAnalysis | null = null;
+  aiLoading = false;
+  aiError = '';
+
   // Email reader
   selectedEmail: EmailDetail | null = null;
   emailDetailLoading = false;
@@ -135,7 +140,7 @@ export class UserDashboard implements OnInit, OnDestroy {
 
   quickActions = [
     { icon: 'refresh',       label: 'Actualiser',      color: '#1a237e', action: 'refresh' },
-    { icon: 'notifications', label: 'Test Notif',       color: '#f57c00', action: 'test'    },
+    { icon: 'psychology',    label: 'Analyse IA',       color: '#059669', action: 'ai'      },
     { icon: 'settings',      label: 'Parametres',       color: '#6a1b9a', action: 'settings'},
   ];
 
@@ -206,6 +211,8 @@ export class UserDashboard implements OnInit, OnDestroy {
       next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
       error: ()  => { this.loadingEmails = false; }
     });
+
+    this.loadAiAnalysis();
 
     this.editName = this.user.name || '';
 
@@ -441,7 +448,7 @@ export class UserDashboard implements OnInit, OnDestroy {
       {
         name:   'WhatsApp',
         icon:   'chat',
-        active: !!this.settings.green_api_instance,
+        active: !!this.settings.phone,
         color:  '#25d366',
         handle: this.settings.phone ? `+${this.settings.phone}` : 'Non configure'
       },
@@ -484,6 +491,24 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.emailDetailBody = '';
   }
 
+  loadAiAnalysis() {
+    if (!this.user.email) return;
+    this.aiLoading = true;
+    this.aiError = '';
+    this.emailService.analyzeInbox(this.user.email).subscribe({
+      next: (result) => {
+        this.aiAnalysis = result;
+        this.aiLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.aiError = err.error?.error || 'Analyse IA indisponible';
+        this.aiLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   runAction(action: string) {
     if (action === 'settings') {
       this.activeView = 'settings';
@@ -493,6 +518,8 @@ export class UserDashboard implements OnInit, OnDestroy {
         next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
         error: ()  => { this.loadingEmails = false; }
       });
+    } else if (action === 'ai') {
+      this.loadAiAnalysis();
     }
   }
 
@@ -517,31 +544,22 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   getWhatsappQr() {
-    if (!this.settings.green_api_instance || !this.settings.green_api_token) {
-      this.qrStatus = "Renseigne d'abord le Green API Instance ID et le Token, puis sauvegarde.";
-      return;
-    }
     this.qrLoading = true;
     this.qrImage   = '';
     this.qrStatus  = '';
-    this.emailService.updateUserSettings({ ...this.settings, email: this.user.email }).subscribe({
-      next: () => {
-        this.emailService.getWhatsappQr(this.user.email).subscribe({
-          next: (res) => {
-            this.qrLoading = false;
-            if      (res.type === 'qrCode')       this.qrImage  = res.message;
-            else if (res.type === 'alreadyLogged') this.qrStatus = 'WhatsApp est deja connecte !';
-            else                                   this.qrStatus = res.message || 'Statut inconnu';
-            this.cdr.detectChanges();
-          },
-          error: (err) => {
-            this.qrLoading = false;
-            this.qrStatus  = err.error?.error || 'Erreur lors de la recuperation du QR code';
-            this.cdr.detectChanges();
-          }
-        });
+    this.emailService.getWhatsappQr(this.user.email).subscribe({
+      next: (res) => {
+        this.qrLoading = false;
+        if      (res.type === 'qrCode')        this.qrImage  = res.message;
+        else if (res.type === 'alreadyLogged') this.qrStatus = 'WhatsApp est deja connecte !';
+        else                                   this.qrStatus = res.message || 'Statut inconnu';
+        this.cdr.detectChanges();
       },
-      error: () => { this.qrLoading = false; this.qrStatus = 'Erreur sauvegarde des parametres'; this.cdr.detectChanges(); }
+      error: (err) => {
+        this.qrLoading = false;
+        this.qrStatus  = err.error?.error || 'Erreur WhatsApp indisponible';
+        this.cdr.detectChanges();
+      }
     });
   }
 
