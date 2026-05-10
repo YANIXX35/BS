@@ -23,11 +23,18 @@ type Step = 'form' | 'otp' | 'success';
 })
 export class Landing implements OnInit, AfterViewInit {
   scrolled = false;
+  mobileMenuOpen = false;
   statValues = { delay: 0, channels: 0, free: 0 };
   private statsAnimated = false;
 
   @HostListener('window:scroll')
-  onScroll() { this.scrolled = window.scrollY > 20; }
+  onScroll() {
+    this.scrolled = window.scrollY > 20;
+    if (this.mobileMenuOpen) this.mobileMenuOpen = false;
+  }
+
+  toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
+  closeMobileMenu() { this.mobileMenuOpen = false; }
 
   // ── Login ──────────────────────────────────────────────────────────────────
   loginEmail = '';

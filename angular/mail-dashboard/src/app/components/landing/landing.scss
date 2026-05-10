@@ -161,6 +161,95 @@ $bg:      #f0f4ff;
   }
 }
 
+// ── HAMBURGER + MOBILE MENU ────────────────────────────────────────────────────
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+
+  &:hover { background: rgba(79,70,229,0.07); }
+
+  span {
+    display: block;
+    width: 22px; height: 2px;
+    background: $text;
+    border-radius: 2px;
+    transition: transform 0.25s, opacity 0.2s, width 0.2s;
+  }
+
+  &.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  &.open span:nth-child(2) { opacity: 0; width: 0; }
+  &.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+}
+
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.30);
+  z-index: 98;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  &.open { opacity: 1; pointer-events: all; }
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 64px;
+  left: 0; right: 0;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid $border;
+  z-index: 99;
+  padding: 12px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transform: translateY(-12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.22s;
+  box-shadow: 0 12px 40px rgba(15,23,42,0.12);
+
+  &.open { transform: translateY(0); opacity: 1; pointer-events: all; }
+
+  a {
+    padding: 12px 16px;
+    text-decoration: none;
+    color: $text;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 12px;
+    transition: background 0.15s, color 0.15s;
+    display: flex; align-items: center; gap: 12px;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: $blue; opacity: 0.7; }
+    &:hover { background: rgba(79,70,229,0.07); color: $blue; mat-icon { opacity: 1; } }
+  }
+
+  .mobile-cta {
+    margin-top: 10px;
+    background: linear-gradient(135deg, $blue, $blue-l) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    height: 48px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(79,70,229,0.28);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: white !important; }
+  }
+}
+
 // ── HERO ───────────────────────────────────────────────────────────────────────
 .hero {
   min-height: 100vh;
@@ -1502,12 +1591,16 @@ $bg:      #f0f4ff;
 }
 
 // ── RESPONSIVE ─────────────────────────────────────────────────────────────────
+
+// ── Tablet large ──
 @media (max-width: 1100px) {
-  .features .features-grid { grid-template-columns: repeat(2, 1fr); }
   .hero { padding: 100px 48px 72px; }
-  .features, .how-it-works, .pricing, .login-section { padding-left: 48px; padding-right: 48px; }
+  .features .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .features, .how-it-works, .pricing { padding-left: 48px; padding-right: 48px; }
+  .login-section { padding-left: 48px; padding-right: 48px; }
 }
 
+// ── Tablet ──
 @media (max-width: 900px) {
   .login-section .login-wrapper { flex-direction: column; gap: 32px; }
   .login-section .login-left { text-align: center; }
@@ -1515,36 +1608,45 @@ $bg:      #f0f4ff;
   .login-section .login-card { max-width: 100%; width: 100%; }
 }
 
+// ── Mobile landscape / small tablet ──
 @media (max-width: 768px) {
+  // Navbar
   .navbar {
     padding: 0 20px;
     .nav-links { display: none; }
+    .nav-cta { display: none; }
     .nav-brand { flex: 1; }
+    .hamburger { display: flex; }
   }
 
+  // Hero
   .hero {
     flex-direction: column;
     padding: 80px 24px 48px;
     text-align: center;
     min-height: unset;
+    gap: 32px;
 
     .hero-content {
       max-width: 100%;
-      h1 { font-size: 36px; letter-spacing: -0.8px; }
+      h1 { font-size: 38px; letter-spacing: -1px; }
       p { font-size: 15.5px; }
       .hero-actions { justify-content: center; }
+      .hero-social-proof { justify-content: center; }
       .hero-stats { margin: 0 auto; }
     }
 
     .hero-visual .phone-mockup { width: 260px; }
   }
 
+  // Features
   .features {
     padding: 64px 24px;
     .features-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
     .section-header h2 { font-size: 30px; }
   }
 
+  // How it works
   .how-it-works {
     padding: 64px 24px;
     .section-header h2 { font-size: 30px; }
@@ -1552,7 +1654,7 @@ $bg:      #f0f4ff;
     .steps {
       flex-direction: column;
       align-items: stretch;
-      gap: 16px;
+      gap: 14px;
 
       .step {
         flex-direction: row;
@@ -1564,36 +1666,49 @@ $bg:      #f0f4ff;
         padding: 20px 24px;
         box-shadow: 0 4px 20px rgba(15,23,42,0.06);
         border: 1px solid $border;
-
-        .step-bubble { margin-bottom: 0; flex-shrink: 0; width: 56px; height: 56px; font-size: 18px; }
+        .step-bubble { margin-bottom: 0; flex-shrink: 0; width: 56px; height: 56px; }
       }
     }
   }
 
-  .login-section { padding: 64px 24px; }
-  .footer { padding: 40px 24px; }
-
+  // Pricing
   .pricing {
     padding: 64px 24px;
     .pricing-grid {
       grid-template-columns: 1fr;
       max-width: 420px;
+      margin-left: auto; margin-right: auto;
       .pricing-card.featured { transform: scale(1); }
-    .pricing-card.anim-card.featured { transform: translateY(36px); }
-    .pricing-card.anim-card.featured.visible { transform: translateY(0); }
+      .pricing-card.anim-card.featured { transform: translateY(36px); }
+      .pricing-card.anim-card.featured.visible { transform: translateY(0); }
     }
   }
+
+  // Login
+  .login-section { padding: 64px 24px; }
+  .footer { padding: 40px 24px; }
 }
 
+// ── Mobile portrait ──
 @media (max-width: 540px) {
+  // Hero
   .hero {
     padding: 72px 16px 40px;
+    gap: 24px;
 
     .hero-content {
-      h1 { font-size: 28px; }
-      p { font-size: 14.5px; margin-bottom: 24px; }
-
+      h1 { font-size: 28px; letter-spacing: -0.5px; }
+      p { font-size: 14.5px; margin-bottom: 20px; }
+      .hero-badge { font-size: 12px; }
       .hero-badge .badge-dot { width: 7px; height: 7px; }
+
+      .hero-social-proof {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        p { font-size: 12px; }
+      }
 
       .hero-actions {
         flex-direction: column;
@@ -1603,26 +1718,58 @@ $bg:      #f0f4ff;
 
       .hero-stats {
         width: 100%;
-        padding: 14px 16px;
-        gap: 12px;
+        padding: 12px 16px;
+        gap: 8px;
         justify-content: space-around;
         .stat-div { display: none; }
-        .stat strong { font-size: 22px; }
+        .stat strong { font-size: 20px; }
+        .stat span { font-size: 10px; }
       }
     }
 
     .hero-visual { display: none; }
   }
 
+  // Features
   .features {
     padding: 48px 16px;
     .features-grid { grid-template-columns: 1fr; gap: 12px; }
-    .section-header h2 { font-size: 24px; }
+    .section-header { margin-bottom: 32px; h2 { font-size: 24px; } }
   }
 
-  .how-it-works { padding: 48px 16px; }
-  .login-section { padding: 48px 16px; }
+  // How it works
+  .how-it-works {
+    padding: 48px 16px;
+    .section-header { margin-bottom: 32px; h2 { font-size: 24px; } }
+    .steps .step {
+      padding: 16px 18px;
+      gap: 16px;
+      .step-bubble { width: 50px; height: 50px; span { font-size: 15px; } }
+    }
+  }
 
+  // Pricing
+  .pricing {
+    padding: 48px 16px;
+    .section-header h2 { font-size: 24px; }
+    .pricing-grid { max-width: 100%; }
+    .pricing-card { padding: 24px 20px; }
+  }
+
+  // Modals
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .pay-modal, .forgot-modal {
+    padding: 24px 20px 32px;
+    border-radius: 24px 24px 0 0;
+    max-width: 100%;
+  }
+
+  // Login
+  .login-section { padding: 48px 16px 64px; }
   .login-section .login-left { display: none; }
   .login-section .login-card { border-radius: 20px; }
+
+  // Footer
+  .footer { padding: 40px 16px; }
+  .section-header p { font-size: 14px; }
 }
