@@ -1925,13 +1925,9 @@ def _check_all_users():
             print(f"[Monitor] Erreur user {user['email']}: {e}")
 
 
-@app.route('/api/chat', methods=['POST', 'OPTIONS'])
-@limiter.limit("40 per hour")
+@app.route('/api/chat', methods=['POST'])
 def chat_bot():
     """Chatbot IA MailNotifier pour la landing page."""
-    if request.method == 'OPTIONS':
-        return '', 200
-
     data    = request.get_json() or {}
     message = _str(data.get('message', ''), 500).strip()
     history = data.get('history', [])
