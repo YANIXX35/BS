@@ -1925,6 +1925,77 @@ def _check_all_users():
             print(f"[Monitor] Erreur user {user['email']}: {e}")
 
 
+@app.route('/api/chat', methods=['POST', 'OPTIONS'])
+@limiter.limit("40 per hour")
+def chat_bot():
+    """Chatbot IA MailNotifier pour la landing page."""
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    data    = request.get_json() or {}
+    message = _str(data.get('message', ''), 500).strip()
+    history = data.get('history', [])
+
+    if not message:
+        return jsonify({'error': 'message requis'}), 400
+
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'response': (
+            "Bonjour ! Je suis l'assistant MailNotifier. 😊 "
+            "MailNotifier surveille ta boîte Gmail et t'envoie des alertes instantanées sur Telegram et WhatsApp. "
+            "C'est gratuit pour commencer ! Crée ton compte en haut de la page."
+        )}), 200
+
+    system_prompt = """Tu es l'assistant virtuel officiel de MailNotifier, une application web de surveillance d'emails avec notifications temps réel.
+
+PRODUIT MAILNOTIFIER:
+- Surveillance Gmail via OAuth2 Google — chaque nouveau mail détecté en moins de 30 secondes
+- Notifications instantanées sur Telegram (gratuit) et WhatsApp (premium)
+- IA Claude intégrée: classe chaque email en important / newsletter / normal avec raison
+- Dashboard web: voir les derniers mails, stats, canaux, analyse IA de la boîte
+
+TARIFS:
+- Gratuit: Surveillance Gmail + Telegram. Pas de WhatsApp ni filtres avancés. Pour toujours.
+- Premium (5 000 XOF/mois): + WhatsApp + filtres avancés
+- Enterprise (15 000 XOF/mois): + Support prioritaire
+
+SETUP EN 3 ÉTAPES:
+1. Inscription (nom, email, mot de passe → code OTP par email)
+2. Connexion Gmail via Google OAuth (1 clic, lecture seule, aucun mot de passe stocké)
+3. Entrer son Chat ID Telegram (via @Kylimail_bot) ou numéro WhatsApp
+
+RÈGLES:
+- Réponds TOUJOURS en français, concis et chaleureux (2-4 phrases max sauf besoin de détail)
+- Utilise 1-2 emojis max par réponse
+- Encourage l'inscription, guide techniquement si besoin
+- Si hors sujet, ramène poliment vers MailNotifier"""
+
+    messages = []
+    for h in (history or [])[-6:]:
+        role    = h.get('role', '')
+        content = _str(h.get('text', ''), 400)
+        if role == 'user' and content:
+            messages.append({'role': 'user',      'content': content})
+        elif role == 'bot' and content:
+            messages.append({'role': 'assistant', 'content': content})
+    messages.append({'role': 'user', 'content': message})
+
+    try:
+        import anthropic as _anthropic
+        client = _anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        msg = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=250,
+            system=system_prompt,
+            messages=messages,
+        )
+        return jsonify({'response': msg.content[0].text})
+    except Exception as e:
+        print(f"[Chat] Erreur: {e}")
+        return jsonify({'response': "Désolé, je rencontre une erreur momentanée. Réessaie dans un instant ! 😅"}), 200
+
+
 @app.route('/api/whatsapp/test')
 def whatsapp_test():
     """Endpoint de diagnostic WhatsApp — teste le flux complet pour un user."""

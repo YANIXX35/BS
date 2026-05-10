@@ -607,6 +607,89 @@
   </div>
 }
 
+<!-- ══════════════════════ CHATBOT ══════════════════════ -->
+<div class="chat-widget">
+
+  <!-- Panneau de chat -->
+  @if (chatOpen) {
+    <div class="chat-panel">
+
+      <!-- En-tête -->
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="chat-avatar-wrap">
+            <mat-icon>smart_toy</mat-icon>
+            <span class="chat-online-dot"></span>
+          </div>
+          <div>
+            <p class="chat-name">Assistant MailNotifier</p>
+            <p class="chat-status">Propulsé par Claude AI · En ligne</p>
+          </div>
+        </div>
+        <button class="chat-close-btn" (click)="chatOpen = false">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages">
+        @for (msg of chatMessages; track $index) {
+          <div class="chat-msg" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'bot'">
+            @if (msg.role === 'bot') {
+              <div class="chat-bot-avatar"><mat-icon>smart_toy</mat-icon></div>
+            }
+            <div class="chat-bubble">
+              @if (msg.typing && !msg.text) {
+                <div class="chat-typing"><span></span><span></span><span></span></div>
+              } @else {
+                {{ msg.text }}
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Suggestions rapides (uniquement au début) -->
+      @if (chatMessages.length <= 1) {
+        <div class="chat-suggestions">
+          @for (s of chatSuggestions; track s) {
+            <button class="chat-chip" (click)="sendChat(s)">{{ s }}</button>
+          }
+        </div>
+      }
+
+      <!-- Zone de saisie -->
+      <div class="chat-input-row">
+        <input
+          class="chat-input"
+          type="text"
+          placeholder="Écris ton message..."
+          [(ngModel)]="chatInput"
+          (keyup.enter)="sendChat()"
+          [disabled]="chatLoading"
+          maxlength="300"
+        />
+        <button class="chat-send-btn" (click)="sendChat()" [disabled]="chatLoading || !chatInput.trim()">
+          <mat-icon>{{ chatLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
+        </button>
+      </div>
+
+    </div>
+  }
+
+  <!-- Bouton flottant -->
+  <button class="chat-fab" (click)="toggleChat()" [class.open]="chatOpen">
+    @if (chatOpen) {
+      <mat-icon>close</mat-icon>
+    } @else {
+      <mat-icon>chat</mat-icon>
+      <span class="chat-fab-label">Aide</span>
+      <span class="chat-fab-dot"></span>
+    }
+  </button>
+
+</div>
+
 <!-- FOOTER -->
 <footer class="footer">
   <div class="footer-inner">

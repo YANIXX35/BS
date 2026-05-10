@@ -151,4 +151,8 @@ export class EmailService {
       params: { email: userEmail }
     });
   }
+
+  chat(message: string, history: Array<{role: string; text: string}>): Observable<{response: string}> {
+    return this.http.post<{response: string}>(`${this.apiUrl}/chat`, { message, history });
+  }
 }

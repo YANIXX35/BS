@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
 import { PaymentService } from '../../services/payment';
+import { EmailService } from '../../services/email';
 
 type Step = 'form' | 'otp' | 'success';
 
@@ -69,6 +70,19 @@ export class Landing implements OnInit, AfterViewInit {
   paymentError = '';
   paymentSuccess = false;
   paymentSuccessPlan = '';
+
+  // ── Chatbot ────────────────────────────────────────────────────────────────
+  chatOpen     = false;
+  chatLoading  = false;
+  chatInput    = '';
+  chatMessages: Array<{ role: 'user' | 'bot'; text: string; typing?: boolean }> = [];
+  chatSuggestions = [
+    "C'est quoi MailNotifier ?",
+    "Quels sont les tarifs ?",
+    "Comment connecter Gmail ?",
+    "Telegram ou WhatsApp ?",
+  ];
+  private _twInterval: any = null;
 
   // ── Forgot Password ────────────────────────────────────────────────────────
   showForgotModal = false;
@@ -143,6 +157,7 @@ export class Landing implements OnInit, AfterViewInit {
   constructor(
     private authService: AuthService,
     private paymentService: PaymentService,
+    private emailService: EmailService,
     private cdr: ChangeDetectorRef,
     private router: Router,
     private route: ActivatedRoute
@@ -423,6 +438,62 @@ export class Landing implements OnInit, AfterViewInit {
       if (progress < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+  }
+
+  // ── Chatbot methods ────────────────────────────────────────────────────────
+
+  toggleChat() {
+    this.chatOpen = !this.chatOpen;
+    if (this.chatOpen && this.chatMessages.length === 0) {
+      const welcome = { role: 'bot' as const, text: '' };
+      this.chatMessages.push(welcome);
+      this._typewrite(welcome, "Bonjour ! 👋 Je suis l'assistant MailNotifier. Pose-moi toutes tes questions !");
+    }
+    if (this.chatOpen) setTimeout(() => this._scrollChat(), 100);
+  }
+
+  sendChat(text?: string) {
+    const message = (text ?? this.chatInput).trim();
+    if (!message || this.chatLoading) return;
+    this.chatInput = '';
+    this.chatMessages.push({ role: 'user', text: message });
+    this.chatLoading = true;
+    const typing = { role: 'bot' as const, text: '', typing: true };
+    this.chatMessages.push(typing);
+    this.cdr.detectChanges();
+    this._scrollChat();
+
+    const history = this.chatMessages.slice(0, -2).map(m => ({ role: m.role, text: m.text }));
+    this.emailService.chat(message, history).subscribe({
+      next: (res) => {
+        this.chatLoading  = false;
+        typing.typing     = false;
+        this._typewrite(typing, res.response);
+      },
+      error: () => {
+        this.chatLoading  = false;
+        typing.typing     = false;
+        typing.text       = "Désolé, une erreur est survenue. Réessaie ! 😅";
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private _typewrite(msg: { text: string }, fullText: string) {
+    clearInterval(this._twInterval);
+    let i = 0;
+    msg.text = '';
+    this._twInterval = setInterval(() => {
+      msg.text += fullText[i++];
+      this.cdr.detectChanges();
+      if (i % 5 === 0) this._scrollChat();
+      if (i >= fullText.length) clearInterval(this._twInterval);
+    }, 14);
+  }
+
+  private _scrollChat() {
+    const el = document.querySelector('.chat-messages');
+    if (el) el.scrollTop = el.scrollHeight;
   }
 
   scrollTo(id: string) {
