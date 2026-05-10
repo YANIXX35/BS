@@ -1206,10 +1206,14 @@ $bg:      #f0f4ff;
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 .login-section {
-  padding: 100px 80px;
-  background: linear-gradient(150deg, #312e81 0%, #4f46e5 55%, #0ea5e9 100%);
+  padding: 80px 24px 100px;
+  background: #06060f;
   position: relative;
   overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   .login-bg {
     position: absolute;
@@ -1220,120 +1224,107 @@ $bg:      #f0f4ff;
     .login-orb {
       position: absolute;
       border-radius: 50%;
-      filter: blur(70px);
-      opacity: 0.3;
+      filter: blur(90px);
     }
 
     .orb-a {
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, #7c3aed, transparent 70%);
-      top: -100px; right: 10%;
-      animation: orbFloat 10s ease-in-out infinite;
+      width: 650px; height: 650px;
+      background: radial-gradient(circle, rgba(99,102,241,0.32), transparent 65%);
+      top: -200px; right: -100px;
+      animation: orbFloat 13s ease-in-out infinite;
     }
 
     .orb-b {
-      width: 350px; height: 350px;
-      background: radial-gradient(circle, #f97316, transparent 70%);
-      bottom: -80px; left: 5%;
-      animation: orbFloat 14s ease-in-out infinite reverse;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(20,184,166,0.22), transparent 65%);
+      bottom: -150px; left: -80px;
+      animation: orbFloat 16s ease-in-out infinite reverse;
+    }
+
+    .orb-c {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(168,85,247,0.20), transparent 65%);
+      top: 45%; left: 15%;
+      animation: orbFloat 11s ease-in-out infinite;
+      animation-delay: -5s;
+    }
+
+    .orb-d {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(14,165,233,0.18), transparent 65%);
+      bottom: 10%; right: 10%;
+      animation: orbFloat 9s ease-in-out infinite reverse;
+      animation-delay: -3s;
     }
   }
 
-  .login-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 64px;
-    max-width: 1000px;
-    margin: 0 auto;
+  .login-center {
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 460px;
+    animation: fadeInUp 0.7s ease-out both;
   }
 
-  .login-left {
-    flex: 1;
-    color: white;
+  .login-brand {
+    text-align: center;
+    margin-bottom: 28px;
 
-    .login-left-badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: rgba(255,255,255,0.9);
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      padding: 5px 16px;
+    .login-brand-icon {
+      width: 64px; height: 64px;
       border-radius: 20px;
-      margin-bottom: 18px;
+      background: linear-gradient(135deg, $blue, $sky);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      box-shadow: 0 12px 40px rgba(79,70,229,0.55);
+      animation: scaleIn 0.5s ease-out both;
+
+      mat-icon { color: white; font-size: 32px; width: 32px; height: 32px; }
     }
 
     h2 {
-      font-size: 38px;
+      font-size: 30px;
       font-weight: 900;
-      margin: 0 0 16px;
-      letter-spacing: -0.8px;
+      color: white;
+      margin: 0 0 8px;
+      letter-spacing: -0.6px;
     }
 
     p {
-      font-size: 16px;
-      opacity: 0.8;
-      line-height: 1.75;
-      margin-bottom: 32px;
-    }
-
-    .login-perks {
-      list-style: none;
-      padding: 0;
+      font-size: 14px;
+      color: rgba(255,255,255,0.40);
       margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-
-      li {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 15px;
-        font-weight: 500;
-        opacity: 0.9;
-
-        mat-icon {
-          color: #4ade80;
-          font-size: 20px;
-          width: 20px; height: 20px;
-          flex-shrink: 0;
-        }
-      }
     }
   }
 
   .login-card {
-    flex: 1;
-    max-width: 420px;
-    border-radius: 24px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.25);
-    background: white;
+    width: 100%;
+    max-width: 460px;
+    background: rgba(255,255,255,0.055) !important;
+    backdrop-filter: blur(32px) !important;
+    -webkit-backdrop-filter: blur(32px) !important;
+    border: 1px solid rgba(255,255,255,0.10) !important;
+    border-radius: 28px !important;
+    box-shadow:
+      0 40px 100px rgba(0,0,0,0.55),
+      inset 0 1px 0 rgba(255,255,255,0.08) !important;
+
+    ::ng-deep .mat-mdc-card-content { padding: 32px !important; }
 
     .login-header {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
 
       .login-logo-wrap {
-        width: 60px; height: 60px;
-        border-radius: 18px;
-        background: linear-gradient(135deg, #ede9fe, #dbeafe);
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 14px;
-
-        .login-logo {
-          font-size: 30px;
-          width: 30px; height: 30px;
-          color: $blue;
-        }
+        background: rgba(255,255,255,0.09);
+        .login-logo { color: rgba(255,255,255,0.88); }
       }
 
-      h3 { font-size: 22px; font-weight: 800; color: $text; margin: 0 0 4px; }
-      p { color: $muted; margin: 0; font-size: 14px; }
+      h3 { color: white; font-size: 20px; font-weight: 800; margin: 0 0 4px; }
+      p { color: rgba(255,255,255,0.38); font-size: 13.5px; margin: 0; }
     }
 
     .auth-tabs {
@@ -1341,28 +1332,21 @@ $bg:      #f0f4ff;
     }
 
     .alert {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border-radius: 10px;
-      margin-bottom: 14px;
-      font-size: 13.5px;
-      font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px; border-radius: 10px;
+      margin-bottom: 14px; font-size: 13.5px; font-weight: 500;
       mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
-      &.error   { background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; }
-      &.success { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }
+      &.error   { background: rgba(239,68,68,0.14);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+      &.success { background: rgba(34,197,94,0.14);  color: #86efac; border: 1px solid rgba(34,197,94,0.25); }
     }
 
     .auth-form {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
+      display: flex; flex-direction: column; gap: 4px;
       .full-width { width: 100%; }
     }
 
     .btn-submit {
-      background: linear-gradient(135deg, $blue, $blue-l);
+      background: linear-gradient(135deg, $blue, $sky) !important;
       color: white;
       padding: 14px;
       border-radius: 12px;
@@ -1370,64 +1354,104 @@ $bg:      #f0f4ff;
       font-weight: 700;
       width: 100%;
       margin-top: 8px;
-      box-shadow: 0 4px 16px rgba(26,35,126,0.25);
+      box-shadow: 0 4px 20px rgba(79,70,229,0.40);
       transition: box-shadow 0.2s, transform 0.15s;
 
       &:hover {
-        box-shadow: 0 8px 24px rgba(26,35,126,0.35);
+        box-shadow: 0 8px 28px rgba(79,70,229,0.55);
         transform: translateY(-1px);
       }
 
       ::ng-deep .mdc-button__label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
       }
 
       mat-icon { font-size: 18px; width: 18px; height: 18px; }
     }
 
+    .forgot-password .forgot-link {
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.45);
+      border-radius: 10px;
+      &:hover { background: rgba(255,255,255,0.10); color: white; }
+    }
+
     .otp-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 8px 0;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 8px 0;
 
       .otp-icon {
-        width: 76px; height: 76px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #ede9fe, #dbeafe);
+        width: 76px; height: 76px; border-radius: 50%;
+        background: rgba(79,70,229,0.18);
         display: flex; align-items: center; justify-content: center;
         margin-bottom: 16px;
-        mat-icon { font-size: 36px; width: 36px; height: 36px; color: $blue; }
+        mat-icon { font-size: 36px; width: 36px; height: 36px; color: $blue-l; }
       }
 
-      h3 { font-size: 22px; font-weight: 800; color: $text; margin: 0 0 8px; }
-      p  { color: $muted; font-size: 14px; line-height: 1.6; margin: 0 0 20px; }
+      h3 { font-size: 20px; font-weight: 800; color: white; margin: 0 0 8px; }
+      p  { color: rgba(255,255,255,0.45); font-size: 14px; line-height: 1.6; margin: 0 0 20px; }
       .otp-field { width: 100%; }
-      .resend-btn { color: $blue; margin-top: 8px; font-size: 13px; }
+      .resend-btn { color: rgba(255,255,255,0.45); margin-top: 8px; font-size: 13px; }
     }
 
     .success-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 16px 0;
+      display: flex; flex-direction: column; align-items: center;
+      text-align: center; padding: 16px 0;
 
       .success-icon {
-        width: 84px; height: 84px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        width: 84px; height: 84px; border-radius: 50%;
+        background: rgba(34,197,94,0.14);
         display: flex; align-items: center; justify-content: center;
         margin-bottom: 16px;
-        mat-icon { font-size: 42px; width: 42px; height: 42px; color: #16a34a; }
+        mat-icon { font-size: 42px; width: 42px; height: 42px; color: #4ade80; }
       }
 
-      h3 { font-size: 24px; font-weight: 800; color: $text; margin: 0 0 8px; }
-      p  { color: $muted; font-size: 14px; margin: 0 0 20px; }
+      h3 { font-size: 22px; font-weight: 800; color: white; margin: 0 0 8px; }
+      p  { color: rgba(255,255,255,0.45); font-size: 14px; margin: 0 0 20px; }
+    }
+
+    // ── Angular Material dark overrides ────────────────────────────────────────
+    ::ng-deep {
+      // Tabs header pill style
+      .mat-mdc-tab-header {
+        background: rgba(255,255,255,0.07);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 4px;
+      }
+      .mdc-tab__text-label { color: rgba(255,255,255,0.42) !important; }
+      .mdc-tab--active .mdc-tab__text-label { color: white !important; }
+      .mdc-tab-indicator__content--underline { border-color: $blue !important; }
+
+      // Input fields — dark
+      .mat-mdc-text-field-wrapper {
+        background: rgba(255,255,255,0.07) !important;
+        border-radius: 12px !important;
+      }
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: rgba(255,255,255,0.11) !important;
+      }
+      .mdc-text-field--focused .mdc-notched-outline__leading,
+      .mdc-text-field--focused .mdc-notched-outline__notch,
+      .mdc-text-field--focused .mdc-notched-outline__trailing {
+        border-color: $blue !important;
+        border-width: 2px !important;
+      }
+      .mat-mdc-input-element {
+        color: white !important;
+        caret-color: $blue-l !important;
+      }
+      .mat-mdc-floating-label, .mdc-floating-label {
+        color: rgba(255,255,255,0.42) !important;
+      }
+      .mat-mdc-form-field-icon-suffix mat-icon {
+        color: rgba(255,255,255,0.30) !important;
+      }
+      .mat-mdc-form-field-hint-wrapper, .mat-hint {
+        color: rgba(255,255,255,0.28) !important;
+      }
     }
   }
 }
@@ -1505,13 +1529,10 @@ $bg:      #f0f4ff;
 @media (max-width: 1100px) {
   .features .features-grid { grid-template-columns: repeat(2, 1fr); }
   .hero { padding: 100px 48px 72px; }
-  .features, .how-it-works, .pricing, .login-section { padding-left: 48px; padding-right: 48px; }
+  .features, .how-it-works, .pricing { padding-left: 48px; padding-right: 48px; }
 }
 
 @media (max-width: 900px) {
-  .login-section .login-wrapper { flex-direction: column; gap: 32px; }
-  .login-section .login-left { text-align: center; }
-  .login-section .login-left .login-perks { align-items: center; }
   .login-section .login-card { max-width: 100%; width: 100%; }
 }
 
@@ -1621,8 +1642,6 @@ $bg:      #f0f4ff;
   }
 
   .how-it-works { padding: 48px 16px; }
-  .login-section { padding: 48px 16px; }
-
-  .login-section .login-left { display: none; }
-  .login-section .login-card { border-radius: 20px; }
+  .login-section { padding: 60px 16px 80px; }
+  .login-section .login-card { border-radius: 24px !important; }
 }
