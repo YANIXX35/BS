@@ -1927,7 +1927,7 @@ def _check_all_users():
 
 @app.route('/api/chat', methods=['POST'])
 def chat_bot():
-    """Chatbot IA MailNotifier pour la landing page."""
+    """Chatbot IA MailNotifier — utilise Gemini REST API via requests."""
     data    = request.get_json() or {}
     message = _str(data.get('message', ''), 500).strip()
     history = data.get('history', [])
@@ -1939,58 +1939,54 @@ def chat_bot():
     if not GEMINI_API_KEY:
         return jsonify({'response': (
             "Bonjour ! Je suis l'assistant MailNotifier. 😊 "
-            "MailNotifier surveille ta boîte Gmail et t'envoie des alertes instantanées sur Telegram et WhatsApp. "
-            "C'est gratuit pour commencer ! Crée ton compte en haut de la page."
+            "MailNotifier surveille ta boîte Gmail et t'envoie des alertes sur Telegram et WhatsApp. "
+            "Crée ton compte gratuitement en haut de la page !"
         )}), 200
 
-    system_prompt = """Tu es l'assistant virtuel officiel de MailNotifier, une application web de surveillance d'emails avec notifications temps réel.
+    system_prompt = (
+        "Tu es l'assistant virtuel officiel de MailNotifier, une app web de surveillance Gmail avec notifications temps réel.\n\n"
+        "PRODUIT:\n"
+        "- Surveillance Gmail OAuth2 — nouveau mail détecté en < 30 secondes\n"
+        "- Notifications Telegram (gratuit) et WhatsApp (premium)\n"
+        "- IA intégrée: classe chaque email important/newsletter/normal\n"
+        "- Dashboard: derniers mails, stats, canaux, analyse IA\n\n"
+        "TARIFS:\n"
+        "- Gratuit: Gmail + Telegram. Pour toujours.\n"
+        "- Premium (5 000 XOF/mois): + WhatsApp + filtres avancés\n"
+        "- Enterprise (15 000 XOF/mois): + Support prioritaire\n\n"
+        "SETUP 3 ÉTAPES: 1) Inscription email+OTP  2) Connexion Gmail OAuth  3) Chat ID Telegram ou numéro WhatsApp\n\n"
+        "RÈGLES: Réponds en français, concis et chaleureux (2-4 phrases max). "
+        "1-2 emojis max. Encourage l'inscription. Si hors sujet, ramène vers MailNotifier."
+    )
 
-PRODUIT MAILNOTIFIER:
-- Surveillance Gmail via OAuth2 Google — chaque nouveau mail détecté en moins de 30 secondes
-- Notifications instantanées sur Telegram (gratuit) et WhatsApp (premium)
-- IA intégrée: classe chaque email en important / newsletter / normal avec raison
-- Dashboard web: voir les derniers mails, stats, canaux, analyse IA de la boîte
-
-TARIFS:
-- Gratuit: Surveillance Gmail + Telegram. Pas de WhatsApp ni filtres avancés. Pour toujours.
-- Premium (5 000 XOF/mois): + WhatsApp + filtres avancés
-- Enterprise (15 000 XOF/mois): + Support prioritaire
-
-SETUP EN 3 ÉTAPES:
-1. Inscription (nom, email, mot de passe → code OTP par email)
-2. Connexion Gmail via Google OAuth (1 clic, lecture seule, aucun mot de passe stocké)
-3. Entrer son Chat ID Telegram (via @Kylimail_bot) ou numéro WhatsApp
-
-RÈGLES:
-- Réponds TOUJOURS en français, concis et chaleureux (2-4 phrases max sauf besoin de détail)
-- Utilise 1-2 emojis max par réponse
-- Encourage l'inscription, guide techniquement si besoin
-- Si hors sujet, ramène poliment vers MailNotifier"""
-
-    # Build Gemini history format
-    gemini_history = []
+    # Construction du contexte de conversation pour Gemini
+    contents = []
     for h in (history or [])[-6:]:
         role    = h.get('role', '')
         content = _str(h.get('text', ''), 400)
         if role == 'user' and content:
-            gemini_history.append({'role': 'user',  'parts': [content]})
+            contents.append({'role': 'user',  'parts': [{'text': content}]})
         elif role == 'bot' and content:
-            gemini_history.append({'role': 'model', 'parts': [content]})
+            contents.append({'role': 'model', 'parts': [{'text': content}]})
+    contents.append({'role': 'user', 'parts': [{'text': message}]})
 
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            system_instruction=system_prompt,
-            generation_config={'max_output_tokens': 250, 'temperature': 0.7},
+        url = (
+            'https://generativelanguage.googleapis.com/v1beta/models/'
+            f'gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}'
         )
-        chat_session = model.start_chat(history=gemini_history)
-        response = chat_session.send_message(message)
-        return jsonify({'response': response.text})
+        payload = {
+            'system_instruction': {'parts': [{'text': system_prompt}]},
+            'contents': contents,
+            'generationConfig': {'maxOutputTokens': 250, 'temperature': 0.7},
+        }
+        resp = requests.post(url, json=payload, timeout=20)
+        resp.raise_for_status()
+        text = resp.json()['candidates'][0]['content']['parts'][0]['text']
+        return jsonify({'response': text})
     except Exception as e:
         print(f"[Chat] Erreur Gemini: {e}")
-        return jsonify({'response': "Désolé, je rencontre une erreur momentanée. Réessaie dans un instant ! 😅"}), 200
+        return jsonify({'response': "Désolé, erreur momentanée. Réessaie dans un instant ! 😅"}), 200
 
 
 @app.route('/api/whatsapp/test')
