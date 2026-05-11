@@ -4,6 +4,9 @@
 $blue:    #4f46e5;
 $blue-l:  #6366f1;
 $sky:     #0ea5e9;
+$pink:    #ec4899;
+$purple:  #8b5cf6;
+$rose:    #f43f5e;
 $orange:  #f97316;
 $text:    #0f172a;
 $muted:   #64748b;
@@ -68,6 +71,24 @@ $bg:      #f0f4ff;
 @keyframes shimmerCta {
   0%   { background-position: 0% center; }
   100% { background-position: 250% center; }
+}
+
+@keyframes blobPulse {
+  0%, 100% { transform: scale(1) translate(0, 0); }
+  33%       { transform: scale(1.08) translate(20px, -15px); }
+  66%       { transform: scale(0.94) translate(-15px, 10px); }
+}
+
+@keyframes gradientBorder {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.8) translateY(10px); opacity: 0; }
+  70%  { transform: scale(1.04); }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 @keyframes scaleIn {
@@ -144,18 +165,20 @@ $bg:      #f0f4ff;
   }
 
   .nav-cta {
-    background: linear-gradient(135deg, $blue, $blue-l);
+    background: linear-gradient(110deg, $blue, $purple, $pink);
+    background-size: 200% auto;
     color: white;
     border-radius: 10px;
     font-size: 13.5px;
-    font-weight: 600;
-    padding: 0 20px;
+    font-weight: 700;
+    padding: 0 22px;
     height: 38px;
-    box-shadow: 0 4px 14px rgba(26,35,126,0.25);
-    transition: box-shadow 0.2s, transform 0.15s;
+    box-shadow: 0 4px 18px rgba(139,92,246,0.35);
+    transition: box-shadow 0.2s, transform 0.15s, background-position 0.4s;
 
     &:hover {
-      box-shadow: 0 6px 20px rgba(26,35,126,0.35);
+      background-position: right center;
+      box-shadow: 0 6px 24px rgba(236,72,153,0.4);
       transform: translateY(-1px);
     }
   }
@@ -268,35 +291,42 @@ $bg:      #f0f4ff;
     inset: 0;
     overflow: hidden;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(238,235,255,0.88) 0%, rgba(224,231,255,0.84) 50%, rgba(235,248,255,0.82) 100%);
+    background: linear-gradient(135deg, rgba(238,235,255,0.92) 0%, rgba(220,216,255,0.88) 30%, rgba(253,242,255,0.85) 60%, rgba(224,242,255,0.88) 100%);
 
     .orb {
       position: absolute;
       border-radius: 50%;
-      filter: blur(60px);
-      opacity: 0.35;
-      animation: orbFloat 12s ease-in-out infinite;
+      filter: blur(70px);
+      opacity: 0.55;
+      animation: blobPulse 14s ease-in-out infinite;
     }
 
     .orb-1 {
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, rgba(79,70,229,0.22), transparent 70%);
-      top: -100px; left: -100px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.38), rgba(139,92,246,0.20) 50%, transparent 70%);
+      top: -150px; left: -120px;
       animation-delay: 0s;
     }
 
     .orb-2 {
-      width: 400px; height: 400px;
-      background: radial-gradient(circle, rgba(14,165,233,0.18), transparent 70%);
-      top: 20%; right: -80px;
-      animation-delay: -4s;
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(236,72,153,0.30), rgba(139,92,246,0.15) 50%, transparent 70%);
+      top: 10%; right: -100px;
+      animation-delay: -5s;
     }
 
     .orb-3 {
-      width: 300px; height: 300px;
-      background: radial-gradient(circle, rgba(249,115,22,0.15), transparent 70%);
-      bottom: 10%; left: 30%;
-      animation-delay: -8s;
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(14,165,233,0.28), rgba(99,102,241,0.12) 50%, transparent 70%);
+      bottom: 5%; left: 25%;
+      animation-delay: -9s;
+    }
+
+    .orb-4 {
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(249,115,22,0.22), transparent 70%);
+      bottom: 20%; right: 20%;
+      animation-delay: -3s;
     }
 
     .particle {
@@ -384,23 +414,24 @@ $bg:      #f0f4ff;
       flex-wrap: wrap;
 
       .btn-primary {
-        background: linear-gradient(110deg, $blue 0%, $sky 40%, #7c3aed 55%, $sky 70%, $blue 100%);
+        background: linear-gradient(110deg, $blue 0%, $purple 30%, $pink 55%, $purple 75%, $blue 100%);
         background-size: 250% auto;
         color: white;
-        padding: 14px 28px;
-        border-radius: 12px;
+        padding: 14px 32px;
+        border-radius: 14px;
         font-size: 15px;
-        font-weight: 700;
-        box-shadow: 0 6px 20px rgba(26,35,126,0.3);
+        font-weight: 800;
+        box-shadow: 0 8px 28px rgba(139,92,246,0.45), 0 2px 8px rgba(236,72,153,0.25);
         transition: box-shadow 0.2s, transform 0.15s;
         display: flex; align-items: center; gap: 8px;
-        animation: shimmerCta 4s linear infinite;
+        animation: shimmerCta 3s linear infinite;
+        letter-spacing: 0.2px;
 
         mat-icon { font-size: 18px; width: 18px; height: 18px; }
 
         &:hover {
-          box-shadow: 0 10px 32px rgba(26,35,126,0.45);
-          transform: translateY(-2px);
+          box-shadow: 0 14px 40px rgba(139,92,246,0.55), 0 4px 12px rgba(236,72,153,0.35);
+          transform: translateY(-3px) scale(1.02);
         }
       }
 
@@ -663,14 +694,14 @@ $bg:      #f0f4ff;
 
   .section-badge {
     display: inline-block;
-    background: linear-gradient(135deg, rgba(79,70,229,0.10), rgba(14,165,233,0.10));
-    border: 1px solid rgba(79,70,229,0.16);
-    color: $blue;
+    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(236,72,153,0.10));
+    border: 1px solid rgba(139,92,246,0.22);
+    color: $purple;
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    padding: 5px 16px;
+    padding: 5px 18px;
     border-radius: 20px;
     margin-bottom: 16px;
   }
@@ -678,9 +709,12 @@ $bg:      #f0f4ff;
   h2 {
     font-size: 40px;
     font-weight: 900;
-    color: $text;
     margin: 0 0 12px;
     letter-spacing: -1px;
+    background: linear-gradient(135deg, $text 0%, $blue 40%, $purple 70%, $pink 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   p {
@@ -707,11 +741,11 @@ $bg:      #f0f4ff;
 
   .feature-card {
     background: $white;
-    border: 1px solid $border;
-    border-radius: 20px;
+    border: 1.5px solid rgba(139,92,246,0.12);
+    border-radius: 22px;
     padding: 28px 24px;
     cursor: default;
-    transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+    transition: transform 0.28s cubic-bezier(.4,0,.2,1), box-shadow 0.28s, border-color 0.28s;
     position: relative;
     overflow: hidden;
 
@@ -719,38 +753,37 @@ $bg:      #f0f4ff;
       content: '';
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, $blue, $sky);
-      border-radius: 20px 20px 0 0;
-      opacity: 0;
+      height: 4px;
+      border-radius: 22px 22px 0 0;
       transition: opacity 0.25s;
+      opacity: 0.7;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      opacity: 0;
+      transition: opacity 0.28s;
     }
 
     &:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 20px 48px rgba(15,23,42,0.1);
-      border-color: rgba(26,35,126,0.2);
-      &::before { opacity: 1; }
+      transform: translateY(-8px) scale(1.01);
+      box-shadow: 0 24px 60px rgba(99,102,241,0.14), 0 4px 16px rgba(139,92,246,0.1);
+      border-color: rgba(139,92,246,0.3);
+      &::after { opacity: 1; }
+      .feature-icon { transform: scale(1.12) rotate(-4deg); }
     }
 
     .feature-icon {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #ede9fe, #dbeafe);
+      width: 56px; height: 56px;
+      border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
       margin-bottom: 18px;
-      transition: background 0.25s;
+      transition: transform 0.28s cubic-bezier(.4,0,.2,1), box-shadow 0.28s;
 
-      mat-icon {
-        color: $blue;
-        font-size: 26px;
-        width: 26px; height: 26px;
-      }
-    }
-
-    &:hover .feature-icon {
-      background: linear-gradient(135deg, $blue, $sky);
-      mat-icon { color: white; }
+      mat-icon { font-size: 28px; width: 28px; height: 28px; color: white; }
     }
 
     h3 {
@@ -769,24 +802,36 @@ $bg:      #f0f4ff;
   }
 
   .feature-card:nth-child(1) {
-    .feature-icon mat-icon { color: $blue; }
-    &:hover .feature-icon { background: linear-gradient(135deg, $blue, $sky); }
-    &::before { background: linear-gradient(90deg, $blue, $sky); }
+    &::before { background: linear-gradient(90deg, $blue, $purple); }
+    &::after  { background: linear-gradient(160deg, rgba(99,102,241,0.04), transparent); }
+    .feature-icon {
+      background: linear-gradient(135deg, $blue, $purple);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+    }
   }
   .feature-card:nth-child(2) {
-    .feature-icon mat-icon { color: #0088cc; }
-    &:hover .feature-icon { background: linear-gradient(135deg, #0088cc, #006aad); }
     &::before { background: linear-gradient(90deg, #0088cc, #29b6f6); }
+    &::after  { background: linear-gradient(160deg, rgba(0,136,204,0.04), transparent); }
+    .feature-icon {
+      background: linear-gradient(135deg, #0088cc, #29b6f6);
+      box-shadow: 0 6px 20px rgba(0,136,204,0.35);
+    }
   }
   .feature-card:nth-child(3) {
-    .feature-icon mat-icon { color: #25d366; }
-    &:hover .feature-icon { background: linear-gradient(135deg, #25d366, #128c7e); }
     &::before { background: linear-gradient(90deg, #25d366, #128c7e); }
+    &::after  { background: linear-gradient(160deg, rgba(37,211,102,0.04), transparent); }
+    .feature-icon {
+      background: linear-gradient(135deg, #25d366, #128c7e);
+      box-shadow: 0 6px 20px rgba(37,211,102,0.35);
+    }
   }
   .feature-card:nth-child(4) {
-    .feature-icon mat-icon { color: $orange; }
-    &:hover .feature-icon { background: linear-gradient(135deg, $orange, #ef4444); }
-    &::before { background: linear-gradient(90deg, $orange, #ef4444); }
+    &::before { background: linear-gradient(90deg, $pink, $orange); }
+    &::after  { background: linear-gradient(160deg, rgba(236,72,153,0.04), transparent); }
+    .feature-icon {
+      background: linear-gradient(135deg, $pink, $orange);
+      box-shadow: 0 6px 20px rgba(236,72,153,0.35);
+    }
   }
 }
 
@@ -865,9 +910,21 @@ $bg:      #f0f4ff;
       }
     }
 
-    .step:nth-child(1) .step-bubble { background: linear-gradient(135deg, $blue, $sky); box-shadow: 0 8px 24px rgba(26,35,126,0.3); }
-    .step:nth-child(2) .step-bubble { background: linear-gradient(135deg, #7c3aed, #a855f7); box-shadow: 0 8px 24px rgba(124,58,237,0.3); }
-    .step:nth-child(3) .step-bubble { background: linear-gradient(135deg, $orange, #ef4444); box-shadow: 0 8px 24px rgba(249,115,22,0.3); }
+    .step:nth-child(1) .step-bubble {
+      background: linear-gradient(135deg, $blue, $purple);
+      box-shadow: 0 10px 30px rgba(99,102,241,0.45);
+      border-color: rgba(255,255,255,0.9);
+    }
+    .step:nth-child(2) .step-bubble {
+      background: linear-gradient(135deg, $purple, $pink);
+      box-shadow: 0 10px 30px rgba(236,72,153,0.45);
+      border-color: rgba(255,255,255,0.9);
+    }
+    .step:nth-child(3) .step-bubble {
+      background: linear-gradient(135deg, $pink, $orange);
+      box-shadow: 0 10px 30px rgba(249,115,22,0.45);
+      border-color: rgba(255,255,255,0.9);
+    }
   }
 }
 
@@ -916,12 +973,21 @@ $bg:      #f0f4ff;
     &:hover { transform: translateY(-4px); box-shadow: 0 16px 48px rgba(15,23,42,0.1); }
 
     &.featured {
-      border-color: $blue;
-      background: linear-gradient(160deg, #ede9fe 0%, #ffffff 40%);
-      box-shadow: 0 8px 32px rgba(26,35,126,0.15);
-      transform: scale(1.03);
+      border-color: transparent;
+      background: linear-gradient(white, white) padding-box,
+                  linear-gradient(135deg, $blue, $purple, $pink) border-box;
+      border: 2px solid transparent;
+      box-shadow: 0 16px 56px rgba(139,92,246,0.22), 0 4px 16px rgba(236,72,153,0.14);
+      transform: scale(1.04);
 
-      &:hover { transform: scale(1.03) translateY(-4px); box-shadow: 0 24px 56px rgba(26,35,126,0.2); }
+      &:hover { transform: scale(1.04) translateY(-6px); box-shadow: 0 28px 72px rgba(139,92,246,0.30), 0 8px 24px rgba(236,72,153,0.20); }
+
+      .plan-header .plan-price .price-amount {
+        background: linear-gradient(135deg, $blue, $purple, $pink);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
     }
 
     .popular-badge {
@@ -929,15 +995,16 @@ $bg:      #f0f4ff;
       top: -13px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg, $blue, $sky);
+      background: linear-gradient(135deg, $purple, $pink);
       color: white;
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      padding: 4px 18px;
+      padding: 5px 20px;
       border-radius: 20px;
       white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(26,35,126,0.3);
+      box-shadow: 0 4px 16px rgba(236,72,153,0.4);
+      animation: popIn 0.5s 0.3s ease-out both;
     }
 
     .plan-header {
@@ -1026,10 +1093,17 @@ $bg:      #f0f4ff;
       }
 
       &.featured-btn {
-        background: linear-gradient(135deg, $blue, $blue-l);
+        background: linear-gradient(110deg, $blue, $purple, $pink);
+        background-size: 200% auto;
         color: white;
-        box-shadow: 0 4px 16px rgba(26,35,126,0.25);
-        &:hover { box-shadow: 0 8px 24px rgba(26,35,126,0.35); }
+        box-shadow: 0 6px 20px rgba(139,92,246,0.40);
+        transition: box-shadow 0.2s, transform 0.15s, background-position 0.4s;
+        animation: shimmerCta 3s linear infinite;
+        &:hover {
+          background-position: right center;
+          box-shadow: 0 10px 30px rgba(236,72,153,0.45);
+          transform: translateY(-2px);
+        }
       }
     }
   }
@@ -1451,7 +1525,8 @@ $bg:      #f0f4ff;
     }
 
     .btn-submit {
-      background: linear-gradient(135deg, $blue, $blue-l);
+      background: linear-gradient(110deg, $blue, $purple, $pink);
+      background-size: 200% auto;
       color: white;
       padding: 14px;
       border-radius: 12px;
@@ -1459,11 +1534,12 @@ $bg:      #f0f4ff;
       font-weight: 700;
       width: 100%;
       margin-top: 8px;
-      box-shadow: 0 4px 16px rgba(26,35,126,0.25);
-      transition: box-shadow 0.2s, transform 0.15s;
+      box-shadow: 0 4px 18px rgba(139,92,246,0.35);
+      transition: box-shadow 0.2s, transform 0.15s, background-position 0.4s;
 
       &:hover {
-        box-shadow: 0 8px 24px rgba(26,35,126,0.35);
+        background-position: right center;
+        box-shadow: 0 8px 28px rgba(236,72,153,0.40);
         transform: translateY(-1px);
       }
 
@@ -1523,7 +1599,7 @@ $bg:      #f0f4ff;
 
 // ── FOOTER ─────────────────────────────────────────────────────────────────────
 .footer {
-  background: $text;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
   padding: 48px;
 
   .footer-inner {
@@ -1540,11 +1616,12 @@ $bg:      #f0f4ff;
     margin-bottom: 14px;
 
     .footer-icon {
-      width: 32px; height: 32px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, $blue, $sky);
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, $blue, $purple, $pink);
       display: flex; align-items: center; justify-content: center;
-      mat-icon { color: white; font-size: 17px; width: 17px; height: 17px; }
+      box-shadow: 0 4px 14px rgba(139,92,246,0.4);
+      mat-icon { color: white; font-size: 19px; width: 19px; height: 19px; }
     }
 
     span {
