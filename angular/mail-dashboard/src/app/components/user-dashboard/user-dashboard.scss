@@ -1062,9 +1062,59 @@ $radius: 16px;
 }
 
 @media (max-width: 480px) {
-  .stats-grid { .stat-icon-wrap { width: 38px; height: 38px; mat-icon { font-size: 20px; } } }
-  .email-row .email-meta .email-date { display: none; }
-  .welcome-banner .welcome-left { flex-direction: column; align-items: flex-start; }
+  .dash-container { padding: 10px; }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    .stat-icon-wrap { width: 36px; height: 36px; mat-icon { font-size: 18px; } }
+    .stat-card { padding: 12px 14px; gap: 10px; }
+    .stat-body .stat-value { font-size: 20px; }
+    .stat-chip { display: none; }
+  }
+
+  .welcome-banner {
+    padding: 14px 16px;
+    .welcome-left { flex-direction: row; align-items: center; }
+    .welcome-left h1 { font-size: 16px; }
+    .welcome-status { display: none; }
+  }
+
+  .actions-body { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+
+  .card-header { padding: 12px 14px 0; .card-title { font-size: 13px; } }
+  .card-body { padding: 10px 14px 14px; }
+  .emails-card .card-body { padding: 6px 10px 12px; }
+
+  .email-row {
+    gap: 8px; padding: 9px 6px;
+    .email-meta .email-date { display: none; }
+    .email-snippet { display: none; }
+    .email-avatar { width: 32px; height: 32px; min-width: 32px; font-size: 13px; }
+    .unread-dot { display: none; }
+  }
+
+  .notif-disabled-banner { font-size: 11px; padding: 7px 10px; }
+
+  .save-row { padding: 12px 14px; }
+}
+
+@media (max-width: 375px) {
+  .dash-navbar {
+    padding: 0 8px; gap: 4px;
+    .nav-tabs .nav-tab { padding: 6px 7px; mat-icon { font-size: 18px; } }
+    .nav-avatar { width: 30px; height: 30px; font-size: 12px; }
+    .logout-btn { width: 30px; height: 30px; }
+  }
+
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+
+  .welcome-banner { padding: 12px 14px; gap: 8px;
+    .welcome-left h1 { font-size: 15px; }
+    .welcome-left .welcome-avatar { width: 36px; height: 36px; font-size: 14px; }
+  }
+
+  .card-body { padding: 8px 12px 12px; }
 }
 
 // ── FONT PICKER ────────────────────────────────────────────────────────────────

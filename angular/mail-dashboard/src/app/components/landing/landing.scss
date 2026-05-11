@@ -1774,6 +1774,50 @@ $bg:      #f0f4ff;
   .section-header p { font-size: 14px; }
 }
 
+// ── Very small phones (375px) ──
+@media (max-width: 375px) {
+  .navbar { padding: 0 14px; }
+
+  .hero {
+    padding: 64px 14px 36px;
+    .hero-content {
+      h1 { font-size: 24px; }
+      p { font-size: 14px; }
+      .hero-actions {
+        .btn-primary, .btn-outline { font-size: 13px; padding: 11px 18px; }
+      }
+      .hero-stats { padding: 10px 12px; gap: 6px;
+        .stat strong { font-size: 18px; }
+        .stat span { font-size: 9px; }
+      }
+    }
+  }
+
+  .features {
+    padding: 40px 14px;
+    .section-header h2 { font-size: 21px; }
+  }
+
+  .how-it-works {
+    padding: 40px 14px;
+    .section-header h2 { font-size: 21px; }
+    .steps .step { padding: 14px 14px; gap: 12px;
+      .step-bubble { width: 44px; height: 44px; }
+    }
+  }
+
+  .pricing {
+    padding: 40px 14px;
+    .section-header h2 { font-size: 21px; }
+    .pricing-card { padding: 20px 16px; }
+  }
+
+  .login-section { padding: 40px 14px 56px; }
+  .login-section .login-card { border-radius: 16px; padding: 20px 16px; }
+
+  .footer { padding: 32px 14px; }
+}
+
 // ── CHATBOT WIDGET ─────────────────────────────────────────────────────────────
 
 @keyframes chatSlideUp {
