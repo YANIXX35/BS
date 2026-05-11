@@ -1694,7 +1694,7 @@ def _classify_email(sender: str, subject: str, snippet: str) -> str:
     return 'normal'
 
 
-def _ai_classify_email(sender: str, subject: str, snippet: str) -> tuple[str, str]:
+def _ai_classify_email(sender: str, subject: str, snippet: str):
     """
     Classify a single email with Claude Haiku.
     Returns (category, reason). Falls back to keyword method if API key missing.
@@ -1925,6 +1925,12 @@ def _check_all_users():
             print(f"[Monitor] Erreur user {user['email']}: {e}")
 
 
+@app.route('/api/version', methods=['GET'])
+def api_version():
+    import sys
+    return jsonify({'version': 'v4.2-chatbot', 'python': sys.version, 'routes': [str(r) for r in app.url_map.iter_rules() if 'chatbot' in str(r) or 'chat' in str(r)]})
+
+
 @app.route('/api/chatbot', methods=['POST'])
 def chat_bot():
     """Chatbot IA MailNotifier — utilise Gemini REST API via requests."""
@@ -1973,7 +1979,7 @@ def chat_bot():
     try:
         url = (
             'https://generativelanguage.googleapis.com/v1beta/models/'
-            f'gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}'
+            f'gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}'
         )
         payload = {
             'system_instruction': {'parts': [{'text': system_prompt}]},
