@@ -674,7 +674,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   logout() {
-    localStorage.removeItem('user');
-    this.router.navigate(['/']);
+    localStorage.clear();
+    this.router.navigate(['/'], { replaceUrl: true });
   }
 }

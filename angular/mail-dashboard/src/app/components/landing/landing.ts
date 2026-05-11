@@ -164,6 +164,19 @@ export class Landing implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit() {
+    // Si déjà connecté → rediriger directement vers le dashboard (bouton retour ne doit pas revenir ici)
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u?.email) {
+          const target = u.role === 'admin' ? '/admin' : '/dashboard';
+          this.router.navigate([target], { replaceUrl: true });
+          return;
+        }
+      }
+    } catch { /* noop */ }
+
     // Detect return from Genius Pay
     this.route.queryParams.subscribe(params => {
       const status = params['payment_status'];
@@ -252,7 +265,7 @@ export class Landing implements OnInit, AfterViewInit {
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
         this.cdr.detectChanges();
         const route = res.role === 'admin' ? '/admin' : '/dashboard';
-        setTimeout(() => this.router.navigate([route]), 1000);
+        setTimeout(() => this.router.navigate([route], { replaceUrl: true }), 1000);
       },
       error: (err) => {
         this.loginLoading = false;
@@ -304,7 +317,7 @@ export class Landing implements OnInit, AfterViewInit {
         this.regStep = 'success';
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: this.regEmail }));
         this.cdr.detectChanges();
-        setTimeout(() => this.router.navigate(['/dashboard']), 1500);
+        setTimeout(() => this.router.navigate(['/dashboard'], { replaceUrl: true }), 1500);
       },
       error: (err) => {
         this.otpLoading = false;
