@@ -42,7 +42,8 @@ export class UserDashboard implements OnInit, OnDestroy {
   // Settings
   settings: UserSettings = {
     name: '', email: '', phone: '', gmail_address: '',
-    telegram_chat_id: '', green_api_instance: '', green_api_token: ''
+    telegram_chat_id: '', green_api_instance: '', green_api_token: '',
+    telegram_enabled: true, whatsapp_enabled: true
   };
   settingsLoading = false;
   settingsSaved   = false;
@@ -371,6 +372,8 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.emailService.getUserSettings(this.user.email).subscribe({
       next: (s) => {
         this.settings = s;
+        if (this.settings.telegram_enabled === undefined) this.settings.telegram_enabled = true;
+        if (this.settings.whatsapp_enabled === undefined) this.settings.whatsapp_enabled = true;
         this.parsePhone();
 
         // Delegate theme to ThemeService — server wins, no round-trip save.

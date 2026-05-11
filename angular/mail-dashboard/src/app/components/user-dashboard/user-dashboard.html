@@ -427,8 +427,21 @@
           <p class="config-title">Telegram</p>
           <p class="config-sub">Notifications sur Telegram</p>
         </div>
+        <div class="notif-toggle-wrap">
+          <span class="notif-toggle-label">{{ settings.telegram_enabled ? 'Activé' : 'Désactivé' }}</span>
+          <label class="notif-toggle">
+            <input type="checkbox" [(ngModel)]="settings.telegram_enabled" />
+            <span class="notif-slider"></span>
+          </label>
+        </div>
       </div>
       <div class="card-body">
+        @if (!settings.telegram_enabled) {
+          <div class="notif-disabled-banner">
+            <mat-icon>notifications_off</mat-icon>
+            <span>Les notifications Telegram sont désactivées. Active le toggle pour les recevoir.</span>
+          </div>
+        }
         <div class="steps-box">
           <div class="step-row"><span class="step-num">1</span><span>Recherche <strong>&#64;Kylimail_bot</strong> sur Telegram</span></div>
           <div class="step-row"><span class="step-num">2</span><span>Envoie <strong>/start</strong></span></div>
@@ -450,8 +463,21 @@
           <p class="config-title">WhatsApp</p>
           <p class="config-sub">Notifications sur WhatsApp via Green API</p>
         </div>
+        <div class="notif-toggle-wrap">
+          <span class="notif-toggle-label">{{ settings.whatsapp_enabled ? 'Activé' : 'Désactivé' }}</span>
+          <label class="notif-toggle">
+            <input type="checkbox" [(ngModel)]="settings.whatsapp_enabled" />
+            <span class="notif-slider"></span>
+          </label>
+        </div>
       </div>
       <div class="card-body">
+        @if (!settings.whatsapp_enabled) {
+          <div class="notif-disabled-banner">
+            <mat-icon>notifications_off</mat-icon>
+            <span>Les notifications WhatsApp sont désactivées. Active le toggle pour les recevoir.</span>
+          </div>
+        }
         <div class="phone-row">
           <mat-form-field appearance="outline" class="phone-code-field">
             <mat-label>Pays</mat-label>

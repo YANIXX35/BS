@@ -323,6 +323,8 @@ def init_db():
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS gmail_connected_email VARCHAR(150)")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token TEXT")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_chat_id VARCHAR(80)")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_enabled BOOLEAN DEFAULT TRUE")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT TRUE")
             # Pré-remplir le chatId @lid connu pour kyliyanisse (checkWhatsapp retourne 404 sur ce serveur)
             cur.execute("""
                 UPDATE users SET whatsapp_chat_id='62508954075303@lid'
@@ -1458,7 +1460,9 @@ def get_user_settings():
             cur.execute(
                 "SELECT name, email, phone, gmail_address, telegram_chat_id, green_api_instance, "
                 "green_api_token, app_password, avatar, theme_color, font_family, theme_mode, theme_secondary, "
-                "to_char(theme_updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') AS theme_updated_at "
+                "to_char(theme_updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') AS theme_updated_at, "
+                "COALESCE(telegram_enabled, TRUE) AS telegram_enabled, "
+                "COALESCE(whatsapp_enabled, TRUE) AS whatsapp_enabled "
                 "FROM users WHERE email = %s AND is_verified = 1",
                 (email,)
             )
@@ -1470,14 +1474,18 @@ def get_user_settings():
                 "green_api_instance": "", "green_api_token": "",
                 "app_password_set": False, "avatar": "",
                 "theme_color": "", "font_family": "", "theme_mode": "light",
-                "theme_secondary": "", "theme_updated_at": None
+                "theme_secondary": "", "theme_updated_at": None,
+                "telegram_enabled": True, "whatsapp_enabled": True
             })
         user = dict(user)
         for key in ["phone", "gmail_address", "telegram_chat_id", "green_api_instance",
                     "green_api_token", "avatar", "theme_color", "font_family",
-                    "theme_mode", "theme_secondary"]:  # theme_updated_at is a timestamp, handled separately
+                    "theme_mode", "theme_secondary"]:
             if user.get(key) is None:
                 user[key] = ""
+        # Booléens — s'assurer qu'ils ne sont jamais null côté client
+        user['telegram_enabled'] = bool(user.get('telegram_enabled', True))
+        user['whatsapp_enabled'] = bool(user.get('whatsapp_enabled', True))
         user['app_password_set'] = bool(user.pop('app_password', None))
         if not user.get('theme_mode'):
             user['theme_mode'] = 'light'
@@ -1521,6 +1529,12 @@ def update_user_settings():
                     cur.execute("UPDATE users SET whatsapp_chat_id = NULL WHERE email = %s", (email,))
                     print(f"[Settings] Phone changé ({old_phone_clean}→{new_phone_clean}), whatsapp_chat_id effacé")
 
+            # Booléens envoyés explicitement (True/False) → on les passe tels quels ;
+            # absents (None) → COALESCE garde la valeur existante.
+            def _bool_val(key):
+                v = data.get(key)
+                return v if isinstance(v, bool) else None
+
             if app_password:
                 cur.execute(
                     """UPDATE users SET
@@ -1536,13 +1550,16 @@ def update_user_settings():
                         font_family      = COALESCE(%s, font_family),
                         theme_mode       = COALESCE(%s, theme_mode),
                         theme_secondary  = COALESCE(%s, theme_secondary),
-                        theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END
+                        theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END,
+                        telegram_enabled = COALESCE(%s, telegram_enabled),
+                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled)
                     WHERE email = %s AND is_verified = 1""",
                     (name, _val('phone'), _val('gmail_address'),
                      _val('telegram_chat_id'), _val('green_api_instance'),
                      _val('green_api_token'), app_password,
                      avatar, theme_color, font_family, theme_mode, theme_secondary,
                      bool(theme_color or font_family or theme_mode or theme_secondary),
+                     _bool_val('telegram_enabled'), _bool_val('whatsapp_enabled'),
                      email)
                 )
             else:
@@ -1559,13 +1576,16 @@ def update_user_settings():
                         font_family      = COALESCE(%s, font_family),
                         theme_mode       = COALESCE(%s, theme_mode),
                         theme_secondary  = COALESCE(%s, theme_secondary),
-                        theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END
+                        theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END,
+                        telegram_enabled = COALESCE(%s, telegram_enabled),
+                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled)
                     WHERE email = %s AND is_verified = 1""",
                     (name, _val('phone'), _val('gmail_address'),
                      _val('telegram_chat_id'), _val('green_api_instance'),
                      _val('green_api_token'),
                      avatar, theme_color, font_family, theme_mode, theme_secondary,
                      bool(theme_color or font_family or theme_mode or theme_secondary),
+                     _bool_val('telegram_enabled'), _bool_val('whatsapp_enabled'),
                      email)
                 )
         db.commit()
@@ -1861,10 +1881,11 @@ def _check_user_emails_gmail(user):
                     category, ai_reason = _ai_classify_email(sender, subject, snippet)
                     print(f"[Monitor] Email [{category}] : {subject[:60]}{' — ' + ai_reason if ai_reason else ''}")
 
-                    if chat_id:
+                    if chat_id and user.get('telegram_enabled', True):
                         _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category, ai_reason)
 
-                    _send_whatsapp_notification(user, sender, subject, snippet, category)
+                    if user.get('whatsapp_enabled', True):
+                        _send_whatsapp_notification(user, sender, subject, snippet, category)
 
                     match_s = re.match(r'^(.+?)\s*<', sender)
                     sender_name = match_s.group(1).strip().strip('"') if match_s else sender.split('@')[0]
@@ -1900,7 +1921,9 @@ def _check_all_users():
         with db.cursor() as cur:
             cur.execute("""
                 SELECT id, email, telegram_chat_id, last_history_id,
-                       fcm_token, phone, whatsapp_chat_id
+                       fcm_token, phone, whatsapp_chat_id,
+                       COALESCE(telegram_enabled, TRUE) AS telegram_enabled,
+                       COALESCE(whatsapp_enabled, TRUE) AS whatsapp_enabled
                 FROM users
                 WHERE gmail_refresh_token IS NOT NULL
                   AND (

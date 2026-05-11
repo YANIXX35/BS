@@ -79,6 +79,8 @@ export interface UserSettings {
   theme_mode?: string;
   theme_secondary?: string;
   theme_updated_at?: string;   // ISO timestamp — used for conflict detection
+  telegram_enabled?: boolean;
+  whatsapp_enabled?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
