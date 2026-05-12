@@ -1647,6 +1647,32 @@ $bg:      #f0f4ff;
     opacity: 0.6;
   }
 
+  .footer-links {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 8px;
+
+    .footer-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      text-decoration: none;
+      transition: color 0.2s;
+      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+      &:hover { color: rgba(255,255,255,0.85); }
+    }
+
+    .footer-dot {
+      color: rgba(255,255,255,0.2);
+      font-size: 14px;
+    }
+  }
+
   .footer-copy {
     color: rgba(255,255,255,0.3);
     font-size: 12px;
