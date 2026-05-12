@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Scanner QR WhatsApp — MailNotifier</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background: #f0f2f5; margin: 0; }
+    .card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); text-align: center; max-width: 400px; }
+    h2 { color: #25d366; margin: 0 0 8px; }
+    p { color: #666; font-size: 14px; margin: 0 0 24px; }
+    img { width: 280px; height: 280px; border: 3px solid #25d366; border-radius: 12px; }
+    .steps { text-align: left; margin-top: 24px; background: #f0fdf4; padding: 16px; border-radius: 10px; }
+    .steps li { color: #333; font-size: 14px; margin-bottom: 6px; }
+    .warn { background: #fff3cd; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #856404; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>📱 Lier WhatsApp</h2>
+    <p>Scanne ce QR code avec ton téléphone</p>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARQAAAEUCAYAAADqcMl5AAAAAklEQVR4AewaftIAABK3SURBVO3BQW4AR5LAQLKh/3+Z62OeCmh0SfYsMsL+wVprXfCw1lqXPKy11iUPa611ycNaa13ysNZalzystdYlD2utdcnDWmtd8rDWWpc8rLXWJQ9rrXXJw1prXfKw1lqXPKy11iUPa611ycNaa13ysNZal/wfKBLR3yqm+ykAAAAASUVORK5CYII=" id="qr" alt="QR Code WhatsApp" />
+    <div class="steps">
+      <ol>
+        <li>Ouvre <strong>WhatsApp</strong> sur ton téléphone</li>
+        <li>Clique sur les <strong>⋮ 3 points</strong> (en haut à droite)</li>
+        <li>Sélectionne <strong>"Appareils liés"</strong></li>
+        <li>Clique <strong>"Lier un appareil"</strong></li>
+        <li>Scanne le QR code ci-dessus</li>
+      </ol>
+    </div>
+    <div class="warn">⚠️ Ce QR code expire dans ~60 secondes. Si expiré, recharge la page.</div>
+    <button onclick="location.reload()" style="margin-top:16px;background:#25d366;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;">🔄 Nouveau QR code</button>
+  </div>
+
+  <script>
+    // Charger le vrai QR code depuis Green-API via le backend
+    fetch('https://backend-mail-1.onrender.com/api/user/whatsapp-qr?email=kyliyanisse@gmail.com')
+      .then(r => r.json())
+      .then(d => {
+        if (d.type === 'qrCode') {
+          document.getElementById('qr').src = 'data:image/png;base64,' + d.message;
+        } else if (d.type === 'alreadyLogged') {
+          document.getElementById('qr').style.display = 'none';
+          document.querySelector('p').textContent = '✅ WhatsApp déjà connecté !';
+          document.querySelector('p').style.color = '#25d366';
+          document.querySelector('p').style.fontSize = '18px';
+          document.querySelector('p').style.fontWeight = '700';
+        }
+      })
+      .catch(() => {
+        // Fallback: QR code déjà chargé en base64 dans le src
+      });
+
+    // Recharger automatiquement toutes les 50 secondes (QR expire en 60s)
+    setTimeout(() => location.reload(), 50000);
+  </script>
+</body>
+</html>
