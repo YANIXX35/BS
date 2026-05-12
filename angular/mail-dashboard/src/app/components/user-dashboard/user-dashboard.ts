@@ -155,16 +155,49 @@ export class UserDashboard implements OnInit, OnDestroy {
   emailDetailLoading = false;
   emailDetailBody: SafeHtml = '';
 
-  // Email filter
+  // Email filter + search + pagination
   activeFilter: 'all' | 'important' | 'newsletter' | 'normal' = 'all';
+  searchQuery = '';
+  currentPage = 1;
+  totalPages  = 1;
+  loadingMore = false;
 
   get filteredEmails(): typeof this.emails {
-    if (this.activeFilter === 'all') return this.emails;
-    return this.emails.filter(e => e.category === this.activeFilter);
+    let list = this.activeFilter === 'all'
+      ? this.emails
+      : this.emails.filter(e => e.category === this.activeFilter);
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(e =>
+        e.sender.toLowerCase().includes(q) ||
+        e.subject.toLowerCase().includes(q)
+      );
+    }
+    return list;
   }
 
   countByCategory(cat: string): number {
     return this.emails.filter(e => e.category === cat).length;
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+  }
+
+  loadMoreEmails() {
+    if (this.currentPage >= this.totalPages || this.loadingMore) return;
+    this.loadingMore = true;
+    const nextPage = this.currentPage + 1;
+    this.emailService.getEmails(this.user.email, nextPage, 10).subscribe({
+      next: (e) => {
+        this.emails = [...this.emails, ...e.emails];
+        this.currentPage = nextPage;
+        this.totalPages  = e.pages;
+        this.loadingMore = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingMore = false; }
+    });
   }
 
   // Gmail OAuth
@@ -245,9 +278,15 @@ export class UserDashboard implements OnInit, OnDestroy {
       error: ()  => { this.loadingStats = false; }
     });
 
-    this.emailService.getEmails(this.user.email).subscribe({
-      next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
-      error: ()  => { this.loadingEmails = false; }
+    this.emailService.getEmails(this.user.email, 1, 10).subscribe({
+      next: (e) => {
+        this.emails = e.emails;
+        this.currentPage = 1;
+        this.totalPages  = e.pages;
+        this.loadingEmails = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.loadingEmails = false; }
     });
 
     this.loadAiAnalysis();
@@ -555,9 +594,15 @@ export class UserDashboard implements OnInit, OnDestroy {
       this.activeView = 'settings';
     } else if (action === 'refresh') {
       this.loadingEmails = true;
-      this.emailService.getEmails(this.user.email).subscribe({
-        next:  (e) => { this.emails = e.emails.slice(0, 8); this.loadingEmails = false; this.cdr.detectChanges(); },
-        error: ()  => { this.loadingEmails = false; }
+      this.emailService.getEmails(this.user.email, 1, 10).subscribe({
+        next: (e) => {
+          this.emails = e.emails;
+          this.currentPage = 1;
+          this.totalPages  = e.pages;
+          this.loadingEmails = false;
+          this.cdr.detectChanges();
+        },
+        error: () => { this.loadingEmails = false; }
       });
     } else if (action === 'ai') {
       this.loadAiAnalysis();

@@ -124,6 +124,23 @@
         <span class="badge">{{ emails.length }}</span>
       </div>
 
+      <!-- BARRE DE RECHERCHE -->
+      <div class="email-search">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher par expéditeur ou sujet..."
+          [(ngModel)]="searchQuery"
+          autocomplete="off"
+        />
+        @if (searchQuery) {
+          <button class="search-clear" (click)="clearSearch()">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+
       <!-- FILTRES IA -->
       <div class="email-filters">
         <button class="filter-tab" [class.active]="activeFilter==='all'" (click)="activeFilter='all'">
@@ -152,8 +169,11 @@
           </div>
         } @else if (filteredEmails.length === 0) {
           <div class="empty-state">
-            <mat-icon>inbox</mat-icon>
-            <p>Aucun mail dans cette catégorie</p>
+            <mat-icon>{{ searchQuery ? 'search_off' : 'inbox' }}</mat-icon>
+            <p>{{ searchQuery ? 'Aucun résultat pour "' + searchQuery + '"' : 'Aucun mail dans cette catégorie' }}</p>
+            @if (searchQuery) {
+              <button class="empty-clear-btn" (click)="clearSearch()">Effacer la recherche</button>
+            }
           </div>
         } @else {
           <div class="email-list">
@@ -184,6 +204,20 @@
               </div>
             }
           </div>
+
+          <!-- VOIR PLUS -->
+          @if (!searchQuery && currentPage < totalPages) {
+            <div class="load-more-row">
+              <button class="load-more-btn" (click)="loadMoreEmails()" [disabled]="loadingMore">
+                @if (loadingMore) {
+                  <mat-progress-spinner diameter="16" mode="indeterminate" />
+                } @else {
+                  <mat-icon>expand_more</mat-icon>
+                }
+                {{ loadingMore ? 'Chargement...' : 'Voir plus' }}
+              </button>
+            </div>
+          }
         }
       </div>
     </div>
