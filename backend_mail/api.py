@@ -52,6 +52,8 @@ import firebase_admin
 from firebase_admin import credentials as fb_credentials, messaging as fb_messaging
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
 
@@ -79,6 +81,19 @@ def _sentry_scrub(event: dict) -> dict:
                 if any(s in key.lower() for s in ('password', 'token', 'secret', 'key', 'email')):
                     f['vars'][key] = '[REDACTED]'
     return event
+
+# ─── CLOUDINARY INIT ──────────────────────────────────────────────────────────
+_cloudinary_enabled = bool(os.getenv('CLOUDINARY_CLOUD_NAME'))
+if _cloudinary_enabled:
+    cloudinary.config(
+        cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME'),
+        api_key    = os.getenv('CLOUDINARY_API_KEY'),
+        api_secret = os.getenv('CLOUDINARY_API_SECRET'),
+        secure     = True,
+    )
+    print("[Cloudinary] Initialisé")
+else:
+    print("[Cloudinary] Variables manquantes — stockage base64 utilisé en fallback")
 
 # ─── FIREBASE ADMIN INIT ──────────────────────────────────────────────────────
 _firebase_initialized = False
@@ -1527,6 +1542,67 @@ def get_whatsapp_qr():
         return jsonify(resp.json())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/user/avatar', methods=['POST'])
+@token_required
+@limiter.limit("10 per minute")
+def upload_avatar():
+    """Upload avatar vers Cloudinary et sauvegarde l'URL en DB."""
+    email = request.current_user['email']
+
+    if not _cloudinary_enabled:
+        return jsonify({'error': 'Cloudinary non configuré sur ce serveur'}), 503
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'Fichier requis (champ "file")'}), 400
+
+    file = request.files['file']
+    if not file or not file.filename:
+        return jsonify({'error': 'Fichier vide'}), 400
+
+    allowed_types = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+    if file.content_type not in allowed_types:
+        return jsonify({'error': 'Format non supporté (jpg, png, webp, gif)'}), 415
+
+    # Limite à 5 Mo
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    if size > 5 * 1024 * 1024:
+        return jsonify({'error': 'Fichier trop volumineux (max 5 Mo)'}), 413
+
+    try:
+        public_id = f"mailnotifier/avatars/{hashlib.md5(email.encode()).hexdigest()}"
+        result = cloudinary.uploader.upload(
+            file,
+            public_id   = public_id,
+            overwrite   = True,
+            invalidate  = True,
+            transformation = [
+                {'width': 200, 'height': 200, 'crop': 'fill', 'gravity': 'face', 'quality': 'auto', 'fetch_format': 'auto'}
+            ],
+        )
+        url = result['secure_url']
+
+        db = get_db()
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    "UPDATE users SET avatar=%s WHERE email=%s AND is_verified=1",
+                    (url, email)
+                )
+            db.commit()
+        finally:
+            _return_db(db)
+
+        _cache_del(f"settings:{email}")
+        print(f"[Cloudinary] Avatar uploadé pour {email} → {url}")
+        return jsonify({'url': url})
+
+    except Exception as e:
+        print(f"[Cloudinary] Erreur upload pour {email}: {e}")
+        return jsonify({'error': 'Erreur lors de l\'upload'}), 500
 
 
 @app.route('/api/user/settings', methods=['GET'])

@@ -706,12 +706,19 @@
                 {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
               </div>
             }
-            <label class="photo-edit-btn" matTooltip="Changer la photo">
-              <mat-icon>photo_camera</mat-icon>
-              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" hidden />
+            <label class="photo-edit-btn" [class.uploading]="avatarUploading" matTooltip="Changer la photo">
+              @if (avatarUploading) {
+                <mat-progress-spinner diameter="16" mode="indeterminate" />
+              } @else {
+                <mat-icon>photo_camera</mat-icon>
+              }
+              <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onPhotoSelected($event)" hidden [disabled]="avatarUploading" />
             </label>
           </div>
-          <p class="photo-hint">JPG, PNG — max 2MB</p>
+          <p class="photo-hint">JPG, PNG, WebP — max 5 Mo</p>
+          @if (avatarError) {
+            <p class="avatar-error">{{ avatarError }}</p>
+          }
         </div>
 
         <div class="profile-fields">

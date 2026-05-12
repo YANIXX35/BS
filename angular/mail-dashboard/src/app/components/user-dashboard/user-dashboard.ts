@@ -460,19 +460,37 @@ export class UserDashboard implements OnInit, OnDestroy {
   // PROFILE PHOTO
   // ─────────────────────────────────────────────────────────────────────────────
 
+  avatarUploading = false;
+  avatarError     = '';
+
   onPhotoSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
+
+    // Prévisualisation immédiate en local
     const reader = new FileReader();
-    reader.onload = async (e) => {
-      const compressed = await this._compressImage(e.target?.result as string);
-      this.profilePhoto = compressed;
-      localStorage.setItem('profilePhoto_' + this.user.email, compressed);
-      this.emailService.savePreferences(this.user.email, { avatar: compressed })
-        .subscribe({ error: (err) => console.error('[avatar save]', err) });
+    reader.onload = (e) => {
+      this.profilePhoto = e.target?.result as string;
       this.cdr.detectChanges();
     };
     reader.readAsDataURL(file);
+
+    // Upload vers Cloudinary via le backend
+    this.avatarUploading = true;
+    this.avatarError = '';
+    this.emailService.uploadAvatar(file).subscribe({
+      next: (res) => {
+        this.profilePhoto = res.url;
+        localStorage.setItem('profilePhoto_' + this.user.email, res.url);
+        this.avatarUploading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.avatarError = 'Erreur upload, réessaie.';
+        this.avatarUploading = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   saveProfile() {
@@ -685,22 +703,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   // HELPERS
   // ─────────────────────────────────────────────────────────────────────────────
 
-  private _compressImage(dataUrl: string, maxSize = 180): Promise<string> {
-    return new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ratio  = Math.min(maxSize / img.width, maxSize / img.height);
-        canvas.width  = Math.round(img.width  * ratio);
-        canvas.height = Math.round(img.height * ratio);
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.75));
-      };
-      img.src = dataUrl;
-    });
-  }
-
-  getSenderName(sender: string): string {
+getSenderName(sender: string): string {
     const match = sender.match(/^(.+?)\s*</);
     return match ? match[1].replace(/"/g, '').trim() : sender.split('@')[0];
   }

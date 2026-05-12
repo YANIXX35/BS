@@ -119,6 +119,12 @@ export class EmailService {
     return this.http.put(`${this.apiUrl}/user/settings`, { email, ...prefs });
   }
 
+  uploadAvatar(file: File): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<{ url: string }>(`${this.apiUrl}/user/avatar`, form);
+  }
+
   getWhatsappQr(email: string): Observable<{ type: string; message: string }> {
     return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
   }
