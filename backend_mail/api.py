@@ -2527,6 +2527,26 @@ def init_user_preferences():
     finally:
         db.close()
 
+@app.route('/api/weekly/test', methods=['POST'])
+@token_required
+def trigger_weekly_summary():
+    """Déclenche manuellement le résumé hebdomadaire pour l'utilisateur connecté (test)."""
+    email = request.current_user['email']
+    db = None
+    try:
+        db = get_db()
+        with db.cursor() as cur:
+            cur.execute("SELECT email, name FROM users WHERE email=%s AND is_verified=1", (email,))
+            user = cur.fetchone()
+        if not user:
+            return jsonify({'error': 'Utilisateur introuvable'}), 404
+        threading.Thread(target=_send_weekly_summary_to_user, args=(dict(user),), daemon=True).start()
+        return jsonify({'message': f'Résumé en cours d\'envoi à {email}'})
+    finally:
+        if db:
+            _return_db(db)
+
+
 @app.route('/api/version', methods=['GET'])
 def api_version():
     import sys
@@ -2605,6 +2625,208 @@ def chat_bot():
         return jsonify({'response': "Desole, erreur momentanee. Reessaie dans un instant !"}), 200
 
 
+def _send_weekly_summary_to_user(user: dict):
+    """Génère et envoie le résumé hebdomadaire à un utilisateur."""
+    email     = user['email']
+    name      = (user.get('name') or email.split('@')[0]).split()[0]
+    try:
+        service = _get_gmail_service(email)
+        if not service:
+            return
+
+        after_date = (datetime.now() - timedelta(days=7)).strftime('%Y/%m/%d')
+        result = service.users().messages().list(
+            userId='me', labelIds=['INBOX'],
+            q=f'after:{after_date}', maxResults=100
+        ).execute()
+        messages = result.get('messages', [])
+        total = len(messages)
+        if total == 0:
+            return
+
+        unread = 0
+        senders: list[str] = []
+        subjects_preview: list[str] = []
+
+        for msg_data in messages[:25]:
+            try:
+                msg = service.users().messages().get(
+                    userId='me', id=msg_data['id'],
+                    format='metadata',
+                    metadataHeaders=['From', 'Subject']
+                ).execute()
+                hdrs = {h['name']: h['value'] for h in msg.get('payload', {}).get('headers', [])}
+                if 'UNREAD' in msg.get('labelIds', []):
+                    unread += 1
+                from_h = hdrs.get('From', '')
+                m = re.search(r'"?([^"<@]+)"?\s*<?[^>]*>?', from_h)
+                sname = m.group(1).strip().strip('"') if m else from_h.split('@')[0]
+                if sname and sname not in senders:
+                    senders.append(sname)
+                subj = hdrs.get('Subject', '(Sans objet)')[:60]
+                if len(subjects_preview) < 5:
+                    subjects_preview.append(subj)
+            except Exception:
+                pass
+
+        read_count     = total - unread
+        week_start     = (datetime.now() - timedelta(days=7)).strftime('%d %b')
+        week_end       = datetime.now().strftime('%d %b %Y')
+        top_senders    = ', '.join(senders[:5]) or '—'
+
+        # Taux de lecture
+        read_pct = int(read_count / total * 100) if total else 0
+        bar_fill = int(read_pct / 10)
+        bar = '█' * bar_fill + '░' * (10 - bar_fill)
+
+        subjects_html = ''.join(
+            f'<li style="padding:4px 0;color:#475569;font-size:13px;">📧 {s}</li>'
+            for s in subjects_preview
+        )
+
+        html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f0f4ff;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4ff;padding:40px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(79,70,229,0.12);">
+
+  <!-- HEADER -->
+  <tr><td style="background:linear-gradient(135deg,#4f46e5,#7c3aed,#ec4899);padding:36px 40px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">📊</div>
+    <h1 style="margin:0;color:white;font-size:24px;font-weight:800;">Ton résumé de la semaine</h1>
+    <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">{week_start} — {week_end}</p>
+  </td></tr>
+
+  <!-- GREETING -->
+  <tr><td style="padding:32px 40px 0;">
+    <p style="margin:0;font-size:16px;color:#0f172a;">Salut <strong>{name}</strong> 👋</p>
+    <p style="color:#64748b;font-size:14px;margin:8px 0 0;">
+      Voici un aperçu de ta boîte Gmail pour la semaine écoulée.
+    </p>
+  </td></tr>
+
+  <!-- STATS -->
+  <tr><td style="padding:24px 40px;">
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" style="text-align:center;background:#f8faff;border-radius:14px;padding:20px 12px;border:1px solid #e2e8f0;">
+          <div style="font-size:32px;font-weight:800;color:#4f46e5;">{total}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px;">Emails reçus</div>
+        </td>
+        <td width="4%"></td>
+        <td width="30%" style="text-align:center;background:#f8faff;border-radius:14px;padding:20px 12px;border:1px solid #e2e8f0;">
+          <div style="font-size:32px;font-weight:800;color:#ec4899;">{unread}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px;">Non lus</div>
+        </td>
+        <td width="4%"></td>
+        <td width="29%" style="text-align:center;background:#f8faff;border-radius:14px;padding:20px 12px;border:1px solid #e2e8f0;">
+          <div style="font-size:32px;font-weight:800;color:#059669;">{read_count}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:4px;">Lus</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- LECTURE BAR -->
+  <tr><td style="padding:0 40px 24px;">
+    <p style="margin:0 0 8px;font-size:13px;color:#64748b;">Taux de lecture : <strong style="color:#4f46e5;">{read_pct}%</strong></p>
+    <div style="background:#e2e8f0;border-radius:8px;height:8px;overflow:hidden;">
+      <div style="background:linear-gradient(90deg,#4f46e5,#7c3aed);height:8px;width:{read_pct}%;border-radius:8px;"></div>
+    </div>
+  </td></tr>
+
+  <!-- TOP SENDERS -->
+  <tr><td style="padding:0 40px 24px;">
+    <div style="background:#faf5ff;border-radius:14px;padding:20px;border:1px solid #e9d5ff;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#7c3aed;">🏆 Expéditeurs fréquents</p>
+      <p style="margin:0;font-size:13px;color:#475569;">{top_senders}</p>
+    </div>
+  </td></tr>
+
+  <!-- APERÇU SUJETS -->
+  {'<tr><td style="padding:0 40px 28px;"><div style="background:#f8faff;border-radius:14px;padding:20px;border:1px solid #e2e8f0;"><p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#4f46e5;">📬 Derniers sujets</p><ul style="margin:0;padding-left:16px;">' + subjects_html + '</ul></div></td></tr>' if subjects_preview else ''}
+
+  <!-- CTA -->
+  <tr><td style="padding:0 40px 36px;text-align:center;">
+    <a href="https://bs-mailnotif-nine.vercel.app/dashboard"
+       style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;text-decoration:none;border-radius:12px;font-weight:700;font-size:15px;">
+      Voir mon dashboard →
+    </a>
+  </td></tr>
+
+  <!-- FOOTER -->
+  <tr><td style="background:#f8faff;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+    <p style="margin:0;font-size:12px;color:#94a3b8;">
+      MailNotifier — Tu reçois ce mail car tu as activé les résumés hebdomadaires.<br>
+      © 2025 MailNotifier
+    </p>
+  </td></tr>
+
+</table></td></tr></table>
+</body></html>"""
+
+        msg_email = MIMEMultipart('alternative')
+        msg_email['Subject'] = f'📊 Résumé MailNotifier — semaine du {week_start}'
+        msg_email['From']    = SMTP_EMAIL
+        msg_email['To']      = email
+        msg_email.attach(MIMEText(html, 'html'))
+
+        ctx = create_default_context()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=ctx) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, email, msg_email.as_string())
+        print(f"[WEEKLY] Résumé envoyé → {email} ({total} emails, {unread} non lus)")
+
+    except Exception as e:
+        print(f"[WEEKLY] Erreur pour {email}: {e}")
+
+
+def _send_weekly_summaries():
+    """Récupère tous les utilisateurs Gmail connectés et envoie leur résumé."""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print("[WEEKLY] SMTP non configuré — résumés annulés")
+        return
+    db = None
+    try:
+        db = get_db()
+        with db.cursor() as cur:
+            cur.execute(
+                "SELECT email, name FROM users "
+                "WHERE is_verified = 1 AND gmail_access_token IS NOT NULL"
+            )
+            users = [dict(u) for u in cur.fetchall()]
+        print(f"[WEEKLY] {len(users)} utilisateurs à notifier")
+        for idx, u in enumerate(users):
+            threading.Thread(
+                target=_send_weekly_summary_to_user,
+                args=(u,), daemon=True
+            ).start()
+            time.sleep(1.5)   # espacement pour éviter les rate limits SMTP
+    except Exception as e:
+        print(f"[WEEKLY] Erreur récupération users: {e}")
+    finally:
+        if db:
+            _return_db(db)
+
+
+def _weekly_summary_loop():
+    """Vérifie chaque heure si c'est lundi 8h UTC pour envoyer les résumés."""
+    time.sleep(180)   # laisse le serveur finir son boot
+    last_sent_week = -1
+    while True:
+        try:
+            now          = datetime.utcnow()
+            current_week = now.isocalendar()[1]
+            if now.weekday() == 0 and now.hour == 8 and last_sent_week != current_week:
+                last_sent_week = current_week
+                print("[WEEKLY] C'est lundi 8h — envoi des résumés hebdomadaires...")
+                threading.Thread(target=_send_weekly_summaries, daemon=True).start()
+        except Exception as e:
+            print(f"[WEEKLY LOOP] Erreur: {e}")
+        time.sleep(3600)   # vérifie toutes les heures
+
+
 def _self_ping_loop():
     """Ping /api/version toutes les 10 min pour garder Render éveillé."""
     time.sleep(60)   # laisse le serveur finir son boot
@@ -2637,6 +2859,8 @@ def _startup():
         threading.Thread(target=monitor_emails_loop, daemon=True, name="email-monitor").start()
         print("[STARTUP] Lancement thread self-ping (anti-sleep Render)...")
         threading.Thread(target=_self_ping_loop, daemon=True, name="self-ping").start()
+        print("[STARTUP] Lancement thread résumé hebdomadaire...")
+        threading.Thread(target=_weekly_summary_loop, daemon=True, name="weekly-summary").start()
         print("[STARTUP] Tous les threads lances avec succes.")
     except Exception as e:
         import traceback
