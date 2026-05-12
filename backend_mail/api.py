@@ -50,8 +50,35 @@ def _cache_del(key: str):
 from functools import wraps
 import firebase_admin
 from firebase_admin import credentials as fb_credentials, messaging as fb_messaging
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 load_dotenv()
+
+# ─── SENTRY ───────────────────────────────────────────────────────────────────
+_sentry_dsn = os.getenv('SENTRY_DSN')
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=0.2,   # 20 % des requêtes tracées (performance)
+        profiles_sample_rate=0.1,
+        environment=os.getenv('ENVIRONMENT', 'production'),
+        send_default_pii=False,   # ne jamais envoyer d'infos perso
+        before_send=lambda event, hint: _sentry_scrub(event),
+    )
+    print(f"[Sentry] Initialisé — env={os.getenv('ENVIRONMENT','production')}")
+else:
+    print("[Sentry] SENTRY_DSN non défini — monitoring désactivé")
+
+def _sentry_scrub(event: dict) -> dict:
+    """Supprime les tokens, mots de passe et emails des événements Sentry."""
+    for frame in (event.get('exception') or {}).get('values', []):
+        for f in (frame.get('stacktrace') or {}).get('frames', []):
+            for key in list((f.get('vars') or {}).keys()):
+                if any(s in key.lower() for s in ('password', 'token', 'secret', 'key', 'email')):
+                    f['vars'][key] = '[REDACTED]'
+    return event
 
 # ─── FIREBASE ADMIN INIT ──────────────────────────────────────────────────────
 _firebase_initialized = False
@@ -2062,6 +2089,8 @@ def monitor_emails_loop():
             _check_all_users()
         except Exception as e:
             print(f"[Monitor] Erreur boucle: {e}")
+            if _sentry_dsn:
+                sentry_sdk.capture_exception(e)
         time.sleep(30)
 
 
@@ -2622,6 +2651,9 @@ def chat_bot():
         return jsonify({'response': text})
     except Exception as e:
         print(f"[Chat] Erreur Gemini: {e}")
+        # Capture Sentry uniquement pour les vraies erreurs (pas les 429 attendus)
+        if _sentry_dsn and '429' not in str(e) and 'timeout' not in str(e).lower():
+            sentry_sdk.capture_exception(e)
         return jsonify({'response': "Desole, erreur momentanee. Reessaie dans un instant !"}), 200
 
 

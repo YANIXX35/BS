@@ -1,0 +1,130 @@
+name: CI — MailNotifier
+
+on:
+  push:
+    branches: [master, staging]
+  pull_request:
+    branches: [master, staging]
+
+jobs:
+  # ── 1. Build Angular ──────────────────────────────────────────────────────
+  build-angular:
+    name: Build Angular
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: angular/mail-dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: angular/mail-dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production
+        run: npx ng build --configuration production
+
+  # ── 2. Lint backend Python ────────────────────────────────────────────────
+  lint-backend:
+    name: Lint Python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend_mail
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Lint api.py
+        run: |
+          flake8 api.py \
+            --max-line-length=120 \
+            --ignore=E501,W503,E302,E303,W291,W293,E741,W605 \
+            --count --statistics
+
+  # ── 3. Smoke tests (endpoints clés) ──────────────────────────────────────
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    # Ne bloque pas le merge si le serveur Render dort (cold start)
+    continue-on-error: true
+    env:
+      BACKEND_URL: https://backend-mail-1.onrender.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install httpx
+        run: pip install httpx
+
+      - name: Health check — /api/version
+        run: |
+          python - <<'EOF'
+          import httpx, sys, time
+
+          url = "${{ env.BACKEND_URL }}/api/version"
+          print(f"Checking {url} ...")
+          for attempt in range(3):
+              try:
+                  r = httpx.get(url, timeout=30)
+                  if r.status_code == 200 and "version" in r.text:
+                      print(f"✅ Health check OK ({r.status_code})")
+                      sys.exit(0)
+                  print(f"⚠️  Attempt {attempt+1}: status {r.status_code}")
+              except Exception as e:
+                  print(f"⚠️  Attempt {attempt+1}: {e}")
+              time.sleep(10)
+          print("❌ Health check failed after 3 attempts")
+          sys.exit(1)
+          EOF
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Locust headless smoke (5 users, 30s)
+        run: |
+          cd backend_mail
+          locust -f locustfile.py \
+            --host ${{ env.BACKEND_URL }} \
+            --headless \
+            -u 5 -r 2 \
+            --run-time 30s \
+            --exit-code-on-error 1 \
+            --html locust-report.html \
+            2>&1 | tee locust-output.txt
+          # Fail only if error rate > 50%
+          python - <<'EOF'
+          import re, sys
+          txt = open("locust-output.txt").read()
+          m = re.search(r'(\d+)%.*?failure', txt, re.IGNORECASE)
+          if m and int(m.group(1)) > 50:
+              print(f"❌ Trop d'erreurs Locust: {m.group(1)}%")
+              sys.exit(1)
+          print("✅ Locust smoke OK")
+          EOF
+
+      - name: Upload Locust report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: locust-report-${{ github.sha }}
+          path: backend_mail/locust-report.html
+          retention-days: 7
