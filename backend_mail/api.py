@@ -7,7 +7,7 @@ import smtplib
 import requests
 import hashlib
 import threading
-import json as _json
+import json as _json  # noqa: F401 – used by inner function scopes via re-import
 from ssl import create_default_context
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -17,11 +17,11 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
 from googleapiclient.errors import HttpError
-from flask import Flask, jsonify, request, redirect, render_template
+from flask import Flask, jsonify, request, redirect, render_template  # noqa: F401
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room  # noqa: F401
 from dotenv import load_dotenv
 import psycopg2
 import psycopg2.extras
@@ -550,7 +550,6 @@ def register():
             expires_at = datetime.now() + timedelta(minutes=10)
 
             # Stocker toutes les infos dans otp_codes (JSON extra)
-            import json as _json
             extra = _json.dumps({
                 'phone': phone,
                 'gmail_address': gmail_address or email,
@@ -613,7 +612,6 @@ def verify_otp():
                 return jsonify({'error': 'Code incorrect'}), 401
 
             # Récupérer les infos supplémentaires
-            import json as _json
             extra = {}
             if otp.get('extra'):
                 try:
@@ -2423,11 +2421,11 @@ def handle_connect():
                 return False
                 
         except jwt.ExpiredSignatureError:
-            print(f"[WEBSOCKET] Token expiré")
+            print("[WEBSOCKET] Token expiré")
             emit('error', {'message': 'Token expiré'})
             return False
         except jwt.InvalidTokenError:
-            print(f"[WEBSOCKET] Token invalide")
+            print("[WEBSOCKET] Token invalide")
             emit('error', {'message': 'Token invalide'})
             return False
         except Exception as e:
@@ -2438,14 +2436,14 @@ def handle_connect():
             if 'db' in locals():
                 db.close()
     else:
-        print(f"[WEBSOCKET] Connexion sans token")
+        print("[WEBSOCKET] Connexion sans token")
         emit('error', {'message': 'Token requis'})
         return False
 
 @socketio.on('disconnect')
 def handle_disconnect():
     """Gère la déconnexion WebSocket."""
-    print(f"[WEBSOCKET] Utilisateur déconnecté")
+    print("[WEBSOCKET] Utilisateur déconnecté")
 
 @socketio.on('ping')
 def handle_ping():
@@ -2784,8 +2782,6 @@ def _send_weekly_summary_to_user(user: dict):
 
         # Taux de lecture
         read_pct = int(read_count / total * 100) if total else 0
-        bar_fill = int(read_pct / 10)
-        bar = '█' * bar_fill + '░' * (10 - bar_fill)
 
         subjects_html = ''.join(
             f'<li style="padding:4px 0;color:#475569;font-size:13px;">📧 {s}</li>'

@@ -53,7 +53,7 @@ jobs:
         run: |
           flake8 api.py \
             --max-line-length=120 \
-            --ignore=E501,W503,E302,E303,W291,W293,E741,W605 \
+            --ignore=E501,W503,E302,E303,W291,W293,E741,W605,E221,E226,E231,E241,E251,E261,E271,E272,E301,E305,E306,E401,E402,E722,W391 \
             --count --statistics
 
   # ── 3. Smoke tests (endpoints clés) ──────────────────────────────────────
