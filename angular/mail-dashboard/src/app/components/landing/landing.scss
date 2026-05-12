@@ -162,6 +162,14 @@ $bg:      #f0f4ff;
         &::after { transform: scaleX(1); }
       }
     }
+
+    .nav-privacy {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      mat-icon { font-size: 15px; width: 15px; height: 15px; color: $purple; }
+      &:hover { color: $purple !important; }
+    }
   }
 
   .nav-cta {

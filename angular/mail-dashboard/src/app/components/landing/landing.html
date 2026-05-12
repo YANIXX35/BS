@@ -8,6 +8,7 @@
     <a href="#features" (click)="closeMobileMenu()">Fonctionnalites</a>
     <a href="#how" (click)="closeMobileMenu()">Comment ca marche</a>
     <a href="#pricing" (click)="closeMobileMenu()">Tarifs</a>
+    <a routerLink="/privacy" class="nav-privacy"><mat-icon>shield</mat-icon>Confidentialite</a>
     <a href="#login" (click)="closeMobileMenu()">Connexion</a>
   </div>
   <button mat-flat-button class="nav-cta" (click)="scrollTo('login')">
@@ -23,6 +24,7 @@
   <a href="#features" (click)="closeMobileMenu()"><mat-icon>auto_awesome</mat-icon>Fonctionnalites</a>
   <a href="#how" (click)="closeMobileMenu()"><mat-icon>help_outline</mat-icon>Comment ca marche</a>
   <a href="#pricing" (click)="closeMobileMenu()"><mat-icon>sell</mat-icon>Tarifs</a>
+  <a routerLink="/privacy" (click)="closeMobileMenu()"><mat-icon>shield</mat-icon>Confidentialite</a>
   <a href="#login" (click)="closeMobileMenu()"><mat-icon>login</mat-icon>Connexion</a>
   <button mat-flat-button class="mobile-cta" (click)="scrollTo('login'); closeMobileMenu()">
     <mat-icon>rocket_launch</mat-icon> Commencer gratuitement
