@@ -262,6 +262,7 @@ export class Landing implements OnInit, AfterViewInit {
       next: (res) => {
         this.loginLoading = false;
         this.loginSuccess = `Bienvenue ${res.name} !`;
+        if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
         this.cdr.detectChanges();
         const route = res.role === 'admin' ? '/admin' : '/dashboard';
@@ -315,6 +316,7 @@ export class Landing implements OnInit, AfterViewInit {
       next: (res) => {
         this.otpLoading = false;
         this.regStep = 'success';
+        if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: this.regEmail }));
         this.cdr.detectChanges();
         setTimeout(() => this.router.navigate(['/dashboard'], { replaceUrl: true }), 1500);
