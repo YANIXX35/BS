@@ -8,7 +8,7 @@
     <a href="#features" (click)="closeMobileMenu()">Fonctionnalites</a>
     <a href="#how" (click)="closeMobileMenu()">Comment ca marche</a>
     <a href="#pricing" (click)="closeMobileMenu()">Tarifs</a>
-    <a routerLink="/privacy" class="nav-privacy"><mat-icon>shield</mat-icon>Confidentialite</a>
+    <a (click)="showPrivacyModal = true" class="nav-privacy" style="cursor:pointer"><mat-icon>shield</mat-icon>Confidentialite</a>
     <a href="#login" (click)="closeMobileMenu()">Connexion</a>
   </div>
   <button mat-flat-button class="nav-cta" (click)="scrollTo('login')">
@@ -24,7 +24,7 @@
   <a href="#features" (click)="closeMobileMenu()"><mat-icon>auto_awesome</mat-icon>Fonctionnalites</a>
   <a href="#how" (click)="closeMobileMenu()"><mat-icon>help_outline</mat-icon>Comment ca marche</a>
   <a href="#pricing" (click)="closeMobileMenu()"><mat-icon>sell</mat-icon>Tarifs</a>
-  <a routerLink="/privacy" (click)="closeMobileMenu()"><mat-icon>shield</mat-icon>Confidentialite</a>
+  <a (click)="showPrivacyModal = true; closeMobileMenu()"><mat-icon>shield</mat-icon>Confidentialite</a>
   <a href="#login" (click)="closeMobileMenu()"><mat-icon>login</mat-icon>Connexion</a>
   <button mat-flat-button class="mobile-cta" (click)="scrollTo('login'); closeMobileMenu()">
     <mat-icon>rocket_launch</mat-icon> Commencer gratuitement
@@ -692,6 +692,67 @@
 
 </div>
 
+<!-- ══════════════════════ MODAL CONFIDENTIALITÉ ══════════════════════ -->
+@if (showPrivacyModal) {
+  <div class="priv-overlay" (click)="showPrivacyModal = false">
+    <div class="priv-modal" (click)="$event.stopPropagation()">
+
+      <!-- En-tête -->
+      <div class="priv-modal-header">
+        <div class="priv-modal-title">
+          <div class="priv-modal-icon"><mat-icon>shield</mat-icon></div>
+          <div>
+            <h2>Politique de Confidentialité</h2>
+            <span>Dernière mise à jour : 12 mai 2025</span>
+          </div>
+        </div>
+        <button class="priv-close" (click)="showPrivacyModal = false">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Intro cards -->
+      <div class="priv-intro-cards">
+        <div class="priv-card"><mat-icon>block</mat-icon><strong>Pas de vente</strong><p>Tes données ne sont jamais vendues.</p></div>
+        <div class="priv-card"><mat-icon>lock</mat-icon><strong>Chiffrement total</strong><p>HTTPS, bcrypt et JWT.</p></div>
+        <div class="priv-card"><mat-icon>visibility_off</mat-icon><strong>Minimum collecté</strong><p>Que le strict nécessaire.</p></div>
+        <div class="priv-card"><mat-icon>delete_forever</mat-icon><strong>Suppression libre</strong><p>À tout moment, sur demande.</p></div>
+      </div>
+
+      <!-- Corps -->
+      <div class="priv-body">
+        @for (section of privacySections; track section.title) {
+          <div class="priv-section">
+            <div class="priv-section-head">
+              <div class="priv-section-icon"><mat-icon>{{ section.icon }}</mat-icon></div>
+              <h3>{{ section.title }}</h3>
+            </div>
+            <div class="priv-items">
+              @for (item of section.items; track item.label) {
+                <div class="priv-item">
+                  <mat-icon>chevron_right</mat-icon>
+                  <div>
+                    <strong>{{ item.label }}</strong>
+                    <p>{{ item.text }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Contact -->
+      <div class="priv-contact">
+        <mat-icon>mail_outline</mat-icon>
+        <span>Une question ? </span>
+        <a href="mailto:contact@mailnotifier.app">contact&#64;mailnotifier.app</a>
+      </div>
+
+    </div>
+  </div>
+}
+
 <!-- FOOTER -->
 <footer class="footer">
   <div class="footer-inner">
@@ -702,7 +763,7 @@
     <p class="footer-tagline">Surveille ta boite Gmail et recois des alertes sur Telegram et WhatsApp</p>
     <div class="footer-divider"></div>
     <div class="footer-links">
-      <a routerLink="/privacy" class="footer-link">
+      <a (click)="showPrivacyModal = true" class="footer-link" style="cursor:pointer">
         <mat-icon>shield</mat-icon> Politique de confidentialite
       </a>
       <span class="footer-dot">·</span>

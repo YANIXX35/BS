@@ -84,6 +84,57 @@ export class Landing implements OnInit, AfterViewInit {
   ];
   private _twInterval: any = null;
 
+  // ── Privacy Modal ─────────────────────────────────────────────────────────
+  showPrivacyModal = false;
+
+  privacySections = [
+    {
+      icon: 'person', title: 'Données collectées',
+      items: [
+        { label: 'Identité',       text: 'Nom, adresse e-mail et mot de passe hashé (bcrypt) lors de l\'inscription.' },
+        { label: 'Gmail OAuth',    text: 'Tokens OAuth2 Google, nécessaires pour lire tes e-mails entrants.' },
+        { label: 'Notifications',  text: 'Identifiant Telegram (chat ID) et/ou numéro de téléphone + credentials GreenAPI pour WhatsApp.' },
+        { label: 'Préférences',    text: 'Thème visuel, photo de profil, paramètres de notification.' },
+        { label: 'Logs techniques',text: 'Adresses IP (rate limiting uniquement, non persistées).' },
+      ]
+    },
+    {
+      icon: 'settings', title: 'Utilisation des données',
+      items: [
+        { label: 'Service principal', text: 'Surveiller ta boite Gmail et t\'envoyer une alerte sur Telegram et/ou WhatsApp.' },
+        { label: 'IA de tri',         text: 'Résumé intelligent via Gemini AI (Google). Seuls les sujets et aperçus sont transmis.' },
+        { label: 'Statistiques',      text: 'Nombre d\'e-mails reçus et notifications envoyées — affichés dans ton dashboard.' },
+      ]
+    },
+    {
+      icon: 'lock', title: 'Sécurité',
+      items: [
+        { label: 'Authentification', text: 'JWT signé (HS256) avec expiration 24h. Tout endpoint sensible est protégé.' },
+        { label: 'Mots de passe',    text: 'Hashés avec bcrypt — le mot de passe en clair n\'est jamais stocké.' },
+        { label: 'Transport',        text: 'Toutes les communications passent par HTTPS/TLS. Backend hébergé sur Render.' },
+        { label: 'OAuth2',           text: 'Accès Gmail via OAuth2 Google officiel. Aucun mot de passe Gmail collecté.' },
+      ]
+    },
+    {
+      icon: 'share', title: 'Services tiers',
+      items: [
+        { label: 'Google Gmail API',    text: 'Lecture des e-mails entrants. Soumis à la Politique de confidentialité Google.' },
+        { label: 'Telegram Bot API',    text: 'Envoi des alertes Telegram. Aucune donnée personnelle partagée au-delà du message.' },
+        { label: 'GreenAPI (WhatsApp)', text: 'Envoi des alertes WhatsApp. Seuls le numéro et le message sont transmis.' },
+        { label: 'Gemini AI (Google)',  text: 'Analyse IA des e-mails selon la politique d\'utilisation Google Gemini.' },
+      ]
+    },
+    {
+      icon: 'gavel', title: 'Tes droits',
+      items: [
+        { label: 'Accès',        text: 'Consulte toutes tes données depuis la page Paramètres de ton dashboard.' },
+        { label: 'Rectification',text: 'Modifie tes informations (nom, téléphone, identifiants) à tout moment.' },
+        { label: 'Suppression',  text: 'Contacte-nous pour supprimer définitivement ton compte et toutes tes données.' },
+        { label: 'Portabilité',  text: 'Tes données te sont transmises sur simple demande en format JSON.' },
+      ]
+    },
+  ];
+
   // ── Forgot Password ────────────────────────────────────────────────────────
   showForgotModal = false;
   forgotStep: 'email' | 'reset' | 'success' = 'email';

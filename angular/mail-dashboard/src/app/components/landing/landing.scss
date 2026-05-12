@@ -1688,6 +1688,245 @@ $bg:      #f0f4ff;
   }
 }
 
+// ── MODAL CONFIDENTIALITÉ ──────────────────────────────────────────────────────
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.priv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.priv-modal {
+  background: $white;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(79, 70, 229, 0.18), 0 8px 24px rgba(0,0,0,0.12);
+  animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  &::-webkit-scrollbar { width: 5px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: $border; border-radius: 4px; }
+
+  .priv-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px 20px;
+    border-bottom: 1px solid $border;
+    position: sticky;
+    top: 0;
+    background: $white;
+    z-index: 10;
+    border-radius: 24px 24px 0 0;
+
+    .priv-modal-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+
+      .priv-modal-icon {
+        width: 46px; height: 46px;
+        border-radius: 13px;
+        background: linear-gradient(135deg, $blue, $purple);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        mat-icon { color: white; font-size: 22px; width: 22px; height: 22px; }
+      }
+
+      h2 {
+        margin: 0 0 3px;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: $text;
+      }
+
+      span {
+        font-size: 0.75rem;
+        color: $muted;
+      }
+    }
+
+    .priv-close {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: $bg;
+      border: 1px solid $border;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: $muted;
+      transition: all 0.15s;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      &:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+    }
+  }
+
+  .priv-intro-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 18px 28px;
+    border-bottom: 1px solid $border;
+    background: $bg;
+
+    .priv-card {
+      background: $white;
+      border: 1px solid $border;
+      border-radius: 12px;
+      padding: 14px 12px;
+      text-align: center;
+
+      mat-icon {
+        font-size: 22px; width: 22px; height: 22px;
+        background: linear-gradient(135deg, $blue, $purple);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 6px;
+      }
+
+      strong {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: $text;
+        margin-bottom: 4px;
+      }
+
+      p {
+        font-size: 0.72rem;
+        color: $muted;
+        margin: 0;
+        line-height: 1.4;
+      }
+    }
+  }
+
+  .priv-body {
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .priv-section {
+    border: 1px solid $border;
+    border-radius: 14px;
+    overflow: hidden;
+
+    .priv-section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: $bg;
+      border-bottom: 1px solid $border;
+
+      .priv-section-icon {
+        width: 36px; height: 36px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, rgba($blue,.15), rgba($purple,.15));
+        border: 1px solid rgba($purple, .2);
+        display: flex; align-items: center; justify-content: center;
+        mat-icon {
+          font-size: 18px; width: 18px; height: 18px;
+          background: linear-gradient(135deg, $blue, $purple);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+      }
+
+      h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: $text;
+      }
+    }
+
+    .priv-items { padding: 4px 0; }
+
+    .priv-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 11px 18px;
+      border-bottom: 1px solid rgba($border, .6);
+      &:last-child { border-bottom: none; }
+
+      > mat-icon {
+        font-size: 16px; width: 16px; height: 16px;
+        color: $purple;
+        margin-top: 2px;
+        flex-shrink: 0;
+      }
+
+      strong {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: $text;
+        margin-bottom: 2px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 0.8rem;
+        color: $muted;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .priv-contact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 28px 24px;
+    font-size: 0.85rem;
+    color: $muted;
+    border-top: 1px solid $border;
+
+    mat-icon { font-size: 18px; width: 18px; height: 18px; color: $purple; }
+
+    a {
+      color: $blue;
+      font-weight: 600;
+      text-decoration: none;
+      &:hover { text-decoration: underline; }
+    }
+  }
+
+  @media (max-width: 540px) {
+    border-radius: 18px;
+    max-height: 92vh;
+
+    .priv-modal-header { padding: 16px 18px 14px; }
+    .priv-intro-cards { grid-template-columns: repeat(2, 1fr); padding: 14px 18px; }
+    .priv-body { padding: 14px 18px; }
+    .priv-section {
+      .priv-section-head { padding: 12px 14px; }
+      .priv-item { padding: 10px 14px; }
+    }
+    .priv-contact { padding: 14px 18px 20px; flex-wrap: wrap; justify-content: center; }
+  }
+}
+
 // ── SCROLL ANIMATIONS ──────────────────────────────────────────────────────────
 .anim-card {
   opacity: 0;
