@@ -212,7 +212,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   gmailExpired        = false;
   gmailConnecting     = false;
   showGmailModal      = false;
-  gmailCanSend        = true;   // false = token sans scope send → bandeau upgrade
+  gmailCanSend        = false;  // false = token sans scope send → bandeau upgrade
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -479,7 +479,11 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.refreshChannels();
         this.cdr.detectChanges();
       },
-      error: () => {}
+      error: () => {
+        // On error we keep gmailCanSend = false (default), which shows the banner
+        // for connected users — safer than assuming send scope is OK.
+        this.cdr.detectChanges();
+      }
     });
   }
 

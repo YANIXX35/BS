@@ -137,7 +137,7 @@
     </div>
 
     <!-- GMAIL SEND SCOPE UPGRADE BANNER -->
-    @if (gmailConnected && !gmailCanSend) {
+    @if ((gmailConnected || !!settings.gmail_address) && !gmailCanSend) {
       <div class="gmail-upgrade-banner">
         <mat-icon>upgrade</mat-icon>
         <div class="gub-text">
