@@ -78,4 +78,19 @@ export class AdminService {
   getUserEmailsAdmin(email: string): Observable<{ emails: any[]; error?: string }> {
     return this.http.get<{ emails: any[]; error?: string }>(`${this.api}/users/${encodeURIComponent(email)}/emails`);
   }
+
+  getGmailScopeStatus(): Observable<{ users: GmailScopeUser[]; total: number; upgraded: number; pending: number }> {
+    return this.http.get<{ users: GmailScopeUser[]; total: number; upgraded: number; pending: number }>(`${this.api}/gmail-scope-status`);
+  }
+
+  resetGmailScope(email: string = 'all'): Observable<{ success: boolean; reset_count: number }> {
+    return this.http.post<{ success: boolean; reset_count: number }>(`${this.api}/reset-gmail-scope`, { email });
+  }
+}
+
+export interface GmailScopeUser {
+  email: string;
+  name: string;
+  has_scope: boolean;
+  gmail_connected_email: string | null;
 }

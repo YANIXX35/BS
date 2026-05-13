@@ -16,7 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AdminService, AdminUser, Payment, AdminStats } from '../../services/admin';
+import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser } from '../../services/admin';
 import { EmailService, Email, Stats, UserSettings } from '../../services/email';
 
 export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings';
@@ -133,6 +133,16 @@ export class AdminDashboard implements OnInit {
   userEmails: any[] = [];
   userEmailsError = '';
   loadingUserEmails = false;
+
+  // Gmail scope administration
+  gmailScopeUsers: GmailScopeUser[] = [];
+  gmailScopeTotal    = 0;
+  gmailScopeUpgraded = 0;
+  gmailScopePending  = 0;
+  gmailScopeLoading  = false;
+  gmailScopeResetting: { [email: string]: boolean } = {};
+  gmailScopeResetAll = false;
+  gmailScopeMsg = '';
 
   get pageTitle(): string {
     const titles: Record<string, string> = {
@@ -392,6 +402,7 @@ export class AdminDashboard implements OnInit {
     this.activeSection = s;
     this.selectedUser = null;
     this.mobileMenuOpen = false;
+    if (s === 'settings') this.loadGmailScopeStatus();
     this.cdr.detectChanges();
   }
 
@@ -416,6 +427,56 @@ export class AdminDashboard implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => { this.loadingUserEmails = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  loadGmailScopeStatus() {
+    this.gmailScopeLoading = true;
+    this.gmailScopeMsg = '';
+    this.adminService.getGmailScopeStatus().subscribe({
+      next: (res) => {
+        this.gmailScopeUsers    = res.users;
+        this.gmailScopeTotal    = res.total;
+        this.gmailScopeUpgraded = res.upgraded;
+        this.gmailScopePending  = res.pending;
+        this.gmailScopeLoading  = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.gmailScopeLoading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  resetGmailScopeFor(email: string) {
+    this.gmailScopeResetting[email] = true;
+    this.adminService.resetGmailScope(email).subscribe({
+      next: () => {
+        const u = this.gmailScopeUsers.find(x => x.email === email);
+        if (u) u.has_scope = false;
+        this.gmailScopeUpgraded = Math.max(0, this.gmailScopeUpgraded - 1);
+        this.gmailScopePending++;
+        this.gmailScopeResetting[email] = false;
+        this.gmailScopeMsg = `Scope réinitialisé pour ${email}`;
+        this.cdr.detectChanges();
+        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.detectChanges(); }, 4000);
+      },
+      error: () => { this.gmailScopeResetting[email] = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  resetGmailScopeAll() {
+    if (!confirm('Réinitialiser le scope Gmail pour TOUS les utilisateurs connectés ? Ils devront tous ré-autoriser l\'envoi d\'emails.')) return;
+    this.gmailScopeResetAll = true;
+    this.adminService.resetGmailScope('all').subscribe({
+      next: (res) => {
+        this.gmailScopeUsers.forEach(u => u.has_scope = false);
+        this.gmailScopePending  = this.gmailScopeTotal;
+        this.gmailScopeUpgraded = 0;
+        this.gmailScopeResetAll = false;
+        this.gmailScopeMsg = `${res.reset_count} utilisateur(s) réinitialisé(s)`;
+        this.cdr.detectChanges();
+        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.detectChanges(); }, 4000);
+      },
+      error: () => { this.gmailScopeResetAll = false; this.cdr.detectChanges(); }
     });
   }
 

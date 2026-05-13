@@ -746,6 +746,107 @@
             </button>
           </div>
 
+          <!-- ── GMAIL SCOPE ADMINISTRATION ── -->
+          <div class="section-block full-settings-col gmail-scope-admin" style="margin-top:24px">
+            <div class="block-header">
+              <h3><mat-icon style="color:#ea4335">manage_accounts</mat-icon> Administration Gmail — Scope d'envoi</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                @if (gmailScopeMsg) {
+                  <span class="gsa-msg">{{ gmailScopeMsg }}</span>
+                }
+                <button mat-stroked-button class="gsa-reload-btn" (click)="loadGmailScopeStatus()" [disabled]="gmailScopeLoading">
+                  <mat-icon>refresh</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <!-- KPI row -->
+            <div class="gsa-kpi-row">
+              <div class="gsa-kpi">
+                <mat-icon style="color:#6b7280">group</mat-icon>
+                <div>
+                  <span class="gsa-kpi-val">{{ gmailScopeTotal }}</span>
+                  <span class="gsa-kpi-lbl">Connectés Gmail</span>
+                </div>
+              </div>
+              <div class="gsa-kpi ok">
+                <mat-icon style="color:#16a34a">check_circle</mat-icon>
+                <div>
+                  <span class="gsa-kpi-val">{{ gmailScopeUpgraded }}</span>
+                  <span class="gsa-kpi-lbl">Ont autorisé l'envoi</span>
+                </div>
+              </div>
+              <div class="gsa-kpi warn">
+                <mat-icon style="color:#d97706">warning</mat-icon>
+                <div>
+                  <span class="gsa-kpi-val">{{ gmailScopePending }}</span>
+                  <span class="gsa-kpi-lbl">En attente</span>
+                </div>
+              </div>
+              <button mat-flat-button class="gsa-reset-all-btn"
+                (click)="resetGmailScopeAll()"
+                [disabled]="gmailScopeResetAll || gmailScopeUpgraded === 0">
+                @if (gmailScopeResetAll) { <mat-spinner diameter="16" /> }
+                @else { <mat-icon>restart_alt</mat-icon> }
+                Reset tous
+              </button>
+            </div>
+
+            <!-- Table -->
+            @if (gmailScopeLoading) {
+              <mat-progress-bar mode="indeterminate" style="margin:12px 0" />
+            } @else if (gmailScopeUsers.length === 0) {
+              <div class="gsa-empty">
+                <mat-icon>mail_outline</mat-icon>
+                <p>Aucun utilisateur avec Gmail OAuth connecté</p>
+              </div>
+            } @else {
+              <div class="gsa-table">
+                <div class="gsa-row gsa-header">
+                  <span>Utilisateur</span>
+                  <span>Gmail connecté</span>
+                  <span>Statut scope</span>
+                  <span>Action</span>
+                </div>
+                @for (u of gmailScopeUsers; track u.email) {
+                  <div class="gsa-row" [class.gsa-row-ok]="u.has_scope" [class.gsa-row-warn]="!u.has_scope">
+                    <div class="gsa-user-cell">
+                      <div class="gsa-avatar" [style.background]="getAvatarColor(u.email)">{{ u.name.charAt(0).toUpperCase() }}</div>
+                      <div>
+                        <span class="gsa-name">{{ u.name }}</span>
+                        <span class="gsa-email">{{ u.email }}</span>
+                      </div>
+                    </div>
+                    <span class="gsa-gmail-addr">{{ u.gmail_connected_email || '—' }}</span>
+                    <span>
+                      @if (u.has_scope) {
+                        <span class="gsa-badge ok"><mat-icon>check</mat-icon> Autorisé</span>
+                      } @else {
+                        <span class="gsa-badge warn"><mat-icon>hourglass_empty</mat-icon> En attente</span>
+                      }
+                    </span>
+                    <span>
+                      @if (u.has_scope) {
+                        <button mat-icon-button matTooltip="Forcer la re-autorisation" (click)="resetGmailScopeFor(u.email)" [disabled]="gmailScopeResetting[u.email]">
+                          @if (gmailScopeResetting[u.email]) { <mat-spinner diameter="18" /> }
+                          @else { <mat-icon class="gsa-reset-icon">restart_alt</mat-icon> }
+                        </button>
+                      } @else {
+                        <span class="gsa-waiting-txt"><mat-icon>schedule</mat-icon> Attend re-auth</span>
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            }
+
+            <p class="gsa-hint">
+              <mat-icon>info_outline</mat-icon>
+              Les utilisateurs "En attente" verront un bandeau dans leur dashboard pour autoriser l'envoi d'emails.
+              Cliquer sur "Reset" force un utilisateur à re-autoriser même s'il l'avait déjà fait.
+            </p>
+          </div>
+
         </div>
       }
 
