@@ -136,6 +136,20 @@
       </div>
     </div>
 
+    <!-- GMAIL SEND SCOPE UPGRADE BANNER -->
+    @if (gmailConnected && !gmailCanSend) {
+      <div class="gmail-upgrade-banner">
+        <mat-icon>upgrade</mat-icon>
+        <div class="gub-text">
+          <strong>Mise à jour requise</strong>
+          <span>Autorisez MailNotifier à envoyer des emails pour activer les réponses depuis le dashboard et WhatsApp.</span>
+        </div>
+        <button class="gub-btn" (click)="reconnectGmailForSend()">
+          <mat-icon>lock_open</mat-icon> Autoriser en 1 clic
+        </button>
+      </div>
+    }
+
     <!-- KPI CARDS -->
     <div class="kpi-grid">
 
@@ -591,6 +605,26 @@
               <mat-icon>cancel</mat-icon> {{ whatsappCheckMessage }}
             </span>
           </div>
+
+          <!-- Webhook reply info -->
+          <div class="wa-webhook-info">
+            <div class="wa-wh-head">
+              <mat-icon>webhook</mat-icon>
+              <strong>Répondre aux mails via WhatsApp</strong>
+            </div>
+            <p class="wa-wh-desc">
+              Configure l'URL de webhook suivante dans ton compte <strong>Green API</strong> pour pouvoir répondre à un email directement depuis WhatsApp.
+            </p>
+            <div class="wa-wh-url">
+              <code>https://backend-mail-1.onrender.com/api/whatsapp/webhook</code>
+              <button class="wa-wh-copy" (click)="copyWebhookUrl()" matTooltip="Copier">
+                <mat-icon>{{ webhookCopied ? 'check' : 'content_copy' }}</mat-icon>
+              </button>
+            </div>
+            <p class="wa-wh-steps">
+              Dans Green API : <em>Account → Settings → Webhooks → URL de notification → coller l'URL ci-dessus</em>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -650,6 +684,52 @@
           <p class="reader-snippet">{{ selectedEmail.snippet }}</p>
         }
       </div>
+
+      <!-- ─── REPLY FOOTER ─── -->
+      <div class="reader-footer">
+        @if (!replyOpen) {
+          <button class="reply-btn" (click)="openReply()">
+            <mat-icon>reply</mat-icon> Répondre
+          </button>
+        }
+        @if (replyOpen) {
+          <div class="reply-composer">
+            <div class="reply-to-row">
+              <mat-icon>reply</mat-icon>
+              <span>Répondre à <strong>{{ getSenderName(selectedEmail.sender) }}</strong></span>
+              <button class="reply-cancel" (click)="closeReply()"><mat-icon>close</mat-icon></button>
+            </div>
+            <textarea
+              class="reply-textarea"
+              [(ngModel)]="replyText"
+              placeholder="Écrivez votre réponse..."
+              rows="5"
+              [disabled]="replySending">
+            </textarea>
+            @if (replyError) {
+              <div class="reply-feedback reply-feedback--err">
+                <mat-icon>error_outline</mat-icon> {{ replyError }}
+              </div>
+            }
+            @if (replySuccess) {
+              <div class="reply-feedback reply-feedback--ok">
+                <mat-icon>check_circle</mat-icon> {{ replySuccess }}
+              </div>
+            }
+            <div class="reply-actions">
+              <button class="reply-send-btn" (click)="sendReply()" [disabled]="!replyText.trim() || replySending">
+                @if (replySending) {
+                  <mat-progress-spinner diameter="16" mode="indeterminate" />
+                } @else {
+                  <mat-icon>send</mat-icon>
+                }
+                {{ replySending ? 'Envoi...' : 'Envoyer' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
     </div>
   </div>
   }

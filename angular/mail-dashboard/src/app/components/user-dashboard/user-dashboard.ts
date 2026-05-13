@@ -212,6 +212,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   gmailExpired        = false;
   gmailConnecting     = false;
   showGmailModal      = false;
+  gmailCanSend        = true;   // false = token sans scope send → bandeau upgrade
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -220,6 +221,16 @@ export class UserDashboard implements OnInit, OnDestroy {
     { icon: 'psychology',    label: 'Analyse IA',       color: '#059669', action: 'ai'      },
     { icon: 'settings',      label: 'Parametres',       color: '#6a1b9a', action: 'settings'},
   ];
+
+  // Reply
+  replyOpen    = false;
+  replyText    = '';
+  replySending = false;
+  replySuccess = '';
+  replyError   = '';
+
+  // Webhook copy
+  webhookCopied = false;
 
   private _clockInterval: any;
   private _syncInterval: any;
@@ -455,6 +466,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.gmailConnected      = res.connected;
         this.gmailConnectedEmail = res.gmail_email || '';
         this.gmailExpired        = res.expired;
+        this.gmailCanSend        = !res.connected || res.can_send;
         this.refreshChannels();
         this.cdr.detectChanges();
       },
@@ -593,6 +605,67 @@ export class UserDashboard implements OnInit, OnDestroy {
   closeEmail() {
     this.selectedEmail = null;
     this.emailDetailBody = '';
+    this.replyOpen = false;
+    this.replyText = '';
+    this.replyError = '';
+    this.replySuccess = '';
+  }
+
+  openReply() {
+    this.replyOpen   = true;
+    this.replyText   = '';
+    this.replySuccess = '';
+    this.replyError  = '';
+  }
+
+  closeReply() {
+    this.replyOpen = false;
+  }
+
+  reconnectGmailForSend() {
+    this.emailService.connectGmail(this.user.email);
+  }
+
+  copyWebhookUrl() {
+    navigator.clipboard.writeText('https://backend-mail-1.onrender.com/api/whatsapp/webhook').then(() => {
+      this.webhookCopied = true;
+      this.cdr.detectChanges();
+      setTimeout(() => { this.webhookCopied = false; this.cdr.detectChanges(); }, 2000);
+    });
+  }
+
+  sendReply() {
+    if (!this.selectedEmail || !this.replyText.trim()) return;
+    this.replySending = true;
+    this.replySuccess = '';
+    this.replyError   = '';
+    this.emailService.replyEmail(this.user.email, this.selectedEmail.id, this.replyText.trim()).subscribe({
+      next: () => {
+        this.replySending = false;
+        this.replySuccess = 'Réponse envoyée !';
+        this.replyText    = '';
+        this.cdr.detectChanges();
+        setTimeout(() => {
+          this.replySuccess = '';
+          this.replyOpen    = false;
+          this.cdr.detectChanges();
+        }, 2500);
+      },
+      error: (err) => {
+        this.replySending = false;
+        const errData = err.error || {};
+        if (errData.reconnect) {
+          // Scope gmail.send manquant → re-auth automatique
+          this.replyError = "Mise à jour des permissions Gmail en cours...";
+          this.gmailCanSend = false;
+          this.cdr.detectChanges();
+          setTimeout(() => this.emailService.connectGmail(this.user.email), 1500);
+          return;
+        }
+        this.replyError = errData.error || "Erreur lors de l'envoi";
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   loadAiAnalysis() {
@@ -606,7 +679,14 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.aiError = err.error?.error || 'Analyse IA indisponible';
+        const msg: string = err.error?.error || '';
+        // Gmail not connected → show the neutral placeholder, not an error
+        if (err.status === 403 || msg.toLowerCase().includes('gmail')) {
+          this.aiAnalysis = null;
+          this.aiError = '';
+        } else {
+          this.aiError = msg || 'Analyse IA indisponible';
+        }
         this.aiLoading = false;
         this.cdr.detectChanges();
       }

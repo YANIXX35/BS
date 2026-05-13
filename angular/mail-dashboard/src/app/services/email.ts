@@ -62,6 +62,7 @@ export interface GmailStatus {
   connected: boolean;
   gmail_email: string | null;
   expired: boolean;
+  can_send: boolean;
 }
 
 export interface UserSettings {
@@ -152,6 +153,14 @@ export class EmailService {
 
   analyzeInbox(email: string): Observable<AiAnalysis> {
     return this.http.get<AiAnalysis>(`${this.apiUrl}/ai/analyze`, { params: { email } });
+  }
+
+  replyEmail(userEmail: string, messageId: string, replyText: string): Observable<{success: boolean; message: string}> {
+    return this.http.post<{success: boolean; message: string}>(`${this.apiUrl}/email/reply`, {
+      email: userEmail,
+      message_id: messageId,
+      reply_text: replyText
+    });
   }
 
   getEmailDetail(userEmail: string, messageId: string): Observable<EmailDetail> {

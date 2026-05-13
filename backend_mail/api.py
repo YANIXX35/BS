@@ -28,6 +28,7 @@ import psycopg2.extras
 import psycopg2.pool
 import bcrypt
 import jwt
+import base64
 
 # ── CACHE MÉMOIRE (TTL simple, thread-safe) ────────────────────────────────────
 _cache: dict = {}
@@ -196,7 +197,10 @@ GOOGLE_CLIENT_ID     = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 OAUTH_REDIRECT_URI   = os.getenv('OAUTH_REDIRECT_URI', 'https://backend-mail-1.onrender.com/api/gmail/callback')
 FRONTEND_URL         = os.getenv('FRONTEND_URL', 'https://bs-mailnotif-nine.vercel.app')
-GMAIL_SCOPES         = ['https://www.googleapis.com/auth/gmail.readonly']
+GMAIL_SCOPES         = [
+    'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
+]
 
 _init_firebase()
 notifier_status = {"running": False}
@@ -412,6 +416,14 @@ def init_db():
                     plan VARCHAR(20),
                     amount DECIMAL(10,2),
                     status VARCHAR(20) DEFAULT 'paid',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS whatsapp_email_map (
+                    wa_msg_id VARCHAR(100) PRIMARY KEY,
+                    user_email VARCHAR(150) NOT NULL,
+                    gmail_message_id VARCHAR(100) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -1163,7 +1175,7 @@ def gmail_disconnect():
 @app.route('/api/gmail/status')
 @token_required
 def gmail_oauth_status():
-    """Retourne le statut de connexion OAuth Gmail de l'utilisateur (cache 60s)."""
+    """Retourne le statut de connexion OAuth Gmail + si le scope send est disponible."""
     email = request.args.get('email', '').strip().lower()
     if not email:
         return jsonify({'connected': False}), 400
@@ -1177,20 +1189,52 @@ def gmail_oauth_status():
     try:
         with db.cursor() as cur:
             cur.execute(
-                "SELECT gmail_refresh_token, gmail_connected_email, gmail_token_expiry "
+                "SELECT gmail_access_token, gmail_refresh_token, gmail_connected_email, gmail_token_expiry "
                 "FROM users WHERE email = %s",
                 (email,),
             )
             row = cur.fetchone()
         if not row or not row.get('gmail_refresh_token'):
-            result = {'connected': False, 'gmail_email': None, 'expired': False}
+            result = {'connected': False, 'gmail_email': None, 'expired': False, 'can_send': False}
         else:
             expiry  = row.get('gmail_token_expiry')
             expired = bool(expiry and int(time.time()) > expiry)
-            result  = {
+
+            # Vérifier si le token a le scope gmail.send (via tokeninfo Google)
+            can_send = False
+            access_token = row.get('gmail_access_token')
+            if access_token:
+                try:
+                    tr = requests.get(
+                        'https://oauth2.googleapis.com/tokeninfo',
+                        params={'access_token': access_token},
+                        timeout=4,
+                    )
+                    if tr.ok:
+                        can_send = 'gmail.send' in tr.json().get('scope', '')
+                    elif tr.status_code == 400:
+                        # Token expiré — on tente un refresh pour obtenir le scope réel
+                        svc = _get_gmail_service(email)
+                        if svc:
+                            with db.cursor() as cur2:
+                                cur2.execute("SELECT gmail_access_token FROM users WHERE email=%s", (email,))
+                                refreshed = cur2.fetchone()
+                            if refreshed and refreshed.get('gmail_access_token'):
+                                tr2 = requests.get(
+                                    'https://oauth2.googleapis.com/tokeninfo',
+                                    params={'access_token': refreshed['gmail_access_token']},
+                                    timeout=4,
+                                )
+                                if tr2.ok:
+                                    can_send = 'gmail.send' in tr2.json().get('scope', '')
+                except Exception:
+                    can_send = True  # en cas d'erreur réseau, on ne bloque pas l'utilisateur
+
+            result = {
                 'connected':   True,
                 'gmail_email': row.get('gmail_connected_email'),
                 'expired':     expired,
+                'can_send':    can_send,
             }
         _cache_set(cache_key, result, ttl=60)
         return jsonify(result)
@@ -1357,6 +1401,169 @@ def get_email_detail(message_id):
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/api/email/reply', methods=['POST'])
+@token_required
+def reply_email():
+    """Répond à un email Gmail via l'API Gmail (send)."""
+    data = request.get_json(silent=True) or {}
+    user_email   = data.get('email', '').strip().lower()
+    message_id   = data.get('message_id', '').strip()
+    reply_text   = data.get('reply_text', '').strip()
+
+    if not user_email or not message_id or not reply_text:
+        return jsonify({'error': 'Paramètres manquants (email, message_id, reply_text)'}), 400
+
+    service = _get_gmail_service(user_email)
+    if not service:
+        return jsonify({'error': 'Gmail non connecté. Reconnectez Gmail dans les paramètres.'}), 403
+
+    try:
+        orig = service.users().messages().get(
+            userId='me', id=message_id, format='metadata',
+            metadataHeaders=['Subject', 'From', 'Message-ID', 'References']
+        ).execute()
+
+        hdrs      = {h['name']: h['value'] for h in orig.get('payload', {}).get('headers', [])}
+        thread_id = orig.get('threadId', '')
+        subject   = hdrs.get('Subject', '')
+        if not subject.lower().startswith('re:'):
+            subject = f'Re: {subject}'
+        to_addr      = hdrs.get('From', '')
+        orig_msg_id  = hdrs.get('Message-ID', '')
+        existing_refs = hdrs.get('References', '')
+        references   = (f'{existing_refs} {orig_msg_id}').strip() if orig_msg_id else existing_refs
+
+        msg = MIMEText(reply_text, 'plain', 'utf-8')
+        msg['To']      = to_addr
+        msg['Subject'] = subject
+        if orig_msg_id:
+            msg['In-Reply-To'] = orig_msg_id
+        if references:
+            msg['References'] = references
+
+        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        service.users().messages().send(
+            userId='me',
+            body={'raw': raw, 'threadId': thread_id}
+        ).execute()
+
+        return jsonify({'success': True, 'message': 'Réponse envoyée avec succès'})
+
+    except HttpError as e:
+        err_str = str(e)
+        if 'insufficientPermissions' in err_str or 'ACCESS_DENIED' in err_str:
+            return jsonify({
+                'error': "Permission insuffisante. Reconnectez Gmail pour activer l'envoi.",
+                'reconnect': True
+            }), 403
+        print(f"[REPLY] HttpError: {e}")
+        return jsonify({'error': f'Erreur envoi: {err_str}'}), 500
+    except Exception as e:
+        print(f"[REPLY] Error: {e}")
+        return jsonify({'error': f'Erreur envoi: {str(e)}'}), 500
+
+
+@app.route('/api/whatsapp/webhook', methods=['POST'])
+def whatsapp_webhook():
+    """Webhook Green API — l'utilisateur répond à une notif WhatsApp → on envoie le reply Gmail."""
+    try:
+        data         = request.get_json(silent=True) or {}
+        type_webhook = data.get('typeWebhook', '')
+
+        if type_webhook != 'incomingMessageReceived':
+            return jsonify({'status': 'ignored'}), 200
+
+        msg_data = data.get('messageData', {})
+        if msg_data.get('typeMessage') != 'textMessage':
+            return jsonify({'status': 'not_text'}), 200
+
+        reply_text = msg_data.get('textMessageData', {}).get('textMessage', '').strip()
+        if not reply_text:
+            return jsonify({'status': 'empty'}), 200
+
+        # On ne traite que les réponses à une notif (quotedMessage présent)
+        quoted = msg_data.get('quotedMessage')
+        if not quoted:
+            return jsonify({'status': 'not_a_reply'}), 200
+
+        original_wa_msg_id = quoted.get('stanzaId', '')
+        if not original_wa_msg_id:
+            return jsonify({'status': 'no_stanza_id'}), 200
+
+        # Retrouver l'email Gmail correspondant
+        db  = get_db()
+        row = None
+        try:
+            with db.cursor() as cur:
+                cur.execute(
+                    "SELECT user_email, gmail_message_id FROM whatsapp_email_map WHERE wa_msg_id=%s",
+                    (original_wa_msg_id,)
+                )
+                row = cur.fetchone()
+        finally:
+            _return_db(db)
+
+        if not row:
+            print(f"[WEBHOOK] Aucun mapping pour wa_msg_id={original_wa_msg_id}")
+            return jsonify({'status': 'no_mapping'}), 200
+
+        user_email       = row['user_email']
+        gmail_message_id = row['gmail_message_id']
+
+        service = _get_gmail_service(user_email)
+        if not service:
+            print(f"[WEBHOOK] Gmail non connecté pour {user_email}")
+            return jsonify({'status': 'gmail_not_connected'}), 200
+
+        orig  = service.users().messages().get(
+            userId='me', id=gmail_message_id, format='metadata',
+            metadataHeaders=['Subject', 'From', 'Message-ID', 'References']
+        ).execute()
+        hdrs      = {h['name']: h['value'] for h in orig.get('payload', {}).get('headers', [])}
+        thread_id = orig.get('threadId', '')
+        subject   = hdrs.get('Subject', '')
+        if not subject.lower().startswith('re:'):
+            subject = f'Re: {subject}'
+        to_addr      = hdrs.get('From', '')
+        orig_msg_id  = hdrs.get('Message-ID', '')
+        existing_refs = hdrs.get('References', '')
+        references   = (f'{existing_refs} {orig_msg_id}').strip() if orig_msg_id else existing_refs
+
+        msg = MIMEText(reply_text, 'plain', 'utf-8')
+        msg['To']      = to_addr
+        msg['Subject'] = subject
+        if orig_msg_id:
+            msg['In-Reply-To'] = orig_msg_id
+        if references:
+            msg['References'] = references
+
+        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        service.users().messages().send(
+            userId='me',
+            body={'raw': raw, 'threadId': thread_id}
+        ).execute()
+
+        print(f"[WEBHOOK] Reply WhatsApp envoyé → {to_addr} pour {user_email}")
+
+        # Confirmation WhatsApp à l'expéditeur
+        sender_chat_id = data.get('senderData', {}).get('chatId', '')
+        if sender_chat_id and GREEN_API_INSTANCE and GREEN_API_TOKEN:
+            try:
+                confirm_url = f"{GREEN_API_URL}/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
+                requests.post(confirm_url, json={
+                    "chatId": sender_chat_id,
+                    "message": f"✅ Réponse envoyée à {to_addr} !"
+                }, timeout=10)
+            except Exception:
+                pass
+
+        return jsonify({'status': 'reply_sent'}), 200
+
+    except Exception as e:
+        print(f"[WEBHOOK] Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/ai/analyze')
 @token_required
 def ai_analyze():
@@ -1441,27 +1648,49 @@ Règles de classification:
 - newsletter: promotions, publicités, désabonnement, marketing, offres commerciales
 - normal: tout le reste (emails de collègues, notifications informatives, etc.)"""
 
-        url = (
-            'https://generativelanguage.googleapis.com/v1beta/models/'
-            f'gemini-2.5-flash-lite:generateContent?key={GEMINI_API_KEY}'
-        )
-        resp = requests.post(
-            url,
-            headers={'Content-Type': 'application/json'},
-            json={
-                'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
-                'generationConfig': {'maxOutputTokens': 1500, 'temperature': 0.2},
-            },
-            timeout=(5, 45),
-        )
-        resp.raise_for_status()
+        GEMINI_MODELS = [
+            'gemini-2.0-flash-lite',
+            'gemini-1.5-flash',
+        ]
 
         import json as _json_ai
+
+        resp = None
+        last_err = None
+        for model_name in GEMINI_MODELS:
+            url = (
+                'https://generativelanguage.googleapis.com/v1beta/models/'
+                f'{model_name}:generateContent?key={GEMINI_API_KEY}'
+            )
+            try:
+                resp = requests.post(
+                    url,
+                    headers={'Content-Type': 'application/json'},
+                    json={
+                        'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
+                        'generationConfig': {'maxOutputTokens': 1500, 'temperature': 0.2},
+                    },
+                    timeout=(5, 45),
+                )
+                resp.raise_for_status()
+                break
+            except Exception as e:
+                last_err = e
+                resp = None
+                continue
+
+        if resp is None:
+            raise last_err
+
         raw = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
+        # Strip markdown code fences if present
+        if '```' in raw:
+            parts = raw.split('```')
+            # parts[1] is the content between first and second fence
+            raw = parts[1] if len(parts) > 1 else raw
+            if raw.startswith('json'):
                 raw = raw[4:]
+            raw = raw.strip()
         analysis = _json_ai.loads(raw)
         _cache_set(cache_key, analysis, ttl=300)   # 5 min
         return jsonify(analysis)
@@ -1795,7 +2024,7 @@ def _resolve_whatsapp_chat_id(phone_clean: str):
     return None
 
 
-def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str, category: str = 'normal'):
+def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str, category: str = 'normal', gmail_message_id: str = ''):
     phone = user.get('phone')
     if not phone or not GREEN_API_INSTANCE or not GREEN_API_TOKEN:
         return
@@ -1804,17 +2033,17 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str, c
         return
     match = re.match(r'^(.+?)\s*<', sender)
     sender_name = match.group(1).strip().strip('"') if match else sender.split('@')[0]
-    cat_labels = {'important': '[!] Important', 'newsletter': '[~] Newsletter', 'normal': '[*] Normal'}
-    cat_label = cat_labels.get(category, '[*] Normal')
+    cat_labels = {'important': '🔴 Important', 'newsletter': '📢 Newsletter', 'normal': '✉️ Normal'}
+    cat_label = cat_labels.get(category, '✉️ Normal')
     text = (
         f"*MailNotifier*\n"
         f"------------------\n"
-        f"Nouveau mail - {cat_label}\n\n"
+        f"Nouveau mail — {cat_label}\n\n"
         f"*De :* {sender_name}\n"
         f"*Objet :* {subject}\n"
-        f"*Apercu :* {snippet[:150]}\n\n"
+        f"*Aperçu :* {snippet[:150]}\n\n"
         f"------------------\n"
-        f"Consultez votre boite mail."
+        f"💬 Répondez à ce message WhatsApp pour répondre directement par email."
     )
     try:
         # Préférer le chatId stocké en BDD (évite checkWhatsapp)
@@ -1829,6 +2058,11 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str, c
             # Sauvegarder le chatId en BDD si pas encore stocké
             if not user.get('whatsapp_chat_id') and chat_id:
                 _save_whatsapp_chat_id(user.get('id'), chat_id)
+            # Stocker le mapping wa_msg_id → gmail_message_id pour le webhook reply
+            if gmail_message_id:
+                wa_msg_id = resp.json().get('idMessage', '')
+                if wa_msg_id:
+                    _store_whatsapp_email_map(wa_msg_id, user.get('email', ''), gmail_message_id)
         else:
             print(f"[Monitor] WhatsApp erreur: {resp.status_code} {resp.text[:100]}")
     except Exception as e:
@@ -1952,6 +2186,22 @@ def _save_whatsapp_chat_id(user_id, chat_id: str):
         _return_db(db)
 
 
+def _store_whatsapp_email_map(wa_msg_id: str, user_email: str, gmail_message_id: str):
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute(
+                """INSERT INTO whatsapp_email_map (wa_msg_id, user_email, gmail_message_id)
+                   VALUES (%s, %s, %s) ON CONFLICT (wa_msg_id) DO NOTHING""",
+                (wa_msg_id, user_email, gmail_message_id)
+            )
+        db.commit()
+    except Exception as e:
+        print(f"[Monitor] Erreur store whatsapp_email_map: {e}")
+    finally:
+        _return_db(db)
+
+
 def _check_user_emails_gmail(user):
     """Vérifie les nouveaux mails d'un utilisateur via Gmail API (OAuth 2.0)."""
     user_email      = user['email']
@@ -2005,7 +2255,7 @@ def _check_user_emails_gmail(user):
                         _send_telegram_notification(chat_id, sender, subject, snippet, user_email, category)
 
                     if user.get('whatsapp_enabled', True):
-                        _send_whatsapp_notification(user, sender, subject, snippet, category)
+                        _send_whatsapp_notification(user, sender, subject, snippet, category, gmail_message_id=msg_id)
 
                     match_s = re.match(r'^(.+?)\s*<', sender)
                     sender_name = match_s.group(1).strip().strip('"') if match_s else sender.split('@')[0]
