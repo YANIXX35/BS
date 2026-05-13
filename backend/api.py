@@ -237,7 +237,7 @@ def hash_password(password):
 def send_otp_email(to_email, name, otp_code):
     msg = MIMEMultipart('alternative')
     msg['Subject'] = f'Votre code de verification MailNotifier : {otp_code}'
-    msg['From']    = SMTP_EMAIL
+    msg['From']    = f'MailNotifier <{SMTP_EMAIL}>'
     msg['To']      = to_email
 
     html = f"""

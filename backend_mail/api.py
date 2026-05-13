@@ -474,7 +474,7 @@ def send_otp_email(to_email, name, otp_code, is_reset=False):
             if is_reset else
             f'Votre code de verification MailNotifier : {otp_code}'
         )
-        msg['From'] = SMTP_EMAIL
+        msg['From'] = f'MailNotifier <{SMTP_EMAIL}>'
         msg['To']   = to_email
 
         title_text       = "Réinitialisation de votre mot de passe" if is_reset else "Verification de votre compte"
@@ -2872,7 +2872,7 @@ def _send_weekly_summary_to_user(user: dict):
 
         msg_email = MIMEMultipart('alternative')
         msg_email['Subject'] = f'📊 Résumé MailNotifier — semaine du {week_start}'
-        msg_email['From']    = SMTP_EMAIL
+        msg_email['From']    = f'MailNotifier <{SMTP_EMAIL}>'
         msg_email['To']      = email
         msg_email.attach(MIMEText(html, 'html'))
 
