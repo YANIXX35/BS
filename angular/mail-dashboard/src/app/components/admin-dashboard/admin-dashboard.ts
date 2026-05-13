@@ -491,6 +491,28 @@ export class AdminDashboard implements OnInit {
     return c[s.charCodeAt(0) % c.length];
   }
 
+  get premiumPct(): number {
+    if (!this.stats?.total_users) return 0;
+    return Math.round((this.stats.premium_users / this.stats.total_users) * 100);
+  }
+
+  get chartBars(): { label: string; pct: number; active: boolean }[] {
+    const labels = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const now = new Date();
+    const raw = Array.from({ length: 6 }, (_, i) => {
+      const offset = 5 - i;
+      const month = ((now.getMonth() - offset) + 12) % 12;
+      const year = now.getMonth() - offset < 0 ? now.getFullYear() - 1 : now.getFullYear();
+      const count = this.users.filter(u => {
+        const d = new Date(u.created_at);
+        return d.getMonth() === month && d.getFullYear() === year;
+      }).length;
+      return { label: labels[month], pct: count, active: offset === 0 };
+    });
+    const max = Math.max(...raw.map(b => b.pct), 1);
+    return raw.map(b => ({ ...b, pct: Math.max((b.pct / max) * 85, 10) }));
+  }
+
   logout() {
     localStorage.removeItem('user');
     this.router.navigate(['/']);

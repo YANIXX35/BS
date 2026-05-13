@@ -95,126 +95,167 @@
       <!-- ══════════════════════ OVERVIEW ══════════════════════ -->
       @if (activeSection === 'overview') {
         <div class="section">
+          <div class="dash-panel">
 
-          <!-- Quick Access = Stat Cards -->
-          <div class="section-block">
-            <div class="block-header">
-              <h3>Acces rapide</h3>
-            </div>
-            <div class="quick-grid">
-              <div class="quick-card" (click)="setSection('users')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Utilisateurs</span>
-                  <div class="qc-ico indigo"><mat-icon>people</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ stats?.total_users ?? '—' }}</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Actif</span>
-                  <span class="qc-hint">Total inscrits</span>
-                </div>
+            <!-- ── TOP ROW ── -->
+            <div class="dp-top-row">
+              <div class="dp-title-block">
+                <h2 class="dp-title">Tableau de bord</h2>
+                <p class="dp-sub">Bienvenue, {{ admin.name }}</p>
               </div>
-              <div class="quick-card" (click)="setSection('users')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Vérifiés</span>
-                  <div class="qc-ico green"><mat-icon>verified_user</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ stats?.verified_users ?? '—' }}</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Validés</span>
-                  <span class="qc-hint">Comptes vérifiés</span>
-                </div>
-              </div>
-              <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Premium</span>
-                  <div class="qc-ico gold"><mat-icon>star</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ stats?.premium_users ?? '—' }}</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Actifs</span>
-                  <span class="qc-hint">Abonnés premium</span>
-                </div>
-              </div>
-              <div class="quick-card" (click)="setSection('emails')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Mes mails</span>
-                  <div class="qc-ico blue"><mat-icon>email</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ gmailStats?.total_messages ?? '—' }}</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend neutral"><mat-icon>inbox</mat-icon> Inbox</span>
-                  <span class="qc-hint">Messages reçus</span>
-                </div>
-              </div>
-              <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Paiements</span>
-                  <div class="qc-ico orange"><mat-icon>receipt</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ stats?.total_payments ?? '—' }}</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Traités</span>
-                  <span class="qc-hint">Total transactions</span>
-                </div>
-              </div>
-              <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-top-row">
-                  <span class="qc-lbl">Revenus</span>
-                  <div class="qc-ico teal"><mat-icon>attach_money</mat-icon></div>
-                </div>
-                <div class="qc-num">{{ getTotalRevenue() | number:'1.0-0' }}€</div>
-                <div class="qc-bot-row">
-                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> CA</span>
-                  <span class="qc-hint">Revenus totaux</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Derniers utilisateurs = liste fichiers -->
-          <div class="section-block">
-            <div class="block-header">
-              <h3>Derniers inscrits</h3>
-              <button mat-stroked-button class="btn-sm" (click)="setSection('users')">
-                Voir tous <mat-icon>arrow_forward</mat-icon>
-              </button>
-            </div>
-            <div class="file-list">
-              <div class="file-list-header">
-                <span class="col-name">Nom</span>
-                <span class="col-sharing">Gmail</span>
-                <span class="col-size">Plan</span>
-                <span class="col-date">Inscription</span>
-                <span class="col-more"></span>
-              </div>
-              @for (u of users.slice(0, 6); track u.id) {
-                <div class="file-row" [class.selected]="selectedUser?.id === u.id" (click)="selectUser(u)">
-                  <div class="col-name">
-                    <div class="file-icon" [style.background]="getAvatarColor(u.email)">{{ u.name.charAt(0).toUpperCase() }}</div>
-                    <div class="file-meta">
-                      <span class="file-name">{{ u.name }}</span>
-                      <span class="file-sub">{{ u.email }}</span>
+              <div class="dp-income-block">
+                <p class="dp-income-label">Revenus fixes</p>
+                <div class="dp-income-cards">
+                  <div class="dp-income-card" (click)="setSection('payments')">
+                    <div class="dic-icon orange"><mat-icon>receipt</mat-icon></div>
+                    <div>
+                      <span class="dic-name">Transactions</span>
+                      <span class="dic-val">{{ stats?.total_payments ?? '—' }}</span>
                     </div>
                   </div>
-                  <span class="col-sharing">
-                    @if (u.gmail_connected) {
-                      <span class="share-dot connected" matTooltip="Gmail connecte"></span>
-                    } @else {
-                      <span class="share-dot" matTooltip="Gmail non connecte"></span>
-                    }
-                  </span>
-                  <span class="col-size"><span class="plan-badge" [class]="u.plan">{{ u.plan }}</span></span>
-                  <span class="col-date">{{ u.created_at | slice:0:10 }}</span>
-                  <span class="col-more">
-                    <button mat-icon-button class="more-btn" (click)="$event.stopPropagation(); openEditUser(u)">
-                      <mat-icon>more_horiz</mat-icon>
-                    </button>
-                  </span>
+                  <div class="dp-income-card" (click)="setSection('payments')">
+                    <div class="dic-icon teal"><mat-icon>attach_money</mat-icon></div>
+                    <div>
+                      <span class="dic-name">Revenus</span>
+                      <span class="dic-val">{{ getTotalRevenue() | number:'1.0-0' }}€</span>
+                    </div>
+                  </div>
                 </div>
-              }
+              </div>
             </div>
-          </div>
 
+            <!-- ── 2-COLUMN LAYOUT ── -->
+            <div class="dp-cols">
+
+              <!-- LEFT COLUMN -->
+              <div class="dp-left">
+
+                <!-- Dark Admin Card (style carte bancaire) -->
+                <div class="adm-card">
+                  <div class="adm-card-top">
+                    <div class="adm-logo-badge">
+                      <div class="adm-logo-icon"><mat-icon>mail</mat-icon></div>
+                      <span>MailNotifier</span>
+                    </div>
+                    <mat-icon class="adm-wave-icon">wifi</mat-icon>
+                  </div>
+                  <div class="adm-card-stats-row">
+                    <div class="adm-cs">
+                      <span class="adm-cs-val">{{ stats?.total_users ?? 0 }}</span>
+                      <span class="adm-cs-lbl">Utilisateurs</span>
+                    </div>
+                    <div class="adm-cs-divider"></div>
+                    <div class="adm-cs">
+                      <span class="adm-cs-val">{{ getTotalRevenue() | number:'1.0-0' }}€</span>
+                      <span class="adm-cs-lbl">Revenus totaux</span>
+                    </div>
+                    <div class="adm-cs-divider"></div>
+                    <div class="adm-cs">
+                      <span class="adm-cs-val">{{ stats?.premium_users ?? 0 }}</span>
+                      <span class="adm-cs-lbl">Premium</span>
+                    </div>
+                  </div>
+                  <div class="adm-card-footer">
+                    <span class="adm-cf-name">{{ admin.name }}</span>
+                    <span class="adm-cf-role">Administrateur</span>
+                  </div>
+                </div>
+
+                <!-- 3 mini stat cards -->
+                <div class="dp-mini-row">
+                  <div class="dp-mini" (click)="setSection('users')">
+                    <div class="dp-mini-ico indigo"><mat-icon>verified_user</mat-icon></div>
+                    <span class="dp-mini-lbl">Vérifiés</span>
+                    <span class="dp-mini-val">{{ stats?.verified_users ?? '—' }}</span>
+                  </div>
+                  <div class="dp-mini" (click)="setSection('users')">
+                    <div class="dp-mini-ico green"><mat-icon>people</mat-icon></div>
+                    <span class="dp-mini-lbl">Total</span>
+                    <span class="dp-mini-val">{{ stats?.total_users ?? '—' }}</span>
+                  </div>
+                  <div class="dp-mini" (click)="setSection('emails')">
+                    <div class="dp-mini-ico blue"><mat-icon>email</mat-icon></div>
+                    <span class="dp-mini-lbl">Mails</span>
+                    <span class="dp-mini-val">{{ gmailStats?.total_messages ?? '—' }}</span>
+                  </div>
+                </div>
+
+                <!-- Derniers inscrits (style transactions) -->
+                <div class="dp-tx">
+                  <div class="dp-tx-hdr">
+                    <span class="dp-tx-title">Derniers inscrits</span>
+                    <button class="dp-tx-see-all" (click)="setSection('users')">
+                      Voir tous <mat-icon>arrow_forward</mat-icon>
+                    </button>
+                  </div>
+                  @for (u of users.slice(0, 5); track u.id) {
+                    <div class="dp-tx-row" [class.dp-tx-selected]="selectedUser?.id === u.id" (click)="selectUser(u)">
+                      <div class="dp-tx-av" [style.background]="getAvatarColor(u.email)">{{ u.name.charAt(0).toUpperCase() }}</div>
+                      <div class="dp-tx-info">
+                        <span class="dp-tx-name">{{ u.name }}</span>
+                        <span class="dp-tx-date">{{ u.created_at | slice:0:10 }}</span>
+                      </div>
+                      <span class="plan-badge" [class]="u.plan">{{ u.plan }}</span>
+                      <button mat-icon-button class="dp-tx-more" (click)="$event.stopPropagation(); openEditUser(u)">
+                        <mat-icon>more_horiz</mat-icon>
+                      </button>
+                    </div>
+                  }
+                </div>
+
+              </div>
+
+              <!-- RIGHT COLUMN -->
+              <div class="dp-right">
+
+                <!-- Graphique barres -->
+                <div class="dp-chart-card">
+                  <div class="dc-hdr">
+                    <div>
+                      <p class="dc-saved-label">Epargné ce mois</p>
+                      <p class="dc-saved-val">{{ stats?.total_users ?? 0 }} inscrits</p>
+                    </div>
+                    <div class="dc-period-tabs">
+                      <span class="dc-tab">Sem.</span>
+                      <span class="dc-tab active">Mois</span>
+                      <span class="dc-tab">An.</span>
+                    </div>
+                  </div>
+                  <div class="dc-bars">
+                    @for (bar of chartBars; track bar.label) {
+                      <div class="dc-bar-col">
+                        <div class="dc-bar" [style.height.%]="bar.pct" [class.dc-bar-active]="bar.active"></div>
+                        <span class="dc-bar-lbl" [class.dc-bar-lbl-active]="bar.active">{{ bar.label }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Carte objectif premium (sombre) -->
+                <div class="dp-goal-card">
+                  <div class="dpg-left">
+                    <p class="dpg-title">Objectif premium</p>
+                    <p class="dpg-detail">{{ stats?.premium_users ?? 0 }} / {{ stats?.total_users ?? 0 }} utilisateurs</p>
+                    <p class="dpg-status">{{ premiumPct >= 50 ? 'Complété' : 'En cours' }}</p>
+                  </div>
+                  <div class="dpg-ring-wrap">
+                    <svg class="dpg-ring" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="15.9155"
+                        fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3.2"/>
+                      <circle cx="18" cy="18" r="15.9155"
+                        fill="none" stroke="white" stroke-width="3.2"
+                        stroke-linecap="round"
+                        transform="rotate(-90 18 18)"
+                        [attr.stroke-dasharray]="premiumPct + ' 100'"/>
+                    </svg>
+                    <span class="dpg-pct">{{ premiumPct }}%</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
         </div>
       }
 
