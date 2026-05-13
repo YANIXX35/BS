@@ -702,33 +702,42 @@ $bg:      #f0f4ff;
 
   .section-badge {
     display: inline-block;
-    background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(236,72,153,0.10));
-    border: 1px solid rgba(139,92,246,0.22);
-    color: $purple;
+    background: linear-gradient(135deg, $purple, $pink);
+    color: white;
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    padding: 5px 18px;
+    padding: 6px 20px;
     border-radius: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(139,92,246,0.32);
   }
 
   h2 {
-    font-size: 40px;
+    font-size: 42px;
     font-weight: 900;
-    margin: 0 0 12px;
+    margin: 0 0 8px;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, $text 0%, $blue 40%, $purple 70%, $pink 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $text;
+    line-height: 1.15;
+
+    &::after {
+      content: '';
+      display: block;
+      width: 52px;
+      height: 4px;
+      background: linear-gradient(90deg, $purple, $pink);
+      border-radius: 3px;
+      margin: 12px auto 0;
+    }
   }
 
   p {
     color: $muted;
-    font-size: 16px;
-    margin: 0;
+    font-size: 16.5px;
+    margin: 16px 0 0;
+    line-height: 1.65;
   }
 }
 

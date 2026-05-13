@@ -1,7 +1,10 @@
 <div class="page-wrapper">
 
+<!-- MOBILE OVERLAY -->
+<div class="mob-overlay" [class.show]="mobileSidebarOpen" (click)="mobileSidebarOpen=false"></div>
+
 <!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
-<aside class="sidebar">
+<aside class="sidebar" [class.mobile-open]="mobileSidebarOpen">
 
   <div class="sb-logo">
     <div class="sb-logo-icon"><mat-icon>mail</mat-icon></div>
@@ -11,7 +14,7 @@
   <nav class="sb-nav">
     <p class="sb-section">Menu</p>
 
-    <button class="sb-item" [class.active]="activeView==='dashboard'" (click)="activeView='dashboard'">
+    <button class="sb-item" [class.active]="activeView==='dashboard'" (click)="navigateTo('dashboard')">
       <mat-icon>dashboard</mat-icon>
       <span>Dashboard</span>
       @if (getUnreadCount() > 0) {
@@ -19,36 +22,36 @@
       }
     </button>
 
-    <button class="sb-item" [class.active]="activeView==='settings'" (click)="activeView='settings'">
+    <button class="sb-item" [class.active]="activeView==='settings'" (click)="navigateTo('settings')">
       <mat-icon>tune</mat-icon>
       <span>Configuration</span>
     </button>
 
-    <button class="sb-item" [class.active]="activeView==='profile'" (click)="activeView='profile'">
+    <button class="sb-item" [class.active]="activeView==='profile'" (click)="navigateTo('profile')">
       <mat-icon>person_outline</mat-icon>
       <span>Mon profil</span>
     </button>
 
     <p class="sb-section">Canaux</p>
 
-    <button class="sb-item sb-channel-item" (click)="activeView='settings'">
+    <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
       <span class="sb-ch-dot" [class.on]="settings.telegram_enabled"></span>
       <span>Telegram</span>
     </button>
 
-    <button class="sb-item sb-channel-item" (click)="activeView='settings'">
+    <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
       <span class="sb-ch-dot" [class.on]="settings.whatsapp_enabled"></span>
       <span>WhatsApp</span>
     </button>
 
-    <button class="sb-item sb-channel-item" (click)="activeView='settings'">
+    <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
       <span class="sb-ch-dot" [class.on]="gmailConnected"></span>
       <span>Gmail OAuth</span>
     </button>
 
     <p class="sb-section">Général</p>
 
-    <button class="sb-item" (click)="activeView='profile'">
+    <button class="sb-item" (click)="navigateTo('profile')">
       <mat-icon>palette</mat-icon>
       <span>Apparence</span>
     </button>
@@ -59,7 +62,7 @@
     </button>
   </nav>
 
-  <div class="sb-footer" (click)="activeView='profile'" role="button" style="cursor:pointer">
+  <div class="sb-footer" (click)="navigateTo('profile')" role="button" style="cursor:pointer">
     <div class="sb-foot-av">
       @if (profilePhoto) {
         <img [src]="profilePhoto" alt="photo" />
@@ -81,6 +84,9 @@
 
   <!-- TOP BAR -->
   <header class="top-bar">
+    <button class="mob-ham" (click)="mobileSidebarOpen=!mobileSidebarOpen" aria-label="Menu">
+      <mat-icon>menu</mat-icon>
+    </button>
     <div class="top-bar-left">
       @if (activeView === 'dashboard') {
         <h1 class="page-title">Dashboard</h1>

@@ -39,6 +39,22 @@
           [value]="stats ? (stats.premium_users / (stats.total_users || 1)) * 100 : 0" />
       </div>
     </div>
+
+    <!-- USER FOOTER -->
+    <div class="sb-user-footer" (click)="setSection('settings')">
+      <div class="sb-uf-avatar">
+        @if (profilePhoto) {
+          <img [src]="profilePhoto" alt="photo" />
+        } @else {
+          {{ admin.name ? admin.name.charAt(0).toUpperCase() : 'A' }}
+        }
+      </div>
+      <div class="sb-uf-info">
+        <span class="sb-uf-name">{{ admin.name }}</span>
+        <span class="sb-uf-role">Administrateur</span>
+      </div>
+      <mat-icon class="sb-uf-more">more_vert</mat-icon>
+    </div>
   </aside>
 
   <!-- ══ MAIN ══ -->
@@ -87,34 +103,70 @@
             </div>
             <div class="quick-grid">
               <div class="quick-card" (click)="setSection('users')">
-                <div class="qc-icon indigo"><mat-icon>people</mat-icon></div>
-                <p class="qc-val">{{ stats?.total_users ?? '—' }}</p>
-                <p class="qc-lbl">Utilisateurs</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Utilisateurs</span>
+                  <div class="qc-ico indigo"><mat-icon>people</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ stats?.total_users ?? '—' }}</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Actif</span>
+                  <span class="qc-hint">Total inscrits</span>
+                </div>
               </div>
               <div class="quick-card" (click)="setSection('users')">
-                <div class="qc-icon green"><mat-icon>verified_user</mat-icon></div>
-                <p class="qc-val">{{ stats?.verified_users ?? '—' }}</p>
-                <p class="qc-lbl">Verifies</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Vérifiés</span>
+                  <div class="qc-ico green"><mat-icon>verified_user</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ stats?.verified_users ?? '—' }}</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Validés</span>
+                  <span class="qc-hint">Comptes vérifiés</span>
+                </div>
               </div>
               <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-icon gold"><mat-icon>star</mat-icon></div>
-                <p class="qc-val">{{ stats?.premium_users ?? '—' }}</p>
-                <p class="qc-lbl">Premium</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Premium</span>
+                  <div class="qc-ico gold"><mat-icon>star</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ stats?.premium_users ?? '—' }}</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Actifs</span>
+                  <span class="qc-hint">Abonnés premium</span>
+                </div>
               </div>
               <div class="quick-card" (click)="setSection('emails')">
-                <div class="qc-icon blue"><mat-icon>email</mat-icon></div>
-                <p class="qc-val">{{ gmailStats?.total_messages ?? '—' }}</p>
-                <p class="qc-lbl">Mes mails</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Mes mails</span>
+                  <div class="qc-ico blue"><mat-icon>email</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ gmailStats?.total_messages ?? '—' }}</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend neutral"><mat-icon>inbox</mat-icon> Inbox</span>
+                  <span class="qc-hint">Messages reçus</span>
+                </div>
               </div>
               <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-icon orange"><mat-icon>receipt</mat-icon></div>
-                <p class="qc-val">{{ stats?.total_payments ?? '—' }}</p>
-                <p class="qc-lbl">Paiements</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Paiements</span>
+                  <div class="qc-ico orange"><mat-icon>receipt</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ stats?.total_payments ?? '—' }}</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> Traités</span>
+                  <span class="qc-hint">Total transactions</span>
+                </div>
               </div>
               <div class="quick-card" (click)="setSection('payments')">
-                <div class="qc-icon teal"><mat-icon>attach_money</mat-icon></div>
-                <p class="qc-val">{{ getTotalRevenue() | number:'1.0-0' }}€</p>
-                <p class="qc-lbl">Revenus</p>
+                <div class="qc-top-row">
+                  <span class="qc-lbl">Revenus</span>
+                  <div class="qc-ico teal"><mat-icon>attach_money</mat-icon></div>
+                </div>
+                <div class="qc-num">{{ getTotalRevenue() | number:'1.0-0' }}€</div>
+                <div class="qc-bot-row">
+                  <span class="qc-trend up"><mat-icon>trending_up</mat-icon> CA</span>
+                  <span class="qc-hint">Revenus totaux</span>
+                </div>
               </div>
             </div>
           </div>

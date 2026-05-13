@@ -38,6 +38,12 @@ export class UserDashboard implements OnInit, OnDestroy {
   loadingEmails = true;
   currentTime   = new Date();
   activeView: 'dashboard' | 'settings' | 'profile' = 'dashboard';
+  mobileSidebarOpen = false;
+
+  navigateTo(view: 'dashboard' | 'settings' | 'profile') {
+    this.activeView = view;
+    this.mobileSidebarOpen = false;
+  }
 
   // Settings
   settings: UserSettings = {
