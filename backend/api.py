@@ -79,6 +79,19 @@ GENIUS_PLANS = {
 notifier_status = {"running": False}
 
 
+# ─── DB MIGRATIONS ────────────────────────────────────────────────────────────
+def init_db_columns():
+    """Ajoute is_suspended si la colonne n'existe pas encore."""
+    try:
+        db = get_db()
+        with db.cursor() as cur:
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE")
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"[DB init] {e}")
+
+
 # ─── TELEGRAM BOT POLLING ─────────────────────────────────────────────────────
 
 def telegram_bot_polling():
@@ -385,6 +398,9 @@ def login():
         if not user or user['password'] != hash_password(password):
             return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 
+        if user.get('is_suspended'):
+            return jsonify({'error': "Votre compte a été suspendu par l'administrateur. Veuillez l'écrire pour régler la situation."}), 403
+
         return jsonify({'message': 'Connexion reussie', 'name': user['name'], 'email': email, 'role': user.get('role', 'user')}), 200
     finally:
         db.close()
@@ -428,7 +444,7 @@ def admin_get_users():
     db = get_db()
     try:
         with db.cursor() as cur:
-            cur.execute("SELECT id, name, email, is_verified, role, plan, created_at FROM users ORDER BY created_at DESC")
+            cur.execute("SELECT id, name, email, is_verified, role, plan, created_at, COALESCE(is_suspended, FALSE) as is_suspended FROM users ORDER BY created_at DESC")
             rows = cur.fetchall()
             users = []
             for u in rows:
@@ -543,6 +559,51 @@ def admin_delete_payment(pay_id):
         return jsonify({'message': 'Paiement supprime'}), 200
     finally:
         db.close()
+
+
+@app.route('/api/admin/users/<int:user_id>/suspend', methods=['PATCH'])
+def admin_suspend_user(user_id):
+    data = request.json or {}
+    suspended = data.get('is_suspended', True)
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("UPDATE users SET is_suspended=%s WHERE id=%s", (suspended, user_id))
+        db.commit()
+        msg = 'Utilisateur suspendu' if suspended else 'Suspension levee'
+        return jsonify({'message': msg}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
+@app.route('/api/admin/users/<path:email>/emails', methods=['GET'])
+def admin_get_user_emails(email):
+    try:
+        service = get_gmail_service_for(email)
+        if not service:
+            return jsonify({'emails': [], 'error': 'Gmail non connecte pour cet utilisateur'}), 200
+        results = service.users().messages().list(userId='me', labelIds=['INBOX'], maxResults=25).execute()
+        messages = results.get('messages', [])
+        emails = []
+        for m in messages:
+            msg = service.users().messages().get(
+                userId='me', id=m['id'], format='metadata',
+                metadataHeaders=['From', 'Subject', 'Date']
+            ).execute()
+            headers = {h['name']: h['value'] for h in msg.get('payload', {}).get('headers', [])}
+            emails.append({
+                'id': m['id'],
+                'sender': headers.get('From', 'Inconnu'),
+                'subject': headers.get('Subject', '(Sans objet)'),
+                'date': headers.get('Date', ''),
+                'unread': 'UNREAD' in msg.get('labelIds', []),
+                'snippet': msg.get('snippet', '')
+            })
+        return jsonify({'emails': emails}), 200
+    except Exception as e:
+        return jsonify({'emails': [], 'error': str(e)}), 200
 
 
 # ─── GENIUS PAY ENDPOINTS ────────────────────────────────────────────────────
@@ -1253,6 +1314,7 @@ def _startup():
         traceback.print_exc()
 
 _startup()
+init_db_columns()
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

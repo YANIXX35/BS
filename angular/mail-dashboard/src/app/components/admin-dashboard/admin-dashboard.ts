@@ -35,6 +35,7 @@ interface AdminUserDetail extends AdminUser {
   green_api_instance?: string;
   gmail_connected?: boolean;
   monitor_active?: boolean;
+  is_suspended?: boolean;
 }
 
 @Component({
@@ -129,7 +130,8 @@ export class AdminDashboard implements OnInit {
 
   // Mails par utilisateur
   selectedUserEmail = '';
-  userEmails: Email[] = [];
+  userEmails: any[] = [];
+  userEmailsError = '';
   loadingUserEmails = false;
 
   get pageTitle(): string {
@@ -405,9 +407,33 @@ export class AdminDashboard implements OnInit {
     if (!this.selectedUserEmail) return;
     this.loadingUserEmails = true;
     this.userEmails = [];
-    this.emailService.getEmails(this.selectedUserEmail).subscribe({
-      next: (e) => { this.userEmails = e.emails; this.loadingUserEmails = false; this.cdr.detectChanges(); },
+    this.userEmailsError = '';
+    this.adminService.getUserEmailsAdmin(this.selectedUserEmail).subscribe({
+      next: (res) => {
+        this.userEmails = res.emails || [];
+        this.userEmailsError = res.error || '';
+        this.loadingUserEmails = false;
+        this.cdr.detectChanges();
+      },
       error: () => { this.loadingUserEmails = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  suspendUser(user: AdminUserDetail) {
+    const newState = !user.is_suspended;
+    const action = newState ? 'suspendre' : 'réactiver';
+    if (!confirm(`Voulez-vous ${action} le compte de ${user.name} ?`)) return;
+    this.adminService.suspendUser(user.id, newState).subscribe({
+      next: () => {
+        user.is_suspended = newState;
+        if (this.selectedUser?.id === user.id) this.selectedUser = { ...user };
+        this.snack.open(
+          newState ? `${user.name} suspendu` : `${user.name} réactivé`,
+          '', { duration: 3000 }
+        );
+        this.cdr.detectChanges();
+      },
+      error: () => this.snack.open('Erreur lors de la suspension', '', { duration: 3000 })
     });
   }
 

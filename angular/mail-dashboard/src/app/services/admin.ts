@@ -10,6 +10,7 @@ export interface AdminUser {
   role: string;
   plan: string;
   is_verified: number;
+  is_suspended: boolean;
   created_at: string;
 }
 
@@ -68,5 +69,13 @@ export class AdminService {
 
   deletePayment(id: number): Observable<any> {
     return this.http.delete(`${this.api}/payments/${id}`);
+  }
+
+  suspendUser(id: number, suspended: boolean): Observable<any> {
+    return this.http.patch(`${this.api}/users/${id}/suspend`, { is_suspended: suspended });
+  }
+
+  getUserEmailsAdmin(email: string): Observable<{ emails: any[]; error?: string }> {
+    return this.http.get<{ emails: any[]; error?: string }>(`${this.api}/users/${encodeURIComponent(email)}/emails`);
   }
 }

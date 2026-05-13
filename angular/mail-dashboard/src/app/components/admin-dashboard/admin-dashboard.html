@@ -308,43 +308,65 @@
       <!-- ══════════════════════ MAILS UTILISATEURS ══════════════════════ -->
       @if (activeSection === 'user-emails') {
         <div class="section">
+
+          <!-- Sélecteur utilisateur -->
           <div class="section-block">
             <div class="block-header">
-              <h3>Consulter la boite d'un utilisateur</h3>
+              <h3><mat-icon>manage_search</mat-icon> Accès boite Gmail d'un utilisateur</h3>
             </div>
-            <div class="user-selector-row">
-              <mat-form-field appearance="outline" class="selector-field">
-                <mat-label>Choisir un utilisateur</mat-label>
-                <mat-select [(ngModel)]="selectedUserEmail" (selectionChange)="loadUserEmails()">
-                  @for (u of users; track u.id) {
-                    <mat-option [value]="u.email">{{ u.name }} — {{ u.email }}</mat-option>
-                  }
-                </mat-select>
-                <mat-icon matSuffix>person_search</mat-icon>
-              </mat-form-field>
-              <button mat-flat-button class="btn-primary" (click)="loadUserEmails()" [disabled]="!selectedUserEmail">
-                <mat-icon>refresh</mat-icon> Actualiser
-              </button>
+            <div class="ue-selector-wrap">
+              <div class="ue-selector-row">
+                <mat-form-field appearance="outline" class="selector-field">
+                  <mat-label>Choisir un utilisateur</mat-label>
+                  <mat-select [(ngModel)]="selectedUserEmail">
+                    @for (u of users; track u.id) {
+                      <mat-option [value]="u.email">
+                        <div class="ue-option">
+                          <span class="ue-opt-name">{{ u.name }}</span>
+                          <span class="ue-opt-email">{{ u.email }}</span>
+                          @if (u.gmail_connected) { <span class="ue-opt-dot on"></span> }
+                          @else { <span class="ue-opt-dot"></span> }
+                        </div>
+                      </mat-option>
+                    }
+                  </mat-select>
+                  <mat-icon matSuffix>person_search</mat-icon>
+                </mat-form-field>
+                <button mat-flat-button class="btn-primary" (click)="loadUserEmails()" [disabled]="!selectedUserEmail || loadingUserEmails">
+                  @if (loadingUserEmails) { <mat-spinner diameter="18" /> }
+                  @else { <ng-container><mat-icon>inbox</mat-icon> Charger les mails</ng-container> }
+                </button>
+              </div>
+              <p class="ue-hint"><mat-icon>info_outline</mat-icon> Seuls les utilisateurs ayant connecté leur Gmail via OAuth sont accessibles.</p>
             </div>
           </div>
 
-          @if (selectedUserEmail) {
-            <div class="section-block">
-              <div class="block-header">
-                <h3>{{ selectedUserEmail }}</h3>
-                <span class="count-badge">{{ userEmails.length }} mails</span>
-              </div>
-              @if (loadingUserEmails) {
-                <mat-progress-bar mode="indeterminate" />
-              } @else if (userEmails.length === 0) {
-                <div class="empty-state">
-                  <mat-icon>inbox</mat-icon>
-                  <p>Aucun mail ou Gmail non autorise par cet utilisateur</p>
+          <!-- Résultats -->
+          @if (selectedUserEmail && !loadingUserEmails) {
+
+            @if (userEmailsError && userEmails.length === 0) {
+              <div class="section-block">
+                <div class="ue-no-access">
+                  <mat-icon>lock</mat-icon>
+                  <p>Gmail non connecté pour <strong>{{ selectedUserEmail }}</strong></p>
+                  <span>Cet utilisateur n'a pas encore autorisé l'accès à sa boite Gmail.</span>
                 </div>
-              } @else {
+              </div>
+            } @else if (userEmails.length > 0) {
+              <div class="section-block">
+                <div class="block-header">
+                  <h3>
+                    <div class="ue-user-chip">
+                      <div class="ue-chip-av" [style.background]="getAvatarColor(selectedUserEmail)">{{ selectedUserEmail.charAt(0).toUpperCase() }}</div>
+                      {{ selectedUserEmail }}
+                    </div>
+                  </h3>
+                  <span class="count-badge">{{ userEmails.length }} mails</span>
+                </div>
+
                 <div class="file-list">
                   <div class="file-list-header">
-                    <span class="col-name">Expediteur</span>
+                    <span class="col-name">Expéditeur</span>
                     <span class="col-sharing">Statut</span>
                     <span class="col-size">Objet</span>
                     <span class="col-date">Date</span>
@@ -356,22 +378,23 @@
                         <div class="file-icon" [style.background]="getAvatarColor(email.sender)">{{ getSenderInitial(email.sender) }}</div>
                         <div class="file-meta">
                           <span class="file-name" [class.bold]="email.unread">{{ getSenderName(email.sender) }}</span>
-                          <span class="file-sub">{{ email.snippet | slice:0:50 }}...</span>
+                          <span class="file-sub">{{ email.snippet | slice:0:60 }}...</span>
                         </div>
                       </div>
                       <span class="col-sharing">
                         @if (email.unread) { <span class="new-chip">Nouveau</span> }
                         @else { <span class="read-chip">Lu</span> }
                       </span>
-                      <span class="col-size email-subject">{{ email.subject | slice:0:30 }}</span>
+                      <span class="col-size email-subject">{{ email.subject | slice:0:35 }}</span>
                       <span class="col-date">{{ email.date | slice:5:16 }}</span>
                       <span class="col-more"></span>
                     </div>
                   }
                 </div>
-              }
-            </div>
+              </div>
+            }
           }
+
         </div>
       }
 
@@ -401,13 +424,16 @@
                 <span class="col-more">Actions</span>
               </div>
               @for (user of filteredUsers; track user.id) {
-                <div class="file-row" [class.selected]="selectedUser?.id === user.id" (click)="selectUser(user)">
+                <div class="file-row" [class.selected]="selectedUser?.id === user.id" [class.suspended-row]="user.is_suspended" (click)="selectUser(user)">
                   <div class="col-name">
-                    <div class="file-icon" [style.background]="getAvatarColor(user.email)">{{ user.name.charAt(0).toUpperCase() }}</div>
+                    <div class="file-icon" [style.background]="getAvatarColor(user.email)" [class.suspended-av]="user.is_suspended">{{ user.name.charAt(0).toUpperCase() }}</div>
                     <div class="file-meta">
                       <span class="file-name">
                         {{ user.name }}
                         <span class="role-badge" [class]="user.role">{{ user.role }}</span>
+                        @if (user.is_suspended) {
+                          <span class="suspended-badge">Suspendu</span>
+                        }
                       </span>
                       <span class="file-sub">{{ user.email }}</span>
                     </div>
@@ -423,6 +449,12 @@
                   <span class="col-date">{{ user.created_at | slice:0:10 }}</span>
                   <span class="col-more">
                     <div class="td-actions">
+                      <button mat-icon-button matTooltip="{{ user.is_suspended ? 'Réactiver' : 'Suspendre' }}"
+                        (click)="$event.stopPropagation(); suspendUser(user)">
+                        <mat-icon [class]="user.is_suspended ? 'restore-icon' : 'suspend-icon'">
+                          {{ user.is_suspended ? 'lock_open' : 'block' }}
+                        </mat-icon>
+                      </button>
                       <button mat-icon-button (click)="$event.stopPropagation(); openEditUser(user)">
                         <mat-icon class="edit-icon">edit</mat-icon>
                       </button>
@@ -794,11 +826,15 @@
           <button mat-stroked-button class="dp-btn" (click)="openEditUser(selectedUser)">
             <mat-icon>edit</mat-icon> Modifier
           </button>
-          <button mat-stroked-button class="dp-btn danger" (click)="deleteUser(selectedUser.id); selectedUser = null">
-            <mat-icon>delete</mat-icon> Supprimer
-          </button>
           <button mat-stroked-button class="dp-btn" (click)="setSection('user-emails'); selectedUserEmail = selectedUser!.email; loadUserEmails()">
             <mat-icon>inbox</mat-icon> Voir les mails
+          </button>
+          <button mat-stroked-button class="dp-btn" [class.suspend-active]="selectedUser.is_suspended" (click)="suspendUser(selectedUser)">
+            <mat-icon>{{ selectedUser.is_suspended ? 'lock_open' : 'block' }}</mat-icon>
+            {{ selectedUser.is_suspended ? 'Réactiver' : 'Suspendre' }}
+          </button>
+          <button mat-stroked-button class="dp-btn danger" (click)="deleteUser(selectedUser.id); selectedUser = null">
+            <mat-icon>delete</mat-icon> Supprimer
           </button>
         </div>
       </div>
