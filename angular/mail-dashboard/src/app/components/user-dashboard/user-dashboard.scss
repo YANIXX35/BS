@@ -9,10 +9,18 @@
   --p-shift:  #2b3ea6;
   --dash-font: 'Inter', sans-serif;
   font-family: var(--dash-font);
-  display: flex;
+  display: block;
   height: 100vh;
   overflow: hidden;
   transition: background-color 0.25s, color 0.25s;
+}
+
+.page-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 
 $r: 14px;
