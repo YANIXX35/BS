@@ -229,6 +229,15 @@ export class UserDashboard implements OnInit, OnDestroy {
   replySuccess = '';
   replyError   = '';
 
+  replyTemplates = [
+    { label: '👍 OK merci',      text: 'Bonjour,\n\nMerci pour votre message.\n\nCordialement,' },
+    { label: '📬 Bien reçu',     text: 'Bonjour,\n\nBien reçu, je reviens vers vous rapidement.\n\nCordialement,' },
+    { label: '⏳ En cours',      text: 'Bonjour,\n\nMerci pour votre message. Je traite votre demande et reviens vers vous très prochainement.\n\nCordialement,' },
+    { label: '📅 Confirmer RDV', text: 'Bonjour,\n\nJe confirme notre rendez-vous. N\'hésitez pas à me contacter si vous avez des questions.\n\nCordialement,' },
+    { label: '🏖️ Absent',        text: 'Bonjour,\n\nJe suis actuellement absent et reviendrai prochainement. Je prendrai en compte votre message à mon retour.\n\nCordialement,' },
+    { label: '❌ Refus poli',    text: 'Bonjour,\n\nMerci pour votre message. Après réflexion, je ne suis malheureusement pas en mesure de donner suite à votre demande.\n\nCordialement,' },
+  ];
+
   // Webhook copy
   webhookCopied = false;
 

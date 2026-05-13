@@ -1239,6 +1239,18 @@ $r: 14px;
     }
   }
 
+  .reply-templates {
+    display: flex; flex-wrap: wrap; gap: 7px;
+
+    .reply-tpl-chip {
+      padding: 5px 12px; border-radius: 20px; font-size: 12.5px; font-weight: 500;
+      border: 1.5px solid var(--border-color); background: var(--bg-color);
+      color: var(--text-sub); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      &:hover  { border-color: var(--p); color: var(--p); background: var(--p-light); }
+      &.active { border-color: var(--p); color: var(--p); background: var(--p-light); font-weight: 600; }
+    }
+  }
+
   .reply-textarea {
     width: 100%; resize: vertical; min-height: 110px;
     border: 1.5px solid var(--border-color); border-radius: 8px;
