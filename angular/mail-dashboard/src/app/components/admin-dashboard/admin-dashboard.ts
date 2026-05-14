@@ -35,7 +35,6 @@ interface AdminUserDetail extends AdminUser {
   green_api_instance?: string;
   gmail_connected?: boolean;
   monitor_active?: boolean;
-  is_suspended?: boolean;
 }
 
 @Component({
