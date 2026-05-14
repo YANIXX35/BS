@@ -28,6 +28,14 @@ export interface EmailsPage {
   pages: number;
 }
 
+export interface WaTemplate {
+  id: number | null;
+  name: string;
+  content: string;
+  is_default: boolean;
+  key?: string;
+}
+
 export interface Status {
   running: boolean;
   email: string;
@@ -171,5 +179,21 @@ export class EmailService {
 
   chat(message: string, history: Array<{role: string; text: string}>): Observable<{response: string}> {
     return this.http.post<{response: string}>(`${this.apiUrl}/chatbot`, { message, history });
+  }
+
+  getTemplates(): Observable<{ defaults: WaTemplate[]; custom: WaTemplate[] }> {
+    return this.http.get<{ defaults: WaTemplate[]; custom: WaTemplate[] }>(`${this.apiUrl}/templates`);
+  }
+
+  createTemplate(name: string, content: string): Observable<WaTemplate> {
+    return this.http.post<WaTemplate>(`${this.apiUrl}/templates`, { name, content });
+  }
+
+  updateTemplate(id: number, name: string, content: string): Observable<{ success: boolean }> {
+    return this.http.put<{ success: boolean }>(`${this.apiUrl}/templates/${id}`, { name, content });
+  }
+
+  deleteTemplate(id: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/templates/${id}`);
   }
 }

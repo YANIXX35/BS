@@ -630,6 +630,97 @@
 
     </div>
 
+    <!-- ── Templates WhatsApp ────────────────────────────────── -->
+    <div class="card config-card full-col tpl-section">
+      <div class="tpl-toggle-head" (click)="openTemplatesSection()">
+        <div class="config-icon" style="background:#7c3aed"><mat-icon>style</mat-icon></div>
+        <div class="tpl-toggle-info">
+          <p class="config-title">Templates de réponse WhatsApp</p>
+          <p class="config-sub">Gérer tes réponses rapides pour WhatsApp. Utilise <code>{{ '{' }}prénom{{ '}' }}</code> <code>{{ '{' }}date{{ '}' }}</code> <code>{{ '{' }}objet{{ '}' }}</code></p>
+        </div>
+        <mat-icon class="tpl-chevron">{{ templatesSection ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </div>
+
+      @if (templatesSection) {
+        @if (templatesLoading) {
+          <div class="tpl-loading"><mat-spinner diameter="28" /></div>
+        } @else {
+          <!-- Defaults (read-only) -->
+          <div class="tpl-group">
+            <p class="tpl-group-label">Templates par défaut</p>
+            <div class="tpl-grid">
+              @for (tpl of defaultTemplates; track tpl.key) {
+                <div class="tpl-chip tpl-chip-default">
+                  <span class="tpl-chip-key">{{ tpl.key }}️⃣</span>
+                  <span class="tpl-chip-name">{{ tpl.name }}</span>
+                  <span class="tpl-chip-lock"><mat-icon>lock</mat-icon></span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Custom templates -->
+          <div class="tpl-group">
+            <p class="tpl-group-label">Mes templates personnalisés <span class="tpl-count">{{ customTemplates.length }}/20</span></p>
+            @if (customTemplates.length === 0) {
+              <p class="tpl-empty">Aucun template personnalisé. Crée-en un ci-dessous.</p>
+            }
+            @for (tpl of customTemplates; track tpl.id) {
+              <div class="tpl-custom-item">
+                @if (editTplId === tpl.id) {
+                  <!-- Edit mode -->
+                  <div class="tpl-edit-form">
+                    <input class="tpl-input" [(ngModel)]="editTplName" placeholder="Nom du template" />
+                    <textarea class="tpl-textarea" [(ngModel)]="editTplContent" rows="3" placeholder="Contenu..."></textarea>
+                    @if (editTplError) { <p class="tpl-err">{{ editTplError }}</p> }
+                    <div class="tpl-edit-btns">
+                      <button class="tpl-btn tpl-btn-save" (click)="saveEditTemplate()" [disabled]="editTplSaving">
+                        @if (editTplSaving) { <mat-spinner diameter="16" /> } @else { Sauvegarder }
+                      </button>
+                      <button class="tpl-btn tpl-btn-cancel" (click)="cancelEditTemplate()">Annuler</button>
+                    </div>
+                  </div>
+                } @else {
+                  <!-- View mode -->
+                  <div class="tpl-custom-view">
+                    <div class="tpl-custom-content">
+                      <p class="tpl-custom-name">{{ tpl.name }}</p>
+                      <p class="tpl-custom-preview">{{ tpl.content | slice:0:80 }}{{ tpl.content.length > 80 ? '...' : '' }}</p>
+                    </div>
+                    <div class="tpl-custom-actions">
+                      <button mat-icon-button (click)="startEditTemplate(tpl)" matTooltip="Modifier">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button class="tpl-del-btn" (click)="deleteTemplate(tpl)" matTooltip="Supprimer">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Add new template -->
+          @if (customTemplates.length < 20) {
+            <div class="tpl-add-form">
+              <p class="tpl-group-label">Ajouter un template</p>
+              <input class="tpl-input" [(ngModel)]="newTplName" placeholder="Nom (ex : Confirmation commande)" />
+              <textarea class="tpl-textarea" [(ngModel)]="newTplContent" rows="4"
+                placeholder="Bonjour ,&#10;&#10;Votre commande est confirmée.&#10;&#10;Cordialement,"></textarea>
+              <p class="tpl-vars-hint">Variables : <code>{{ '{' }}prénom{{ '}' }}</code> <code>{{ '{' }}nom{{ '}' }}</code> <code>{{ '{' }}date{{ '}' }}</code> <code>{{ '{' }}objet{{ '}' }}</code></p>
+              @if (newTplError) { <p class="tpl-err">{{ newTplError }}</p> }
+              @if (newTplSuccess) { <p class="tpl-ok">✅ Template créé !</p> }
+              <button class="tpl-btn tpl-btn-add" (click)="saveNewTemplate()" [disabled]="newTplSaving">
+                @if (newTplSaving) { <mat-spinner diameter="16" /> }
+                @else { <mat-icon>add</mat-icon> Ajouter }
+              </button>
+            </div>
+          }
+        }
+      }
+    </div>
+
     <div class="save-row">
       <button mat-flat-button class="btn-save" (click)="saveSettings()" [disabled]="settingsLoading">
         @if (settingsLoading) { <mat-spinner diameter="20" /> }

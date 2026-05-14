@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis } from '../../services/email';
+import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
 
@@ -795,6 +795,121 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.whatsappCheckMessage = 'Erreur lors de la vérification.';
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // TEMPLATES WHATSAPP
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  defaultTemplates: WaTemplate[] = [];
+  customTemplates: WaTemplate[]  = [];
+  templatesLoading  = false;
+  templatesSection  = false;
+
+  // New template form
+  newTplName    = '';
+  newTplContent = '';
+  newTplSaving  = false;
+  newTplError   = '';
+  newTplSuccess = false;
+
+  // Edit template form
+  editTplId: number | null = null;
+  editTplName    = '';
+  editTplContent = '';
+  editTplSaving  = false;
+  editTplError   = '';
+
+  loadTemplates() {
+    if (this.templatesLoading) return;
+    this.templatesLoading = true;
+    this.emailService.getTemplates().subscribe({
+      next: (res) => {
+        this.defaultTemplates = res.defaults;
+        this.customTemplates  = res.custom;
+        this.templatesLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.templatesLoading = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  openTemplatesSection() {
+    this.templatesSection = !this.templatesSection;
+    if (this.templatesSection && !this.defaultTemplates.length) {
+      this.loadTemplates();
+    }
+  }
+
+  saveNewTemplate() {
+    const name = this.newTplName.trim();
+    const content = this.newTplContent.trim();
+    if (!name || !content) { this.newTplError = 'Nom et contenu requis.'; return; }
+    this.newTplSaving = true;
+    this.newTplError = '';
+    this.emailService.createTemplate(name, content).subscribe({
+      next: (tpl) => {
+        this.customTemplates.push(tpl);
+        this.newTplName    = '';
+        this.newTplContent = '';
+        this.newTplSaving  = false;
+        this.newTplSuccess = true;
+        this.cdr.detectChanges();
+        setTimeout(() => { this.newTplSuccess = false; this.cdr.detectChanges(); }, 2500);
+      },
+      error: (err) => {
+        this.newTplSaving = false;
+        this.newTplError  = err.error?.error || 'Erreur lors de la création.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  startEditTemplate(tpl: WaTemplate) {
+    this.editTplId      = tpl.id;
+    this.editTplName    = tpl.name;
+    this.editTplContent = tpl.content;
+    this.editTplError   = '';
+  }
+
+  cancelEditTemplate() {
+    this.editTplId = null;
+  }
+
+  saveEditTemplate() {
+    if (!this.editTplId) return;
+    const name = this.editTplName.trim();
+    const content = this.editTplContent.trim();
+    if (!name || !content) { this.editTplError = 'Nom et contenu requis.'; return; }
+    this.editTplSaving = true;
+    this.editTplError  = '';
+    this.emailService.updateTemplate(this.editTplId, name, content).subscribe({
+      next: () => {
+        const idx = this.customTemplates.findIndex(t => t.id === this.editTplId);
+        if (idx !== -1) {
+          this.customTemplates[idx] = { ...this.customTemplates[idx], name, content };
+        }
+        this.editTplId     = null;
+        this.editTplSaving = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.editTplSaving = false;
+        this.editTplError  = err.error?.error || 'Erreur mise à jour.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  deleteTemplate(tpl: WaTemplate) {
+    if (!tpl.id || !confirm(`Supprimer le template "${tpl.name}" ?`)) return;
+    this.emailService.deleteTemplate(tpl.id).subscribe({
+      next: () => {
+        this.customTemplates = this.customTemplates.filter(t => t.id !== tpl.id);
+        this.cdr.detectChanges();
+      },
+      error: () => {}
     });
   }
 
