@@ -18,6 +18,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -958,30 +959,50 @@ getSenderName(sender: string): string {
     if (this.chatOpen) setTimeout(() => this._scrollChatPanel(), 100);
   }
 
-  sendChat(text?: string) {
+  async sendChat(text?: string) {
     const message = (text ?? this.chatInput).trim();
     if (!message || this.chatLoading) return;
     this.chatInput = '';
     this.chatMessages.push({ role: 'user', text: message });
     this.chatLoading = true;
-    const typing = { role: 'bot' as const, text: '', typing: true };
+    const typing = { role: 'bot' as const, text: '', typing: false };
     this.chatMessages.push(typing);
     this.cdr.detectChanges();
     this._scrollChatPanel();
     const history = this.chatMessages.slice(0, -2).map(m => ({ role: m.role, text: m.text }));
-    this.emailService.chat(message, history).subscribe({
-      next: (res) => {
-        this.chatLoading  = false;
-        typing.typing     = false;
-        this._typewriteChat(typing, res.response);
-      },
-      error: () => {
-        this.chatLoading  = false;
-        typing.typing     = false;
-        typing.text       = "Désolé, une erreur est survenue. Réessaie ! 😅";
-        this.cdr.detectChanges();
+    try {
+      const res = await fetch(`${environment.apiUrl}/api/chatbot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history })
+      });
+      if (!res.ok || !res.body) throw new Error('bad response');
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (raw === '[DONE]') break;
+          try {
+            const d = JSON.parse(raw);
+            if (d.text) { typing.text += d.text; this.cdr.detectChanges(); this._scrollChatPanel(); }
+          } catch {}
+        }
       }
-    });
+    } catch {
+      typing.text = "Désolé, une erreur est survenue. Réessaie ! 😅";
+      this.cdr.detectChanges();
+    } finally {
+      this.chatLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   private _typewriteChat(msg: { text: string }, fullText: string) {
