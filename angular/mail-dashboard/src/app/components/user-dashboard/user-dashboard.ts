@@ -935,6 +935,72 @@ getSenderName(sender: string): string {
     return this.emails.filter(e => e.unread).length;
   }
 
+  // ── Chatbot ────────────────────────────────────────────────────────────────
+  chatOpen     = false;
+  chatLoading  = false;
+  chatInput    = '';
+  chatMessages: Array<{ role: 'user' | 'bot'; text: string; typing?: boolean }> = [];
+  chatSuggestions = [
+    'Comment répondre depuis WhatsApp ?',
+    'Mes notifications ne fonctionnent pas',
+    'Comment configurer Telegram ?',
+    'Explique les commandes WhatsApp',
+  ];
+  private _twInterval: any = null;
+
+  toggleChat() {
+    this.chatOpen = !this.chatOpen;
+    if (this.chatOpen && this.chatMessages.length === 0) {
+      const welcome = { role: 'bot' as const, text: '' };
+      this.chatMessages.push(welcome);
+      this._typewriteChat(welcome, "Bonjour ! 👋 Je suis ton assistant MailNotifier. Comment puis-je t'aider ?");
+    }
+    if (this.chatOpen) setTimeout(() => this._scrollChatPanel(), 100);
+  }
+
+  sendChat(text?: string) {
+    const message = (text ?? this.chatInput).trim();
+    if (!message || this.chatLoading) return;
+    this.chatInput = '';
+    this.chatMessages.push({ role: 'user', text: message });
+    this.chatLoading = true;
+    const typing = { role: 'bot' as const, text: '', typing: true };
+    this.chatMessages.push(typing);
+    this.cdr.detectChanges();
+    this._scrollChatPanel();
+    const history = this.chatMessages.slice(0, -2).map(m => ({ role: m.role, text: m.text }));
+    this.emailService.chat(message, history).subscribe({
+      next: (res) => {
+        this.chatLoading  = false;
+        typing.typing     = false;
+        this._typewriteChat(typing, res.response);
+      },
+      error: () => {
+        this.chatLoading  = false;
+        typing.typing     = false;
+        typing.text       = "Désolé, une erreur est survenue. Réessaie ! 😅";
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private _typewriteChat(msg: { text: string }, fullText: string) {
+    clearInterval(this._twInterval);
+    let i = 0;
+    msg.text = '';
+    this._twInterval = setInterval(() => {
+      msg.text += fullText[i++];
+      this.cdr.detectChanges();
+      if (i % 5 === 0) this._scrollChatPanel();
+      if (i >= fullText.length) clearInterval(this._twInterval);
+    }, 14);
+  }
+
+  private _scrollChatPanel() {
+    const el = document.querySelector('.dash-chat-messages');
+    if (el) el.scrollTop = el.scrollHeight;
+  }
+
   logout() {
     localStorage.clear();
     this.router.navigate(['/'], { replaceUrl: true });

@@ -1050,4 +1050,56 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════ CHATBOT FLOTTANT ══════════════════════ -->
+<div class="dash-chat-widget">
+  @if (chatOpen) {
+    <div class="dash-chat-panel">
+      <div class="dash-chat-header">
+        <div class="dash-chat-header-left">
+          <div class="dash-chat-bot-icon"><mat-icon>smart_toy</mat-icon></div>
+          <div>
+            <p class="dash-chat-title">Assistant MailNotifier</p>
+            <p class="dash-chat-status">Propulsé par Gemini AI · En ligne</p>
+          </div>
+        </div>
+        <button class="dash-chat-close-btn" (click)="chatOpen = false"><mat-icon>close</mat-icon></button>
+      </div>
+      <div class="dash-chat-messages">
+        @for (msg of chatMessages; track $index) {
+          <div class="dash-chat-msg" [class.user]="msg.role === 'user'" [class.bot]="msg.role === 'bot'">
+            @if (msg.role === 'bot') {
+              <div class="dash-chat-avatar"><mat-icon>smart_toy</mat-icon></div>
+            }
+            <div class="dash-chat-bubble">
+              @if (msg.typing && !msg.text) {
+                <div class="dash-chat-typing"><span></span><span></span><span></span></div>
+              } @else {
+                {{ msg.text }}
+              }
+            </div>
+          </div>
+        }
+      </div>
+      @if (chatMessages.length <= 1) {
+        <div class="dash-chat-suggestions">
+          @for (s of chatSuggestions; track s) {
+            <button class="dash-chat-chip" (click)="sendChat(s)">{{ s }}</button>
+          }
+        </div>
+      }
+      <div class="dash-chat-input-row">
+        <input class="dash-chat-input" type="text" placeholder="Pose ta question..." [(ngModel)]="chatInput" (keyup.enter)="sendChat()" [disabled]="chatLoading" maxlength="300" />
+        <button class="dash-chat-send-btn" (click)="sendChat()" [disabled]="chatLoading || !chatInput.trim()">
+          <mat-icon>{{ chatLoading ? 'hourglass_empty' : 'send' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+  <button class="dash-chat-fab" (click)="toggleChat()" [class.open]="chatOpen">
+    @if (chatOpen) { <mat-icon>close</mat-icon> } @else { <mat-icon>chat</mat-icon> }
+    @if (!chatOpen) { <span>Aide</span> }
+    @if (!chatOpen) { <span class="dash-chat-fab-dot"></span> }
+  </button>
+</div>
 }
