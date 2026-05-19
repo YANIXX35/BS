@@ -18,7 +18,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate } from '../../services/email';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-user-dashboard',

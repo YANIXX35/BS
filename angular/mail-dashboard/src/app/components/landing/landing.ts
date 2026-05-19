@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth';
 import { PaymentService } from '../../services/payment';
 import { EmailService } from '../../services/email';
-import { environment } from '../../environments/environment';
+import { environment } from '../../../environments/environment';
 
 type Step = 'form' | 'otp' | 'success';
 
