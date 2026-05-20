@@ -90,6 +90,8 @@ export interface UserSettings {
   theme_updated_at?: string;   // ISO timestamp — used for conflict detection
   telegram_enabled?: boolean;
   whatsapp_enabled?: boolean;
+  teams_webhook_url?: string;
+  teams_enabled?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
