@@ -45,11 +45,6 @@
     </button>
 
     <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
-      <span class="sb-ch-dot" [class.on]="settings.teams_enabled && !!settings.teams_webhook_url"></span>
-      <span>Teams</span>
-    </button>
-
-    <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
       <span class="sb-ch-dot" [class.on]="gmailConnected"></span>
       <span>Gmail OAuth</span>
     </button>
@@ -630,42 +625,6 @@
               Dans Green API : <em>Account → Settings → Webhooks → URL de notification → coller l'URL ci-dessus</em>
             </p>
           </div>
-        </div>
-      </div>
-
-      <!-- MICROSOFT TEAMS -->
-      <div class="card config-card">
-        <div class="config-card-head">
-          <div class="config-icon" style="background:#6264a7"><mat-icon>groups</mat-icon></div>
-          <div>
-            <p class="config-title">Microsoft Teams</p>
-            <p class="config-sub">Notifications via Incoming Webhook</p>
-          </div>
-          <div class="notif-toggle-wrap">
-            <span class="notif-toggle-label">{{ settings.teams_enabled ? 'Activé' : 'Désactivé' }}</span>
-            <label class="notif-toggle">
-              <input type="checkbox" [(ngModel)]="settings.teams_enabled" />
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-        </div>
-        <div class="card-body">
-          @if (!settings.teams_enabled) {
-            <div class="notif-disabled-banner">
-              <mat-icon>notifications_off</mat-icon>
-              <span>Les notifications Teams sont désactivées.</span>
-            </div>
-          }
-          <div class="steps-box">
-            <div class="step-row"><span class="step-num">1</span><span>Dans Teams, va dans un canal → <strong>Connecteurs</strong></span></div>
-            <div class="step-row"><span class="step-num">2</span><span>Ajoute <strong>Incoming Webhook</strong> et nomme-le MailNotifier</span></div>
-            <div class="step-row"><span class="step-num">3</span><span>Copie l'URL générée ci-dessous</span></div>
-          </div>
-          <mat-form-field appearance="outline" class="full-width" style="margin-top:14px">
-            <mat-label>Webhook URL Teams</mat-label>
-            <input matInput [(ngModel)]="settings.teams_webhook_url" placeholder="https://outlook.webhook.office.com/webhookb2/..." />
-            <mat-icon matSuffix>groups</mat-icon>
-          </mat-form-field>
         </div>
       </div>
 
