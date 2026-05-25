@@ -81,7 +81,6 @@ export interface UserSettings {
   telegram_chat_id: string;
   green_api_instance: string;
   green_api_token: string;
-  app_password_set?: boolean;
   avatar?: string;
   theme_color?: string;
   font_family?: string;
@@ -90,8 +89,6 @@ export interface UserSettings {
   theme_updated_at?: string;   // ISO timestamp — used for conflict detection
   telegram_enabled?: boolean;
   whatsapp_enabled?: boolean;
-  teams_webhook_url?: string;
-  teams_enabled?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -134,10 +131,6 @@ export class EmailService {
     const form = new FormData();
     form.append('file', file);
     return this.http.post<{ url: string }>(`${this.apiUrl}/user/avatar`, form);
-  }
-
-  getWhatsappQr(email: string): Observable<{ type: string; message: string }> {
-    return this.http.get<{ type: string; message: string }>(`${this.apiUrl}/user/whatsapp-qr`, { params: { email } });
   }
 
   checkWhatsappNumber(phone: string): Observable<{ exists: boolean; chatId: string; phone: string }> {

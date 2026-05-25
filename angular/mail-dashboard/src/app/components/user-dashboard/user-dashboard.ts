@@ -50,8 +50,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   settings: UserSettings = {
     name: '', email: '', phone: '', gmail_address: '',
     telegram_chat_id: '', green_api_instance: '', green_api_token: '',
-    telegram_enabled: true, whatsapp_enabled: true,
-    teams_webhook_url: '', teams_enabled: true
+    telegram_enabled: true, whatsapp_enabled: true
   };
   settingsLoading = false;
   settingsSaved   = false;
@@ -144,9 +143,6 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   // QR WhatsApp
-  qrLoading = false;
-  qrImage   = '';
-  qrStatus  = '';
 
   // Vérification numéro WhatsApp
   whatsappCheckLoading = false;
@@ -441,8 +437,6 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.settings = s;
         if (this.settings.telegram_enabled === undefined) this.settings.telegram_enabled = true;
         if (this.settings.whatsapp_enabled === undefined) this.settings.whatsapp_enabled = true;
-        if (this.settings.teams_enabled === undefined) this.settings.teams_enabled = true;
-        if (!this.settings.teams_webhook_url) this.settings.teams_webhook_url = '';
         this.parsePhone();
 
         // Delegate theme to ThemeService — server wins, no round-trip save.
@@ -751,25 +745,6 @@ export class UserDashboard implements OnInit, OnDestroy {
     });
   }
 
-  getWhatsappQr() {
-    this.qrLoading = true;
-    this.qrImage   = '';
-    this.qrStatus  = '';
-    this.emailService.getWhatsappQr(this.user.email).subscribe({
-      next: (res) => {
-        this.qrLoading = false;
-        if      (res.type === 'qrCode')        this.qrImage  = res.message;
-        else if (res.type === 'alreadyLogged') this.qrStatus = 'WhatsApp est deja connecte !';
-        else                                   this.qrStatus = res.message || 'Statut inconnu';
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.qrLoading = false;
-        this.qrStatus  = err.error?.error || 'Erreur WhatsApp indisponible';
-        this.cdr.detectChanges();
-      }
-    });
-  }
 
   verifyWhatsapp() {
     const phone = this.fullPhone.trim();
