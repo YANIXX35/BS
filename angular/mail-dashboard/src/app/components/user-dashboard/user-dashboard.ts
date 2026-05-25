@@ -276,9 +276,9 @@ export class UserDashboard implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     });
 
+    // Fallback: browser blocked the popup → full-page redirect still works
     this.route.queryParams.subscribe(params => {
       if (params['gmail_connected'] === '1') {
-        // Retour du callback OAuth Google
         this.gmailConnected      = true;
         this.gmailConnectedEmail = params['gmail_email'] || '';
         this.gmailConnecting     = false;
@@ -537,16 +537,55 @@ export class UserDashboard implements OnInit, OnDestroy {
   // SETTINGS (channels)
   // ─────────────────────────────────────────────────────────────────────────────
 
-  /** Ouvre le modal d'instruction avant la redirection Google. */
+  /** Ouvre le modal d'instruction avant de lancer l'OAuth Google. */
   openGmailModal() {
     this.showGmailModal = true;
   }
 
-  /** Lance le flow OAuth Google (redirection navigateur). */
+  /** Lance le flow OAuth Google via popup. */
   connectGmail() {
     this.showGmailModal  = false;
     this.gmailConnecting = true;
-    this.emailService.connectGmail(this.user.email);
+    this._openGmailPopup();
+  }
+
+  private _openGmailPopup() {
+    const url  = this.emailService.getGmailConnectUrl(this.user.email);
+    const w    = 520, h = 650;
+    const left = Math.round(screen.width  / 2 - w / 2);
+    const top  = Math.round(screen.height / 2 - h / 2);
+    const popup = window.open(
+      url, 'gmail-oauth',
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+    );
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== 'gmail_oauth') return;
+      window.removeEventListener('message', onMessage);
+      clearInterval(closedCheck);
+      this.gmailConnecting = false;
+      if (event.data.success) {
+        this.gmailConnected      = true;
+        this.gmailConnectedEmail = event.data.gmail_email;
+        this.gmailCanSend        = true;
+        this.loadUserSettings();
+      }
+      this.cdr.detectChanges();
+    };
+    window.addEventListener('message', onMessage);
+
+    const closedCheck = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(closedCheck);
+        window.removeEventListener('message', onMessage);
+        if (this.gmailConnecting) {
+          this.gmailConnecting = false;
+          this.loadUserSettings();
+          this.cdr.detectChanges();
+        }
+      }
+    }, 500);
   }
 
   /** Déconnecte Gmail et supprime les tokens OAuth. */
@@ -634,7 +673,8 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   reconnectGmailForSend() {
-    this.emailService.connectGmail(this.user.email);
+    this.gmailConnecting = true;
+    this._openGmailPopup();
   }
 
   copyWebhookUrl() {
@@ -670,7 +710,7 @@ export class UserDashboard implements OnInit, OnDestroy {
           this.replyError = "Mise à jour des permissions Gmail en cours...";
           this.gmailCanSend = false;
           this.cdr.detectChanges();
-          setTimeout(() => this.emailService.connectGmail(this.user.email), 1500);
+          setTimeout(() => { this.gmailConnecting = true; this._openGmailPopup(); }, 1500);
           return;
         }
         this.replyError = errData.error || "Erreur lors de l'envoi";

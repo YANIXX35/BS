@@ -1,6 +1,6 @@
 import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -18,7 +18,7 @@ type Step = 'form' | 'otp' | 'success';
 
 @Component({
   selector: 'app-landing',
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatCardModule,
+  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, MatCardModule,
     MatInputModule, MatFormFieldModule, MatTabsModule, MatProgressSpinnerModule, FormsModule],
   templateUrl: './landing.html',
   styleUrl: './landing.scss'

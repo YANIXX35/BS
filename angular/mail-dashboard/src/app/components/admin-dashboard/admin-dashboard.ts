@@ -325,7 +325,45 @@ export class AdminDashboard implements OnInit {
 
   connectGmail() {
     this.gmailConnecting = true;
-    this.emailService.connectGmail(this.admin.email);
+    this._openGmailPopup();
+  }
+
+  private _openGmailPopup() {
+    const url  = this.emailService.getGmailConnectUrl(this.admin.email);
+    const w    = 520, h = 650;
+    const left = Math.round(screen.width  / 2 - w / 2);
+    const top  = Math.round(screen.height / 2 - h / 2);
+    const popup = window.open(
+      url, 'gmail-oauth',
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`
+    );
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== 'gmail_oauth') return;
+      window.removeEventListener('message', onMessage);
+      clearInterval(closedCheck);
+      this.gmailConnecting = false;
+      if (event.data.success) {
+        this.gmailConnected      = true;
+        this.gmailConnectedEmail = event.data.gmail_email;
+        this.loadAdminGmailStatus();
+      }
+      this.cdr.detectChanges();
+    };
+    window.addEventListener('message', onMessage);
+
+    const closedCheck = setInterval(() => {
+      if (popup?.closed) {
+        clearInterval(closedCheck);
+        window.removeEventListener('message', onMessage);
+        if (this.gmailConnecting) {
+          this.gmailConnecting = false;
+          this.loadAdminGmailStatus();
+          this.cdr.detectChanges();
+        }
+      }
+    }, 500);
   }
 
   disconnectGmail() {

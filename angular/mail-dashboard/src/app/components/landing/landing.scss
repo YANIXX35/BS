@@ -1690,6 +1690,19 @@ $bg:      #f0f4ff;
     }
   }
 
+  .footer-legal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    a {
+      color: rgba(255,255,255,0.45);
+      font-size: 12px;
+      text-decoration: none;
+      &:hover { color: rgba(255,255,255,0.8); text-decoration: underline; }
+    }
+    span { color: rgba(255,255,255,0.25); font-size: 12px; }
+  }
   .footer-copy {
     color: rgba(255,255,255,0.3);
     font-size: 12px;

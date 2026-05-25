@@ -139,9 +139,9 @@ export class EmailService {
 
   // ─── GMAIL OAUTH 2.0 ─────────────────────────────────────────────────────────
 
-  /** Redirige le navigateur vers Google pour l'autorisation OAuth. */
-  connectGmail(userEmail: string): void {
-    window.location.href = `${environment.apiUrl}/api/gmail/connect?email=${encodeURIComponent(userEmail)}`;
+  /** Returns the Google OAuth URL to open (popup or redirect). */
+  getGmailConnectUrl(userEmail: string): string {
+    return `${environment.apiUrl}/api/gmail/connect?email=${encodeURIComponent(userEmail)}`;
   }
 
   /** Statut de connexion OAuth Gmail (connected, gmail_email, expired). */
