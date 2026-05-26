@@ -71,6 +71,7 @@ export interface GmailStatus {
   gmail_email: string | null;
   expired: boolean;
   can_send: boolean;
+  monitor_last_ok?: string | null;
 }
 
 export interface UserSettings {

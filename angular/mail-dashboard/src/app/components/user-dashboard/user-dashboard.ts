@@ -211,6 +211,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   gmailConnecting     = false;
   showGmailModal      = false;
   gmailCanSend        = false;  // false = token sans scope send → bandeau upgrade
+  monitorLastOk       = '';     // horodatage du dernier check réussi
 
   channels: { name: string; icon: string; active: boolean; color: string; handle: string }[] = [];
 
@@ -474,6 +475,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.gmailConnectedEmail = res.gmail_email || '';
         this.gmailExpired        = res.expired;
         this.gmailCanSend        = !res.connected || res.can_send;
+        this.monitorLastOk       = res.monitor_last_ok ? this._timeAgo(res.monitor_last_ok) : '';
         this.refreshChannels();
         this.cdr.detectChanges();
       },
@@ -675,6 +677,14 @@ export class UserDashboard implements OnInit, OnDestroy {
   reconnectGmailForSend() {
     this.gmailConnecting = true;
     this._openGmailPopup();
+  }
+
+  private _timeAgo(iso: string): string {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 60)   return 'il y a quelques secondes';
+    if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `il y a ${Math.floor(diff / 3600)}h`;
+    return `il y a ${Math.floor(diff / 86400)} j`;
   }
 
   copyWebhookUrl() {

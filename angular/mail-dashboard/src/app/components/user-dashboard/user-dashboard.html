@@ -498,6 +498,12 @@
             @if (gmailExpired) {
               <div class="alert warning"><mat-icon>warning</mat-icon> Token expiré — reconnecte ton compte Gmail.</div>
             }
+            @if (monitorLastOk && !gmailExpired) {
+              <div class="monitor-pulse">
+                <span class="monitor-dot"></span>
+                Surveillance active — dernière vérification {{ monitorLastOk }}
+              </div>
+            }
           } @else {
             <p class="gmail-oauth-hint">Connecte ton compte Gmail en 1 clic. Aucun mot de passe requis.</p>
             <button mat-flat-button class="btn-gmail-oauth" (click)="openGmailModal()" [disabled]="gmailConnecting">
