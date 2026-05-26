@@ -86,6 +86,10 @@ export class AdminService {
   resetGmailScope(email: string = 'all'): Observable<{ success: boolean; reset_count: number }> {
     return this.http.post<{ success: boolean; reset_count: number }>(`${this.api}/reset-gmail-scope`, { email });
   }
+
+  getUserActivity(): Observable<UserActivity[]> {
+    return this.http.get<UserActivity[]>(`${this.api}/user-activity`);
+  }
 }
 
 export interface GmailScopeUser {
@@ -93,4 +97,16 @@ export interface GmailScopeUser {
   name: string;
   has_scope: boolean;
   gmail_connected_email: string | null;
+}
+
+export interface UserActivity {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  plan: string;
+  login_count: number;
+  last_login: string | null;
+  gmail_connected: boolean;
+  created_at: string;
 }

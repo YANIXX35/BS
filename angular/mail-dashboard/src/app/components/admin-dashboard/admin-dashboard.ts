@@ -16,10 +16,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser } from '../../services/admin';
+import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser, UserActivity } from '../../services/admin';
 import { EmailService, Email, Stats, UserSettings } from '../../services/email';
 
-export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings';
+export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings' | 'activity';
 
 interface NavItem {
   id: Section;
@@ -58,6 +58,8 @@ export class AdminDashboard implements OnInit {
   users: AdminUserDetail[] = [];
   payments: Payment[] = [];
   emails: Email[] = [];
+  userActivity: UserActivity[] = [];
+  activityLoading = false;
 
   loading = { stats: true, users: true, payments: true, emails: true };
 
@@ -157,6 +159,7 @@ export class AdminDashboard implements OnInit {
 
   navItems: NavItem[] = [
     { id: 'overview',    icon: 'dashboard',     label: 'Vue generale' },
+    { id: 'activity',    icon: 'bar_chart',     label: 'Activité' },
     { id: 'emails',      icon: 'email',         label: 'Mes mails' },
     { id: 'user-emails', icon: 'manage_search', label: 'Mails utilisateurs' },
     { id: 'users',       icon: 'people',        label: 'Utilisateurs' },
@@ -435,11 +438,20 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  loadUserActivity() {
+    this.activityLoading = true;
+    this.adminService.getUserActivity().subscribe({
+      next: data => { this.userActivity = data; this.activityLoading = false; this.cdr.detectChanges(); },
+      error: ()   => { this.activityLoading = false; this.cdr.detectChanges(); }
+    });
+  }
+
   setSection(s: Section) {
     this.activeSection = s;
     this.selectedUser = null;
     this.mobileMenuOpen = false;
-    if (s === 'settings') this.loadGmailScopeStatus();
+    if (s === 'settings')  this.loadGmailScopeStatus();
+    if (s === 'activity')  this.loadUserActivity();
     this.cdr.detectChanges();
   }
 

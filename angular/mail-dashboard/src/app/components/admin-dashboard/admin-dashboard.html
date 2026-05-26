@@ -259,6 +259,97 @@
         </div>
       }
 
+      <!-- ══════════════════════ ACTIVITY ══════════════════════ -->
+      @if (activeSection === 'activity') {
+        <div class="section">
+          <div class="section-block">
+            <div class="block-header">
+              <h3>Analyse des connexions</h3>
+              <span class="count-badge">{{ userActivity.length }} utilisateurs</span>
+            </div>
+
+            @if (activityLoading) {
+              <div style="text-align:center;padding:40px">
+                <mat-progress-spinner mode="indeterminate" diameter="36" />
+              </div>
+            } @else {
+              <!-- Podium top 3 -->
+              @if (userActivity.length >= 3) {
+                <div class="activity-podium">
+                  @for (u of userActivity.slice(0,3); track u.id; let i = $index) {
+                    <div class="podium-card" [class.gold]="i===0" [class.silver]="i===1" [class.bronze]="i===2">
+                      <div class="podium-rank">{{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}</div>
+                      <div class="podium-avatar">{{ u.name.charAt(0).toUpperCase() }}</div>
+                      <div class="podium-name">{{ u.name }}</div>
+                      <div class="podium-email">{{ u.email }}</div>
+                      <div class="podium-count">
+                        <mat-icon style="font-size:16px;vertical-align:middle">login</mat-icon>
+                        {{ u.login_count }} connexion{{ u.login_count > 1 ? 's' : '' }}
+                      </div>
+                      <div class="podium-last">
+                        {{ u.last_login ? 'Dernière : ' + u.last_login : 'Jamais connecté' }}
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Tableau complet -->
+              <table class="activity-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Utilisateur</th>
+                    <th>Connexions</th>
+                    <th>Barre</th>
+                    <th>Dernière connexion</th>
+                    <th>Gmail</th>
+                    <th>Plan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (u of userActivity; track u.id; let i = $index) {
+                    <tr [class.top-row]="i < 3">
+                      <td class="rank-cell">{{ i + 1 }}</td>
+                      <td>
+                        <div class="user-cell">
+                          <div class="user-avatar-sm">{{ u.name.charAt(0).toUpperCase() }}</div>
+                          <div>
+                            <div class="user-name-sm">{{ u.name }}</div>
+                            <div class="user-email-sm">{{ u.email }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="count-cell">{{ u.login_count }}</td>
+                      <td class="bar-cell">
+                        <div class="mini-bar-wrap">
+                          <div class="mini-bar" [style.width.%]="userActivity[0].login_count > 0 ? (u.login_count / userActivity[0].login_count) * 100 : 0"></div>
+                        </div>
+                      </td>
+                      <td class="date-cell">{{ u.last_login ?? '—' }}</td>
+                      <td>
+                        @if (u.gmail_connected) {
+                          <span class="badge-ok">Connecté</span>
+                        } @else {
+                          <span class="badge-no">—</span>
+                        }
+                      </td>
+                      <td>
+                        <span class="plan-chip" [class.premium]="u.plan === 'premium'">{{ u.plan }}</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              @if (userActivity.length === 0) {
+                <p style="text-align:center;color:#94a3b8;padding:40px">Aucune donnée — les connexions seront tracées dès la prochaine connexion d'un utilisateur.</p>
+              }
+            }
+          </div>
+        </div>
+      }
+
       <!-- ══════════════════════ EMAILS ══════════════════════ -->
       @if (activeSection === 'emails') {
         <div class="section">
