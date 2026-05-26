@@ -44,6 +44,7 @@ export class Landing implements OnInit, AfterViewInit {
   loginError = '';
   loginLoading = false;
   loginSuccess = '';
+  authTab: 'login' | 'register' = 'login';
 
   // ── Register ───────────────────────────────────────────────────────────────
   regName = '';

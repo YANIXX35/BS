@@ -291,210 +291,220 @@
 <!-- LOGIN / REGISTER -->
 <section class="login-section" id="login">
   <div class="login-bg">
-    <div class="login-orb orb-a"></div>
-    <div class="login-orb orb-b"></div>
+    <div class="lb-blob lb-1"></div>
+    <div class="lb-blob lb-2"></div>
+    <div class="lb-grid"></div>
   </div>
-  <div class="login-wrapper">
-    <div class="login-left">
-      <div class="login-left-badge">Acces securise</div>
-      <h2>Acces a ton espace</h2>
-      <p>Connecte-toi ou cree un compte pour acceder au dashboard et gerer tes notifications en temps reel.</p>
-      <ul class="login-perks">
-        <li><mat-icon>check_circle</mat-icon> Visualise tes derniers mails</li>
-        <li><mat-icon>check_circle</mat-icon> Gere tes canaux Telegram et WhatsApp</li>
-        <li><mat-icon>check_circle</mat-icon> Statistiques de ta boite mail</li>
-        <li><mat-icon>check_circle</mat-icon> Code OTP envoye par email a la creation</li>
+
+  <div class="auth-wrap">
+    <!-- ── LEFT: Brand panel ── -->
+    <div class="auth-brand">
+      <div class="brand-icon-wrap"><mat-icon>mail</mat-icon></div>
+      <h2>MailNotifier</h2>
+      <p class="brand-desc">Surveillance Gmail intelligente avec alertes instantanées sur Telegram et WhatsApp.</p>
+
+      <ul class="brand-perks">
+        <li>
+          <span class="bp-icon"><mat-icon>flash_on</mat-icon></span>
+          <div>
+            <strong>Alertes en temps réel</strong>
+            <span>Chaque mail notifié en moins de 5s</span>
+          </div>
+        </li>
+        <li>
+          <span class="bp-icon"><mat-icon>send</mat-icon></span>
+          <div>
+            <strong>Telegram & WhatsApp</strong>
+            <span>Notifications sur tes messageries préférées</span>
+          </div>
+        </li>
+        <li>
+          <span class="bp-icon"><mat-icon>verified_user</mat-icon></span>
+          <div>
+            <strong>100% sécurisé</strong>
+            <span>OAuth Google, aucun mot de passe stocké</span>
+          </div>
+        </li>
       </ul>
+
+      <div class="brand-social">
+        <div class="bs-avatars">
+          <span class="bs-av">Y</span><span class="bs-av">A</span><span class="bs-av">K</span><span class="bs-av">+</span>
+        </div>
+        <span>+500 utilisateurs actifs</span>
+      </div>
     </div>
 
-    <mat-card class="login-card">
-      <mat-card-content>
+    <!-- ── RIGHT: Auth card ── -->
+    <div class="auth-card">
 
-        <!-- TABS -->
-        <mat-tab-group animationDuration="300ms" class="auth-tabs">
+      <!-- Tab toggle -->
+      <div class="auth-toggle">
+        <button [class.active]="authTab === 'login'" (click)="authTab = 'login'">Se connecter</button>
+        <button [class.active]="authTab === 'register'" (click)="authTab = 'register'; regStep = 'form'">Créer un compte</button>
+      </div>
 
-          <!-- ── TAB LOGIN ── -->
-          <mat-tab label="Connexion">
-            <div class="tab-content">
-              <div class="login-header">
-                <div class="login-logo-wrap"><mat-icon class="login-logo">login</mat-icon></div>
-                <h3>Bon retour !</h3>
-                <p>Connecte-toi a ton compte</p>
+      <!-- ══ LOGIN ══ -->
+      @if (authTab === 'login') {
+        <div class="form-block">
+          <div class="form-head">
+            <h3>Bon retour !</h3>
+            <p>Connecte-toi à ton espace MailNotifier</p>
+          </div>
+
+          @if (loginError) {
+            <div class="form-alert err"><mat-icon>error_outline</mat-icon>{{ loginError }}</div>
+          }
+          @if (loginSuccess) {
+            <div class="form-alert ok"><mat-icon>check_circle</mat-icon>{{ loginSuccess }}</div>
+          }
+
+          @if (!loginSuccess) {
+            <div class="form-fields">
+              <div class="fld-group">
+                <label>Adresse email</label>
+                <div class="fld-box">
+                  <mat-icon>email</mat-icon>
+                  <input type="email" [(ngModel)]="loginEmail" placeholder="exemple@gmail.com" />
+                </div>
               </div>
 
-              @if (loginError) {
-                <div class="alert error">
-                  <mat-icon>error</mat-icon> {{ loginError }}
+              <div class="fld-group">
+                <label>Mot de passe</label>
+                <div class="fld-box">
+                  <mat-icon>lock</mat-icon>
+                  <input type="password" [(ngModel)]="loginPassword" placeholder="••••••••" (keyup.enter)="login()" />
                 </div>
-              }
-              @if (loginSuccess) {
-                <div class="alert success">
-                  <mat-icon>check_circle</mat-icon> {{ loginSuccess }}
-                </div>
-              }
+              </div>
 
-              @if (!loginSuccess) {
-                <div class="auth-form">
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Adresse email</mat-label>
-                    <input matInput type="email" [(ngModel)]="loginEmail" placeholder="exemple@gmail.com" />
-                    <mat-icon matSuffix>email</mat-icon>
-                  </mat-form-field>
+              <div class="fld-forgot">
+                <button (click)="showForgotPassword()">Mot de passe oublié ?</button>
+              </div>
 
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Mot de passe</mat-label>
-                    <input matInput type="password" [(ngModel)]="loginPassword" (keyup.enter)="login()" />
-                    <mat-icon matSuffix>lock</mat-icon>
-                  </mat-form-field>
-
-                  <button mat-flat-button class="btn-submit" (click)="login()" [disabled]="loginLoading">
-                    @if (loginLoading) {
-                      <mat-spinner diameter="20" />
-                    } @else {
-                      <ng-container>
-                        <mat-icon>login</mat-icon> Se connecter
-                      </ng-container>
-                    }
-                  </button>
-
-                  <div class="forgot-password">
-                    <button mat-button class="forgot-link" (click)="showForgotPassword()">
-                      <mat-icon>help_outline</mat-icon> Mot de passe oublié ?
-                    </button>
-                  </div>
-                </div>
-              }
+              <button class="btn-auth" (click)="login()" [disabled]="loginLoading">
+                @if (loginLoading) { <mat-spinner diameter="20"></mat-spinner> }
+                @else { <mat-icon>login</mat-icon> Se connecter }
+              </button>
             </div>
-          </mat-tab>
+          }
+        </div>
+      }
 
-          <!-- ── TAB REGISTER ── -->
-          <mat-tab label="Creer un compte">
-            <div class="tab-content">
+      <!-- ══ REGISTER ══ -->
+      @if (authTab === 'register') {
 
-              <!-- ETAPE 1 : FORMULAIRE -->
-              @if (regStep === 'form') {
-                <div class="login-header">
-                  <div class="login-logo-wrap"><mat-icon class="login-logo">person_add</mat-icon></div>
-                  <h3>Nouveau compte</h3>
-                  <p>Inscription avec verification par email</p>
-                </div>
-
-                @if (regError) {
-                  <div class="alert error">
-                    <mat-icon>error</mat-icon> {{ regError }}
-                  </div>
-                }
-
-                <div class="auth-form">
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Nom complet</mat-label>
-                    <input matInput [(ngModel)]="regName" placeholder="Yanisse Walker" />
-                    <mat-icon matSuffix>person</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Adresse email (compte)</mat-label>
-                    <input matInput type="email" [(ngModel)]="regEmail" placeholder="exemple@gmail.com" />
-                    <mat-icon matSuffix>email</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Mot de passe</mat-label>
-                    <input matInput type="password" [(ngModel)]="regPassword" />
-                    <mat-icon matSuffix>lock</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Gmail a surveiller</mat-label>
-                    <input matInput type="email" [(ngModel)]="regGmail" placeholder="tonmail@gmail.com" />
-                    <mat-icon matSuffix>mark_email_unread</mat-icon>
-                    <mat-hint>Laisse vide pour utiliser ton email de compte</mat-hint>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Numero WhatsApp</mat-label>
-                    <input matInput [(ngModel)]="regPhone" placeholder="2250143875302" />
-                    <mat-icon matSuffix>chat</mat-icon>
-                    <mat-hint>Format international sans + (ex: 2250143875302)</mat-hint>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline" class="full-width">
-                    <mat-label>Telegram Chat ID</mat-label>
-                    <input matInput [(ngModel)]="regTelegramChatId" placeholder="123456789" />
-                    <mat-icon matSuffix>send</mat-icon>
-                    <mat-hint>Envoie /start a @Kylimail_bot sur Telegram pour obtenir ton ID</mat-hint>
-                  </mat-form-field>
-
-                  <button mat-flat-button class="btn-submit" (click)="register()" [disabled]="regLoading">
-                    @if (regLoading) {
-                      <mat-spinner diameter="20" />
-                    } @else {
-                      <ng-container>
-                        <mat-icon>send</mat-icon> Recevoir le code OTP
-                      </ng-container>
-                    }
-                  </button>
-                </div>
-              }
-
-              <!-- ETAPE 2 : OTP -->
-              @if (regStep === 'otp') {
-                <div class="otp-screen">
-                  <div class="otp-icon">
-                    <mat-icon>mark_email_read</mat-icon>
-                  </div>
-                  <h3>Verifie ton email</h3>
-                  <p>Un code a 6 chiffres a ete envoye a<br><strong>{{ regEmail }}</strong></p>
-
-                  @if (otpError) {
-                    <div class="alert error">
-                      <mat-icon>error</mat-icon> {{ otpError }}
-                    </div>
-                  }
-
-                  <mat-form-field appearance="outline" class="full-width otp-field">
-                    <mat-label>Code OTP</mat-label>
-                    <input matInput [(ngModel)]="otpCode" placeholder="123456"
-                      (input)="onOtpInput()" (keyup.enter)="verifyOtp()"
-                      style="font-size:24px;letter-spacing:8px;text-align:center;" />
-                  </mat-form-field>
-
-                  <button mat-flat-button class="btn-submit" (click)="verifyOtp()" [disabled]="otpLoading">
-                    @if (otpLoading) {
-                      <mat-spinner diameter="20" />
-                    } @else {
-                      <ng-container>
-                        <mat-icon>verified</mat-icon> Verifier le code
-                      </ng-container>
-                    }
-                  </button>
-
-                  <button mat-button class="resend-btn" (click)="resendOtp()">
-                    Renvoyer le code
-                  </button>
-                </div>
-              }
-
-              <!-- ETAPE 3 : SUCCES -->
-              @if (regStep === 'success') {
-                <div class="success-screen">
-                  <div class="success-icon">
-                    <mat-icon>check_circle</mat-icon>
-                  </div>
-                  <h3>Compte cree !</h3>
-                  <p>Bienvenue <strong>{{ regName }}</strong>, ton compte a ete verifie et cree avec succes.</p>
-                  <div class="alert success">
-                    <mat-icon>celebration</mat-icon> Tu peux maintenant te connecter
-                  </div>
-                </div>
-              }
-
+        @if (regStep === 'form') {
+          <div class="form-block">
+            <div class="form-head">
+              <h3>Créer un compte</h3>
+              <p>Inscription avec vérification par email</p>
             </div>
-          </mat-tab>
-        </mat-tab-group>
 
-      </mat-card-content>
-    </mat-card>
+            @if (regError) {
+              <div class="form-alert err"><mat-icon>error_outline</mat-icon>{{ regError }}</div>
+            }
+
+            <div class="form-fields">
+              <div class="fld-group">
+                <label>Nom complet</label>
+                <div class="fld-box">
+                  <mat-icon>person</mat-icon>
+                  <input [(ngModel)]="regName" placeholder="Yanisse Walker" />
+                </div>
+              </div>
+
+              <div class="fld-group">
+                <label>Adresse email</label>
+                <div class="fld-box">
+                  <mat-icon>email</mat-icon>
+                  <input type="email" [(ngModel)]="regEmail" placeholder="exemple@gmail.com" />
+                </div>
+              </div>
+
+              <div class="fld-group">
+                <label>Mot de passe</label>
+                <div class="fld-box">
+                  <mat-icon>lock</mat-icon>
+                  <input type="password" [(ngModel)]="regPassword" placeholder="••••••••" />
+                </div>
+              </div>
+
+              <div class="fld-group">
+                <label>Gmail à surveiller <span class="fld-opt">optionnel</span></label>
+                <div class="fld-box">
+                  <mat-icon>mark_email_unread</mat-icon>
+                  <input type="email" [(ngModel)]="regGmail" placeholder="tonmail@gmail.com" />
+                </div>
+              </div>
+
+              <div class="fld-row">
+                <div class="fld-group">
+                  <label>WhatsApp</label>
+                  <div class="fld-box">
+                    <mat-icon>chat</mat-icon>
+                    <input [(ngModel)]="regPhone" placeholder="2250143875302" />
+                  </div>
+                  <span class="fld-hint">Format international sans +</span>
+                </div>
+                <div class="fld-group">
+                  <label>Telegram Chat ID</label>
+                  <div class="fld-box">
+                    <mat-icon>send</mat-icon>
+                    <input [(ngModel)]="regTelegramChatId" placeholder="123456789" />
+                  </div>
+                  <span class="fld-hint">Envoie /start à @Kylimail_bot</span>
+                </div>
+              </div>
+
+              <button class="btn-auth" (click)="register()" [disabled]="regLoading">
+                @if (regLoading) { <mat-spinner diameter="20"></mat-spinner> }
+                @else { <mat-icon>send</mat-icon> Recevoir le code OTP }
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (regStep === 'otp') {
+          <div class="form-block center-block">
+            <div class="step-icon-ring otp-ring">
+              <mat-icon>mark_email_read</mat-icon>
+            </div>
+            <h3>Vérifie ton email</h3>
+            <p class="step-desc">Un code à 6 chiffres a été envoyé à<br><strong>{{ regEmail }}</strong></p>
+
+            @if (otpError) {
+              <div class="form-alert err"><mat-icon>error_outline</mat-icon>{{ otpError }}</div>
+            }
+
+            <div class="form-fields" style="width:100%">
+              <div class="fld-box otp-box">
+                <input [(ngModel)]="otpCode" placeholder="000000" class="otp-inp"
+                  (input)="onOtpInput()" (keyup.enter)="verifyOtp()" />
+              </div>
+
+              <button class="btn-auth" (click)="verifyOtp()" [disabled]="otpLoading">
+                @if (otpLoading) { <mat-spinner diameter="20"></mat-spinner> }
+                @else { <mat-icon>verified</mat-icon> Vérifier le code }
+              </button>
+
+              <button class="btn-text-link" (click)="resendOtp()">Renvoyer le code</button>
+            </div>
+          </div>
+        }
+
+        @if (regStep === 'success') {
+          <div class="form-block center-block">
+            <div class="step-icon-ring success-ring">
+              <mat-icon>check_circle</mat-icon>
+            </div>
+            <h3>Compte créé !</h3>
+            <p class="step-desc">Bienvenue <strong>{{ regName }}</strong>, ton compte est maintenant actif.</p>
+            <div class="form-alert ok"><mat-icon>celebration</mat-icon> Connexion automatique en cours...</div>
+          </div>
+        }
+
+      }
+    </div>
   </div>
 </section>
 
