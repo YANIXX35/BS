@@ -1675,6 +1675,30 @@ $bg:      #f0f4ff;
       font-weight: 500; cursor: pointer; font-family: inherit; text-align: center; padding: 4px;
       &:hover { color: $blue; }
     }
+
+    // Mobile-only brand — hidden on desktop
+    .mob-brand {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1.5px solid #f1f5f9;
+
+      .mob-brand-logo {
+        width: 44px; height: 44px; border-radius: 13px;
+        background: linear-gradient(135deg, $blue, $purple);
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 14px rgba(79,70,229,0.30);
+        mat-icon { color: white; font-size: 22px; width: 22px; height: 22px; }
+      }
+
+      div {
+        strong { display: block; font-size: 17px; font-weight: 800; color: #0f172a; }
+        span   { display: block; font-size: 12px; color: $muted; }
+      }
+    }
   }
 }
 
@@ -2123,7 +2147,10 @@ $bg:      #f0f4ff;
   }
 
   // Login
-  .login-section { padding: 48px 16px; }
+  .login-section {
+    padding: 48px 20px;
+    .auth-card { padding: 36px 32px; }
+  }
   .footer { padding: 40px 24px; }
 }
 
@@ -2202,12 +2229,55 @@ $bg:      #f0f4ff;
     max-width: 100%;
   }
 
-  // Login
-  .login-section { padding: 32px 12px; }
-  .login-section .auth-brand { display: none; }
-  .login-section .auth-wrap { border-radius: 20px; }
-  .login-section .auth-card { padding: 28px 22px; }
-  .login-section .fld-row { grid-template-columns: 1fr; }
+  // Login — mobile full redesign
+  .login-section {
+    padding: 16px 14px 48px;
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: flex-start;
+
+    .lb-blob { opacity: 0.2; }
+
+    .auth-wrap {
+      width: 100%;
+      border-radius: 22px;
+      box-shadow: 0 12px 48px rgba(79,70,229,0.16), 0 4px 16px rgba(0,0,0,0.08);
+    }
+
+    .auth-brand { display: none; }
+
+    .auth-card {
+      padding: 28px 22px 36px;
+      max-height: none;
+      border-radius: 0;
+
+      .mob-brand { display: flex; }
+
+      .auth-toggle {
+        button { font-size: 13px; height: 36px; }
+      }
+
+      .form-head h3 { font-size: 19px; }
+
+      .fld-row { grid-template-columns: 1fr; }
+
+      .fld-group .fld-box {
+        height: 50px;
+        border-radius: 12px;
+      }
+
+      .btn-auth {
+        height: 52px;
+        border-radius: 14px;
+        font-size: 15px;
+      }
+
+      .otp-box { height: 64px !important; }
+      .otp-inp { font-size: 32px !important; letter-spacing: 16px; }
+
+      .step-icon-ring { width: 64px; height: 64px; }
+    }
+  }
 
   // Footer
   .footer { padding: 40px 16px; }
@@ -2252,8 +2322,15 @@ $bg:      #f0f4ff;
     .pricing-card { padding: 20px 16px; }
   }
 
-  .login-section { padding: 24px 10px; }
-  .login-section .auth-card { padding: 22px 16px; }
+  .login-section {
+    padding: 12px 10px 40px;
+    .auth-wrap { border-radius: 18px; }
+    .auth-card { padding: 22px 18px 32px; }
+    .auth-card .mob-brand strong { font-size: 15px; }
+    .auth-card .auth-toggle button { font-size: 12px; height: 34px; }
+    .auth-card .fld-group .fld-box { height: 46px; }
+    .auth-card .btn-auth { height: 48px; font-size: 14px; }
+  }
 
   .footer { padding: 32px 14px; }
 }
