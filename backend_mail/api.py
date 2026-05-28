@@ -913,6 +913,81 @@ def login():
         _return_db(db)
 
 
+@app.route('/api/config')
+def public_config():
+    """Expose les paramètres publics nécessaires au frontend."""
+    return jsonify({'google_client_id': GOOGLE_CLIENT_ID or ''}), 200
+
+
+@app.route('/api/auth/google-login', methods=['POST'])
+@limiter.limit("10 per minute")
+def google_login():
+    """Connexion / inscription via Google Identity Services (ID token)."""
+    data       = request.json or {}
+    credential = data.get('credential', '')
+
+    if not credential:
+        return jsonify({'error': 'Token Google manquant'}), 400
+
+    if not GOOGLE_CLIENT_ID:
+        return jsonify({'error': 'Google OAuth non configuré côté serveur'}), 500
+
+    try:
+        from google.oauth2 import id_token as _id_token
+        from google.auth.transport import requests as _greq
+        idinfo = _id_token.verify_oauth2_token(
+            credential,
+            _greq.Request(),
+            GOOGLE_CLIENT_ID
+        )
+        google_email = idinfo.get('email', '').lower()
+        google_name  = idinfo.get('name', '') or google_email.split('@')[0]
+        if not google_email:
+            return jsonify({'error': 'Email Google non disponible'}), 400
+    except Exception as e:
+        print(f"[Google Login] Token invalide: {e}")
+        return jsonify({'error': 'Token Google invalide'}), 401
+
+    import secrets as _sec
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT * FROM users WHERE email = %s", (google_email,))
+            user = cur.fetchone()
+
+        if user:
+            with db.cursor() as cur:
+                cur.execute(
+                    "UPDATE users SET last_login = NOW(), login_count = COALESCE(login_count, 0) + 1 WHERE email = %s",
+                    (google_email,)
+                )
+            db.commit()
+        else:
+            rand_pw = hash_password(_sec.token_urlsafe(32))
+            with db.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO users
+                       (name, email, password, gmail_address, is_verified, plan, created_at, last_login, login_count)
+                       VALUES (%s, %s, %s, %s, 1, 'free', NOW(), NOW(), 1)""",
+                    (google_name, google_email, rand_pw, google_email)
+                )
+            db.commit()
+            with db.cursor() as cur:
+                cur.execute("SELECT * FROM users WHERE email = %s", (google_email,))
+                user = cur.fetchone()
+
+        token = generate_token(user['id'], google_email)
+        return jsonify({
+            'message': 'Connexion reussie',
+            'name':    user['name'],
+            'email':   google_email,
+            'role':    user.get('role', 'user'),
+            'token':   token,
+        }), 200
+    finally:
+        _return_db(db)
+
+
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 
 @app.route('/api/admin/stats')

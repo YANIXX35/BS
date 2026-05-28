@@ -353,6 +353,21 @@
         <button [class.active]="authTab === 'register'" (click)="authTab = 'register'; regStep = 'form'">Créer un compte</button>
       </div>
 
+      <!-- Google Sign-In -->
+      @if (googleClientId) {
+        <div class="google-signin-wrap">
+          @if (googleError) {
+            <div class="form-alert err" style="margin-bottom:10px"><mat-icon>error_outline</mat-icon>{{ googleError }}</div>
+          }
+          @if (googleLoading) {
+            <div class="google-btn-loading"><mat-spinner diameter="20"></mat-spinner><span>Connexion en cours...</span></div>
+          } @else {
+            <div #googleBtnDiv class="google-btn-container"></div>
+          }
+          <div class="auth-or"><span>ou</span></div>
+        </div>
+      }
+
       <!-- ══ LOGIN ══ -->
       @if (authTab === 'login') {
         <div class="form-block">

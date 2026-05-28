@@ -1,4 +1,6 @@
-import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+
+declare const google: any;
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +39,13 @@ export class Landing implements OnInit, AfterViewInit {
 
   toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
   closeMobileMenu() { this.mobileMenuOpen = false; }
+
+  @ViewChild('googleBtnDiv') googleBtnDiv!: ElementRef;
+
+  // ── Google Sign-In ─────────────────────────────────────────────────────────
+  googleClientId = '';
+  googleLoading  = false;
+  googleError    = '';
 
   // ── Login ──────────────────────────────────────────────────────────────────
   loginEmail = '';
@@ -218,6 +227,82 @@ export class Landing implements OnInit, AfterViewInit {
     if (stored) {
       try { this.paymentEmail = JSON.parse(stored).email || ''; } catch { /* noop */ }
     }
+
+    // Load Google client ID for Sign-In
+    this.authService.getPublicConfig().subscribe({
+      next: (cfg) => {
+        if (cfg?.google_client_id) {
+          this.googleClientId = cfg.google_client_id;
+          this.initGoogleBtn();
+        }
+      },
+      error: () => { /* Google Sign-In non disponible */ }
+    });
+  }
+
+  // ── Google Sign-In ─────────────────────────────────────────────────────────
+  private waitForGoogle(): Promise<void> {
+    return new Promise(resolve => {
+      if (typeof google !== 'undefined' && google?.accounts) { resolve(); return; }
+      const t = setInterval(() => {
+        if (typeof google !== 'undefined' && google?.accounts) { clearInterval(t); resolve(); }
+      }, 150);
+      setTimeout(() => { clearInterval(t); resolve(); }, 6000);
+    });
+  }
+
+  private async initGoogleBtn() {
+    await this.waitForGoogle();
+    if (!this.googleClientId || typeof google === 'undefined') return;
+    try {
+      google.accounts.id.initialize({
+        client_id: this.googleClientId,
+        callback: (resp: any) => this.onGoogleCredential(resp),
+      });
+      this.renderGoogleBtn();
+    } catch { /* noop */ }
+  }
+
+  renderGoogleBtn() {
+    if (!this.googleBtnDiv?.nativeElement || typeof google === 'undefined') return;
+    try {
+      google.accounts.id.renderButton(this.googleBtnDiv.nativeElement, {
+        theme: 'outline',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: this.googleBtnDiv.nativeElement.offsetWidth || 340,
+        locale: 'fr',
+      });
+    } catch { /* noop */ }
+  }
+
+  private onGoogleCredential(response: any) {
+    if (!response?.credential) {
+      this.googleError = 'Aucun identifiant Google reçu';
+      this.cdr.detectChanges();
+      return;
+    }
+    this.googleLoading = true;
+    this.googleError   = '';
+    this.loginError    = '';
+    this.cdr.detectChanges();
+
+    this.authService.googleLogin(response.credential).subscribe({
+      next: (res) => {
+        this.googleLoading = false;
+        if (res.token) localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
+        const target = res.role === 'admin' ? '/admin' : '/dashboard';
+        this.router.navigate([target], { replaceUrl: true });
+      },
+      error: (err) => {
+        this.googleLoading = false;
+        this.googleError = err.error?.error || 'Erreur de connexion Google';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
@@ -412,6 +497,11 @@ export class Landing implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
+    // Re-render Google button once the view is ready (client_id may already be loaded)
+    if (this.googleClientId) {
+      setTimeout(() => this.renderGoogleBtn(), 200);
+    }
+
     const cardObs = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {

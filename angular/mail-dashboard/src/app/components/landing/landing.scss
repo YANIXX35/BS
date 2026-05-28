@@ -1676,6 +1676,51 @@ $bg:      #f0f4ff;
       &:hover { color: $blue; }
     }
 
+    // Google Sign-In block
+    .google-signin-wrap {
+      margin-bottom: 4px;
+    }
+
+    .google-btn-container {
+      width: 100%;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      // Override Google iframe button to fill container
+      iframe { width: 100% !important; }
+    }
+
+    .google-btn-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: 44px;
+      font-size: 14px;
+      color: $muted;
+    }
+
+    .auth-or {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0 4px;
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 500;
+
+      &::before, &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #e2e8f0;
+      }
+
+      span { white-space: nowrap; color: #94a3b8; letter-spacing: 0.3px; }
+    }
+
     // Mobile-only brand — hidden on desktop
     .mob-brand {
       display: none;
