@@ -35,17 +35,17 @@
     <p class="sb-section">Canaux</p>
 
     <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
-      <span class="sb-ch-dot" [class.on]="settings.telegram_enabled"></span>
+      <span class="sb-ch-icon telegram" [class.on]="settings.telegram_enabled"><mat-icon>send</mat-icon></span>
       <span>Telegram</span>
     </button>
 
     <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
-      <span class="sb-ch-dot" [class.on]="settings.whatsapp_enabled"></span>
+      <span class="sb-ch-icon whatsapp" [class.on]="settings.whatsapp_enabled"><mat-icon>chat</mat-icon></span>
       <span>WhatsApp</span>
     </button>
 
     <button class="sb-item sb-channel-item" (click)="navigateTo('settings')">
-      <span class="sb-ch-dot" [class.on]="gmailConnected"></span>
+      <span class="sb-ch-icon gmail" [class.on]="gmailConnected"><mat-icon>email</mat-icon></span>
       <span>Gmail OAuth</span>
     </button>
 

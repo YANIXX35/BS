@@ -139,13 +139,21 @@ $r: 14px;
 }
 
 .sb-channel-item {
-  gap: 12px;
+  gap: 10px;
 }
 
-.sb-ch-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #d1d5db; flex-shrink: 0;
-  &.on { background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
+.sb-ch-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: #e5e7eb;
+  transition: background 0.2s, box-shadow 0.2s;
+
+  mat-icon { font-size: 15px; width: 15px; height: 15px; color: #9ca3af; transition: color 0.2s; }
+
+  &.telegram.on  { background: rgba(0,136,204,0.12); mat-icon { color: #0088cc; } }
+  &.whatsapp.on  { background: rgba(37,211,102,0.12); mat-icon { color: #25d366; } }
+  &.gmail.on     { background: rgba(234,67,53,0.12);  mat-icon { color: #ea4335; } }
 }
 
 .sb-footer {
