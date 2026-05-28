@@ -231,7 +231,6 @@ export class Landing implements OnInit, AfterViewInit {
       next: (cfg) => {
         if (cfg?.google_client_id) {
           this.googleClientId = cfg.google_client_id;
-          this.initGoogleBtn();
         }
       },
       error: () => { /* Google Sign-In non disponible */ }
