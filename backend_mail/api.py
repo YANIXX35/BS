@@ -199,6 +199,17 @@ GREEN_API_TOKEN    = (os.getenv('GREEN_API_TOKEN') or '').strip() or None
 # ─── GOOGLE OAUTH CONFIG ──────────────────────────────────────────────────────
 GOOGLE_CLIENT_ID     = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+
+# Fallback: extract from GOOGLE_CLIENT_SECRET_JSON if individual vars not set
+_gcsj = os.getenv('GOOGLE_CLIENT_SECRET_JSON', '')
+if _gcsj and (not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET):
+    try:
+        _gcs = _json.loads(_gcsj)
+        _web = _gcs.get('web') or _gcs.get('installed') or {}
+        GOOGLE_CLIENT_ID     = GOOGLE_CLIENT_ID     or _web.get('client_id', '')
+        GOOGLE_CLIENT_SECRET = GOOGLE_CLIENT_SECRET or _web.get('client_secret', '')
+    except Exception:
+        pass
 OAUTH_REDIRECT_URI   = os.getenv('OAUTH_REDIRECT_URI', 'https://backend-mail-1.onrender.com/api/gmail/callback')
 FRONTEND_URL         = os.getenv('FRONTEND_URL', 'https://notifymails.com')
 GMAIL_SCOPES         = [
