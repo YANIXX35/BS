@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
 
 declare const google: any;
 import { CommonModule } from '@angular/common';
@@ -39,8 +39,6 @@ export class Landing implements OnInit, AfterViewInit {
 
   toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
   closeMobileMenu() { this.mobileMenuOpen = false; }
-
-  @ViewChild('googleBtnDiv') googleBtnDiv!: ElementRef;
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
   googleClientId = '';
@@ -251,35 +249,45 @@ export class Landing implements OnInit, AfterViewInit {
     });
   }
 
-  private async initGoogleBtn() {
+  async googleSignIn() {
+    if (this.googleLoading) return;
+    if (!this.googleClientId) {
+      this.googleError = 'Google Sign-In non disponible pour le moment';
+      return;
+    }
+    this.googleLoading = true;
+    this.googleError   = '';
+    this.cdr.detectChanges();
+
     await this.waitForGoogle();
-    if (!this.googleClientId || typeof google === 'undefined') return;
+    if (typeof google === 'undefined') {
+      this.googleLoading = false;
+      this.googleError = 'Impossible de charger Google Sign-In';
+      this.cdr.detectChanges();
+      return;
+    }
+
     try {
       google.accounts.id.initialize({
         client_id: this.googleClientId,
         callback: (resp: any) => this.onGoogleCredential(resp),
+        ux_mode: 'popup',
       });
-      this.renderGoogleBtn();
-    } catch { /* noop */ }
-  }
-
-  renderGoogleBtn() {
-    if (!this.googleBtnDiv?.nativeElement || typeof google === 'undefined') return;
-    try {
-      google.accounts.id.renderButton(this.googleBtnDiv.nativeElement, {
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',
-        shape: 'rectangular',
-        logo_alignment: 'left',
-        width: this.googleBtnDiv.nativeElement.offsetWidth || 340,
-        locale: 'fr',
+      google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          this.googleLoading = false;
+          this.cdr.detectChanges();
+        }
       });
-    } catch { /* noop */ }
+    } catch {
+      this.googleLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   private onGoogleCredential(response: any) {
     if (!response?.credential) {
+      this.googleLoading = false;
       this.googleError = 'Aucun identifiant Google reçu';
       this.cdr.detectChanges();
       return;
@@ -497,11 +505,6 @@ export class Landing implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Re-render Google button once the view is ready (client_id may already be loaded)
-    if (this.googleClientId) {
-      setTimeout(() => this.renderGoogleBtn(), 200);
-    }
-
     const cardObs = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
