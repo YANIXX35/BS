@@ -1558,6 +1558,22 @@ $r: 14px;
   // Email card header pills wrap
   .email-card-hdr { flex-wrap: wrap; gap: 8px; }
   .fpills { flex-wrap: wrap; gap: 4px; }
+
+  // Settings / configuration page
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .phone-row {
+    flex-direction: column;
+    gap: 10px;
+    .phone-code-field { flex: 1 1 auto; width: 100%; }
+    .phone-local-field { flex: 1 1 auto; width: 100%; }
+  }
+
+  .config-card-head { padding: 14px 16px 0 !important; gap: 12px !important; }
+  .config-card .card-body { padding: 14px 16px !important; }
 }
 
 @media (max-width: 480px) {
