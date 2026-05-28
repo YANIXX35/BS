@@ -17,7 +17,7 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleRequest
 from googleapiclient.errors import HttpError
-from flask import Flask, jsonify, request, redirect, render_template  # noqa: F401
+from flask import Flask, jsonify, request, redirect, render_template, Response, stream_with_context  # noqa: F401
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -123,6 +123,8 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max request body
 ALLOWED_ORIGINS = [
     "https://yanixx35.github.io",
     "https://bs-mailnotif-nine.vercel.app",
+    "https://notifymails.com",
+    "https://www.notifymails.com",
     "http://localhost:4200",
     "http://localhost:4201",
     "http://localhost:8080",
@@ -198,7 +200,7 @@ GREEN_API_TOKEN    = (os.getenv('GREEN_API_TOKEN') or '').strip() or None
 GOOGLE_CLIENT_ID     = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 OAUTH_REDIRECT_URI   = os.getenv('OAUTH_REDIRECT_URI', 'https://backend-mail-1.onrender.com/api/gmail/callback')
-FRONTEND_URL         = os.getenv('FRONTEND_URL', 'https://bs-mailnotif-nine.vercel.app')
+FRONTEND_URL         = os.getenv('FRONTEND_URL', 'https://notifymails.com')
 GMAIL_SCOPES         = [
     'https://www.googleapis.com/auth/gmail.readonly',
     'https://www.googleapis.com/auth/gmail.send',
@@ -206,6 +208,10 @@ GMAIL_SCOPES         = [
 
 _init_firebase()
 notifier_status = {"running": False}
+
+# Cache mémoire pour le chatbot (évite de rappeler Gemini pour la même question)
+_chat_cache: dict = {}
+_CHAT_CACHE_TTL = timedelta(hours=1)
 
 # Middleware JWT pour sécuriser les endpoints
 def token_required(f):
@@ -254,6 +260,47 @@ def token_required(f):
         return f(*args, **kwargs)
     
     return decorated
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+        if not token:
+            return jsonify({'error': 'Token JWT requis'}), 401
+        db = None
+        try:
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            user_id = payload['user_id']
+            user_email = payload['email']
+            db = get_db()
+            with db.cursor() as cur:
+                cur.execute(
+                    "SELECT id, email, role FROM users WHERE id = %s AND email = %s AND is_verified = 1",
+                    (user_id, user_email)
+                )
+                user = cur.fetchone()
+            if not user:
+                return jsonify({'error': 'Utilisateur non trouvé'}), 401
+            if user.get('role') != 'admin':
+                return jsonify({'error': 'Accès refusé — Admin requis'}), 403
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token expiré'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Token invalide'}), 401
+        except Exception as e:
+            print(f"[ADMIN AUTH] {e}")
+            return jsonify({'error': 'Erreur de validation'}), 401
+        finally:
+            if db:
+                _return_db(db)
+        request.current_user = {'id': user_id, 'email': user_email}
+        return f(*args, **kwargs)
+    return decorated
+
 
 def generate_token(user_id: int, email: str) -> str:
     """Génère un token JWT pour l'utilisateur."""
@@ -397,6 +444,11 @@ def init_db():
             # v2 scope flag — nouvelle colonne propre qui part à FALSE pour tous (y compris les
             # utilisateurs existants dont gmail_send_scope était déjà TRUE par erreur).
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS gmail_scope_v2 BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS teams_webhook_url VARCHAR(500)")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS teams_enabled BOOLEAN DEFAULT TRUE")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS monitor_last_ok TIMESTAMP")
             # Pré-remplir le chatId @lid connu pour kyliyanisse (checkWhatsapp retourne 404 sur ce serveur)
             cur.execute("""
                 UPDATE users SET whatsapp_chat_id='62508954075303@lid'
@@ -843,6 +895,12 @@ def login():
                 cur.execute("UPDATE users SET password = %s WHERE email = %s", (new_hash, email))
             db.commit()
 
+        with db.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET last_login = NOW(), login_count = COALESCE(login_count, 0) + 1 WHERE email = %s",
+                (email,)
+            )
+        db.commit()
         token = generate_token(user['id'], email)
         return jsonify({
             'message': 'Connexion reussie',
@@ -858,6 +916,7 @@ def login():
 # ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
 
 @app.route('/api/admin/stats')
+@admin_required
 def admin_stats():
     db = get_db()
     try:
@@ -888,7 +947,38 @@ def admin_stats():
         _return_db(db)
 
 
+@app.route('/api/admin/user-activity', methods=['GET'])
+@admin_required
+def admin_user_activity():
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("""
+                SELECT id, name, email, role, plan,
+                       COALESCE(login_count, 0) AS login_count,
+                       last_login,
+                       CASE WHEN gmail_refresh_token IS NOT NULL THEN TRUE ELSE FALSE END AS gmail_connected,
+                       created_at
+                FROM users
+                ORDER BY COALESCE(login_count, 0) DESC
+                LIMIT 100
+            """)
+            rows = cur.fetchall()
+            result = []
+            for u in rows:
+                u = dict(u)
+                u['last_login'] = u['last_login'].strftime('%Y-%m-%d %H:%M') if u.get('last_login') else None
+                u['created_at'] = u['created_at'].strftime('%Y-%m-%d') if u.get('created_at') else None
+                result.append(u)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
 @app.route('/api/admin/users', methods=['GET'])
+@admin_required
 def admin_get_users():
     db = get_db()
     try:
@@ -916,6 +1006,7 @@ def admin_get_users():
 
 
 @app.route('/api/admin/users/<int:user_id>', methods=['PUT'])
+@admin_required
 def admin_update_user(user_id):
     data = request.json
     db = get_db()
@@ -933,6 +1024,7 @@ def admin_update_user(user_id):
 
 
 @app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_required
 def admin_delete_user(user_id):
     db = get_db()
     try:
@@ -945,6 +1037,7 @@ def admin_delete_user(user_id):
 
 
 @app.route('/api/admin/users', methods=['POST'])
+@admin_required
 def admin_create_user():
     data = request.json
     db = get_db()
@@ -964,6 +1057,7 @@ def admin_create_user():
 
 
 @app.route('/api/admin/payments', methods=['GET'])
+@admin_required
 def admin_get_payments():
     db = get_db()
     try:
@@ -989,6 +1083,7 @@ def admin_get_payments():
 
 
 @app.route('/api/admin/payments', methods=['POST'])
+@admin_required
 def admin_create_payment():
     data = request.json
     db = get_db()
@@ -1008,6 +1103,7 @@ def admin_create_payment():
 
 
 @app.route('/api/admin/payments/<int:pay_id>', methods=['DELETE'])
+@admin_required
 def admin_delete_payment(pay_id):
     db = get_db()
     try:
@@ -1020,6 +1116,7 @@ def admin_delete_payment(pay_id):
 
 
 @app.route('/api/admin/whatsapp-diagnostic', methods=['GET'])
+@admin_required
 def admin_whatsapp_diagnostic():
     """Diagnostic complet WhatsApp pour tous les utilisateurs configurés."""
     db = get_db()
@@ -1122,6 +1219,7 @@ def admin_whatsapp_diagnostic():
 
 
 @app.route('/api/admin/whatsapp-fix-chat-ids', methods=['POST'])
+@admin_required
 def admin_fix_chat_ids():
     """Résout et sauvegarde les whatsapp_chat_id manquants pour tous les users."""
     db = get_db()
@@ -1166,6 +1264,7 @@ def admin_fix_chat_ids():
 
 
 @app.route('/api/admin/users/<int:user_id>/suspend', methods=['PATCH'])
+@admin_required
 def admin_suspend_user(user_id):
     data = request.json or {}
     suspended = bool(data.get('is_suspended', False))
@@ -1183,6 +1282,7 @@ def admin_suspend_user(user_id):
 
 
 @app.route('/api/admin/users/<path:email>/emails', methods=['GET'])
+@admin_required
 def admin_get_user_emails(email):
     """Recupere les emails Gmail d'un utilisateur specifique (acces admin)."""
     db = get_db()
@@ -1234,6 +1334,7 @@ def admin_get_user_emails(email):
 
 
 @app.route('/api/admin/gmail-scope-status', methods=['GET'])
+@admin_required
 def admin_gmail_scope_status():
     """Liste tous les utilisateurs avec Gmail OAuth connecté + leur statut de scope v2."""
     db = get_db()
@@ -1256,6 +1357,7 @@ def admin_gmail_scope_status():
 
 
 @app.route('/api/admin/reset-gmail-scope', methods=['POST'])
+@admin_required
 def admin_reset_gmail_scope():
     """Remet gmail_scope_v2=FALSE pour forcer la reconnexion (pour 1 user ou tous)."""
     data = request.json or {}
@@ -1433,7 +1535,12 @@ def gmail_oauth_callback():
             with db.cursor() as cur:
                 # Vérifier si le scope gmail.send est inclus dans les scopes accordés
                 granted_scopes = getattr(creds, 'scopes', None) or []
-                has_send_scope = any('gmail.send' in s for s in granted_scopes)
+                if granted_scopes:
+                    has_send_scope = any('gmail.send' in s for s in granted_scopes)
+                else:
+                    # Google ne retourne pas toujours les scopes dans la réponse token.
+                    # On a demandé gmail.send dans GMAIL_SCOPES → on suppose qu'il est accordé.
+                    has_send_scope = True
 
                 cur.execute(
                     """UPDATE users SET
@@ -1511,21 +1618,23 @@ def gmail_oauth_status():
         with db.cursor() as cur:
             cur.execute(
                 "SELECT gmail_refresh_token, gmail_connected_email, gmail_token_expiry, "
-                "COALESCE(gmail_scope_v2, FALSE) as gmail_scope_v2 "
+                "COALESCE(gmail_scope_v2, FALSE) as gmail_scope_v2, monitor_last_ok "
                 "FROM users WHERE email = %s",
                 (email,),
             )
             row = cur.fetchone()
         if not row or not row.get('gmail_refresh_token'):
-            result = {'connected': False, 'gmail_email': None, 'expired': False, 'can_send': False}
+            result = {'connected': False, 'gmail_email': None, 'expired': False, 'can_send': False, 'monitor_last_ok': None}
         else:
             expiry  = row.get('gmail_token_expiry')
             expired = bool(expiry and int(time.time()) > expiry)
+            mlo     = row.get('monitor_last_ok')
             result  = {
-                'connected':   True,
-                'gmail_email': row.get('gmail_connected_email'),
-                'expired':     expired,
-                'can_send':    bool(row.get('gmail_scope_v2', False)),
+                'connected':       True,
+                'gmail_email':     row.get('gmail_connected_email'),
+                'expired':         expired,
+                'can_send':        bool(row.get('gmail_scope_v2', False)),
+                'monitor_last_ok': mlo.isoformat() if mlo else None,
             }
         _cache_set(cache_key, result, ttl=60)
         return jsonify(result)
@@ -2115,74 +2224,22 @@ def ai_analyze():
             for i, e in enumerate(emails_data)
         )
 
-        prompt = f"""Tu es un assistant IA de gestion d'emails. Analyse ces {len(emails_data)} emails récents et réponds UNIQUEMENT en JSON valide, sans texte avant ni après.
-
-EMAILS:
-{emails_text}
-
-Réponds avec ce JSON exact:
-{{
-  "summary": "Résumé de 2 phrases max de l'état de la boîte mail",
-  "urgent_count": <nombre d'emails urgents/importants>,
-  "important_count": <nombre d'emails importants>,
-  "newsletter_count": <nombre de newsletters/promotions>,
-  "normal_count": <nombre d'emails normaux>,
-  "actions": ["action1 concrète à faire", "action2"],
-  "emails": [
-    {{"id": "<id>", "category": "important|newsletter|normal", "reason": "raison courte en français", "priority": "high|medium|low"}}
-  ]
-}}
-
-Règles de classification:
-- important: factures, paiements, sécurité, urgences, réunions, contrats, mots de passe, alertes compte
-- newsletter: promotions, publicités, désabonnement, marketing, offres commerciales
-- normal: tout le reste (emails de collègues, notifications informatives, etc.)"""
-
-        GEMINI_MODELS = [
-            'gemini-2.0-flash',
-            'gemini-2.5-flash-lite',
-        ]
-
-        import json as _json_ai
-
-        resp = None
-        last_err = None
-        for model_name in GEMINI_MODELS:
-            url = (
-                'https://generativelanguage.googleapis.com/v1beta/models/'
-                f'{model_name}:generateContent?key={GEMINI_API_KEY}'
-            )
-            try:
-                resp = requests.post(
-                    url,
-                    headers={'Content-Type': 'application/json'},
-                    json={
-                        'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
-                        'generationConfig': {'maxOutputTokens': 1500, 'temperature': 0.2},
-                    },
-                    timeout=(5, 45),
-                )
-                resp.raise_for_status()
-                break
-            except Exception as e:
-                last_err = e
-                resp = None
-                continue
-
-        if resp is None:
-            raise last_err
-
-        raw = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-        # Strip markdown code fences if present
-        if '```' in raw:
-            parts = raw.split('```')
-            # parts[1] is the content between first and second fence
-            raw = parts[1] if len(parts) > 1 else raw
-            if raw.startswith('json'):
-                raw = raw[4:]
-            raw = raw.strip()
-        analysis = _json_ai.loads(raw)
-        _cache_set(cache_key, analysis, ttl=300)   # 5 min
+        # Gemini désactivé — quota réservé au chatbot uniquement
+        # Analyse statique basée sur les emails lus (sans appel API)
+        unread_count = sum(1 for e in emails_data if e['unread'])
+        analysis = {
+            "summary": f"Vous avez {len(emails_data)} emails récents dont {unread_count} non lus.",
+            "urgent_count": 0,
+            "important_count": unread_count,
+            "newsletter_count": 0,
+            "normal_count": len(emails_data) - unread_count,
+            "actions": ["Consultez vos emails non lus en priorité."] if unread_count else [],
+            "emails": [
+                {"id": e['id'], "category": "normal", "reason": "Analyse IA désactivée", "priority": "low"}
+                for e in emails_data
+            ],
+        }
+        _cache_set(cache_key, analysis, ttl=300)
         return jsonify(analysis)
 
     except Exception as e:
@@ -2243,20 +2300,6 @@ def whatsapp_check_number():
             chat_id = data.get('chatId', '') if exists else ''
             return jsonify({"exists": exists, "chatId": chat_id, "phone": phone_clean})
         return jsonify({"exists": False, "chatId": "", "phone": phone_clean})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route('/api/user/whatsapp-qr', methods=['GET'])
-def get_whatsapp_qr():
-    if not GREEN_API_INSTANCE or not GREEN_API_TOKEN:
-        return jsonify({"error": "WhatsApp non configuré sur ce serveur"}), 503
-    url = f"{GREEN_API_URL}/waInstance{GREEN_API_INSTANCE}/qr/{GREEN_API_TOKEN}"
-    try:
-        resp = requests.get(url, timeout=15)
-        if not resp.ok:
-            return jsonify({"error": f"Erreur Green API: {resp.status_code}"}), 502
-        return jsonify(resp.json())
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -2715,36 +2758,7 @@ def _handle_wa_command(cmd: str, user_email: str, chat_id: str) -> bool:
 
 
 def _get_smart_reply_suggestions(user_email: str, ctx: dict) -> str:
-    """Utilise Gemini pour générer 3 suggestions de réponse basées sur le dernier email."""
-    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    if not GEMINI_API_KEY:
-        return ''
-    sender = ctx.get('last_sender', '')
-    subject = ctx.get('last_subject', '')
-    snippet = ctx.get('last_snippet', '')
-    match = re.match(r'^(.+?)\s*<', sender)
-    sender_name = match.group(1).strip().strip('"') if match else sender.split('@')[0]
-    prompt = (
-        f"Tu es un assistant email professionnel. "
-        f"Voici un email reçu :\n"
-        f"De : {sender_name}\n"
-        f"Objet : {subject}\n"
-        f"Contenu : {snippet[:500]}\n\n"
-        f"Génère exactement 3 suggestions de réponse courtes (2-3 phrases max chacune), "
-        f"professionnelles et en français. "
-        f"Format : numérote chaque suggestion (1., 2., 3.) sans entête ni explication."
-    )
-    models = ['gemini-2.0-flash', 'gemini-2.5-flash-lite']
-    for model in models:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"maxOutputTokens": 400}}
-            resp = requests.post(url, json=body, timeout=20)
-            if resp.ok:
-                text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-                return f"🤖 *Suggestions de réponse IA :*\n\n{text}\n\n_Répondez à la notification avec votre réponse._"
-        except Exception as e:
-            print(f"[SmartReply] {model} error: {e}")
+    """Gemini désactivé — quota réservé au chatbot uniquement."""
     return ''
 
 
@@ -2990,6 +3004,52 @@ def _store_whatsapp_email_map(wa_msg_id: str, user_email: str, gmail_message_id:
         _return_db(db)
 
 
+# Throttle : une alerte de déconnexion Gmail max par utilisateur toutes les 24h
+_gmail_alert_sent: dict = {}
+
+def _should_send_disconnect_alert(email: str) -> bool:
+    last = _gmail_alert_sent.get(email, 0)
+    if time.time() - last > 86400:
+        _gmail_alert_sent[email] = time.time()
+        return True
+    return False
+
+def _send_gmail_disconnect_alert(user: dict):
+    """Alerte WA + Telegram quand le token Gmail expire silencieusement."""
+    name = (user.get('name') or user['email'].split('@')[0]).split()[0]
+    dashboard_url = f"{FRONTEND_URL}/dashboard"
+    msg = (
+        f"⚠️ *MailNotifier — Action requise*\n\n"
+        f"Bonjour {name},\n\n"
+        f"Votre connexion Gmail a expiré. "
+        f"Les notifications email sont interrompues.\n\n"
+        f"👉 Reconnectez Gmail en 30 secondes :\n{dashboard_url}\n\n"
+        f"_(Paramètres → Gmail → Connecter)_"
+    )
+    # Telegram
+    chat_id = user.get('telegram_chat_id')
+    if chat_id and TELEGRAM_BOT_TOKEN:
+        try:
+            requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                json={"chat_id": chat_id, "text": msg, "parse_mode": "Markdown"},
+                timeout=10
+            )
+            print(f"[Alert] Telegram disconnect alert → {user['email']}")
+        except Exception as e:
+            print(f"[Alert] Telegram error for {user['email']}: {e}")
+    # WhatsApp
+    wa_chat_id = user.get('whatsapp_chat_id')
+    if wa_chat_id and GREEN_API_INSTANCE and GREEN_API_TOKEN:
+        try:
+            send_url = f"{GREEN_API_URL}/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
+            plain_msg = msg.replace('*', '').replace('_', '')
+            requests.post(send_url, json={"chatId": wa_chat_id, "message": plain_msg}, timeout=10)
+            print(f"[Alert] WhatsApp disconnect alert → {user['email']}")
+        except Exception as e:
+            print(f"[Alert] WhatsApp error for {user['email']}: {e}")
+
+
 def _check_user_emails_gmail(user):
     """Vérifie les nouveaux mails d'un utilisateur via Gmail API (OAuth 2.0)."""
     user_email      = user['email']
@@ -3000,6 +3060,11 @@ def _check_user_emails_gmail(user):
     try:
         service = _get_gmail_service(user_email)
         if not service:
+            # Token expiré ou révoqué — alerter l'utilisateur une fois par 24h
+            if _should_send_disconnect_alert(user_email):
+                threading.Thread(
+                    target=_send_gmail_disconnect_alert, args=(user,), daemon=True
+                ).start()
             return
 
         profile            = service.users().getProfile(userId='me').execute()
@@ -3069,6 +3134,18 @@ def _check_user_emails_gmail(user):
             raise
 
         _save_last_uid(user_id, current_history_id)
+
+        # Horodatage du dernier check réussi (visible dans le dashboard)
+        try:
+            db_ok = get_db()
+            try:
+                with db_ok.cursor() as cur:
+                    cur.execute("UPDATE users SET monitor_last_ok = NOW() WHERE id = %s", (user_id,))
+                db_ok.commit()
+            finally:
+                _return_db(db_ok)
+        except Exception:
+            pass
 
     except Exception as e:
         print(f"[Monitor] Erreur Gmail API pour {user_email}: {e}")
@@ -3533,110 +3610,11 @@ def handle_keep_alive():
     })
 
 @app.route('/api/dashboard/advanced-stats', methods=['GET'])
+@token_required
 @limiter.limit("20 per minute")
 def get_advanced_stats():
     """Endpoint pour récupérer les statistiques avancées du tableau de bord."""
-    email = request.args.get('email')
-    period = int(request.args.get('period', 30))  # jours
-    status = request.args.get('status', 'all')
-    sender_filter = request.args.get('sender', '')
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    
-    if not email:
-        return jsonify({'error': 'Email requis'}), 400
-    
-    try:
-        db = get_db()
-        with db.cursor() as cur:
-            # Statistiques générales
-            cur.execute("""
-                SELECT 
-                    COUNT(*) as total_emails,
-                    SUM(CASE WHEN is_read = false THEN 1 ELSE 0 END) as unread_emails,
-                    SUM(CASE WHEN is_sent = true THEN 1 ELSE 0 END) as sent_emails,
-                    DATE(sent_at) as last_email_date
-                FROM emails 
-                WHERE user_email = %s
-            """, (email,))
-            
-            stats = cur.fetchone()
-            
-            # Évolution temporelle
-            cur.execute("""
-                SELECT 
-                    DATE(sent_at) as date,
-                    COUNT(*) as count,
-                    SUM(CASE WHEN is_read = false THEN 1 ELSE 0 END) as unread
-                FROM emails 
-                WHERE user_email = %s 
-                    AND sent_at >= CURRENT_DATE - INTERVAL '%s days'
-                GROUP BY DATE(sent_at)
-                ORDER BY date DESC
-            """, (email, period))
-            
-            evolution = cur.fetchall()
-            
-            # Répartition par statut
-            cur.execute("""
-                SELECT 
-                    CASE WHEN is_read = true THEN 'Lus' ELSE 'Non lus' END as status,
-                    COUNT(*) as count
-                FROM emails 
-                WHERE user_email = %s
-                GROUP BY is_read
-            """, (email,))
-            
-            status_distribution = cur.fetchall()
-            
-            # Top expéditeurs
-            cur.execute("""
-                SELECT 
-                    sender,
-                    COUNT(*) as count
-                FROM emails 
-                WHERE user_email = %s
-                    AND sender IS NOT NULL
-                GROUP BY sender
-                ORDER BY count DESC
-                LIMIT 10
-            """, (email,))
-            
-            top_senders = cur.fetchall()
-            
-        return jsonify({
-            'total_emails': int(stats['total_emails'] or 0),
-            'unread_emails': int(stats['unread_emails'] or 0),
-            'sent_emails': int(stats['sent_emails'] or 0),
-            'average_per_day': round(int(stats['total_emails'] or 0) / period, 1),
-            'evolution': [
-                {
-                    'date': str(row['date']),
-                    'count': int(row['count']),
-                    'unread': int(row['unread'])
-                } for row in evolution
-            ],
-            'status_distribution': [
-                {
-                    'status': row['status'],
-                    'count': int(row['count'])
-                } for row in status_distribution
-            ],
-            'top_senders': [
-                {
-                    'sender': row['sender'],
-                    'count': int(row['count'])
-                } for row in top_senders
-            ]
-        }), 200
-        
-    except Exception as e:
-        print(f"[ERROR] Advanced stats: {e}")
-        return jsonify({'error': 'Erreur lors de la récupération des statistiques'}), 500
-        
-    finally:
-        if 'db' in locals():
-            db.close()
+    return jsonify({'error': 'Statistiques avancées non disponibles dans cette version'}), 501
 
 
 def init_user_preferences():
@@ -3698,9 +3676,9 @@ def api_version():
 
 
 @app.route('/api/chatbot', methods=['POST'])
-@limiter.limit("30 per hour; 5 per minute")
+@limiter.limit("60 per hour; 10 per minute")
 def chat_bot():
-    """Chatbot IA MailNotifier — Gemini 2.5 Flash Lite via REST."""
+    """Chatbot IA MailNotifier — gemini-1.5-flash (1500 req/jour) + cache + fallback."""
     data    = request.get_json() or {}
     message = _str(data.get('message', ''), 500).strip()
     history = data.get('history', [])
@@ -3709,31 +3687,23 @@ def chat_bot():
         return jsonify({'error': 'message requis'}), 400
 
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    if not GEMINI_API_KEY:
-        return jsonify({'response': (
-            "Bonjour ! Je suis l'assistant MailNotifier. \U0001f60a "
-            "MailNotifier surveille ta boite Gmail et t'envoie des alertes Telegram et WhatsApp. "
-            "Cree ton compte gratuitement en haut de la page !"
-        )}), 200
+    print(f"[Chat] Clé utilisée: ...{GEMINI_API_KEY[-8:] if GEMINI_API_KEY else 'AUCUNE'}")
 
     system_prompt = (
-        "Tu es l'assistant virtuel officiel de MailNotifier, une app web de surveillance Gmail avec notifications temps reel.\n\n"
-        "PRODUIT:\n"
-        "- Surveillance Gmail OAuth2 — nouveau mail detecte en < 30 secondes\n"
+        "Tu es un assistant IA intelligent, sympathique et polyvalent intégré dans MailNotifier.\n\n"
+        "Tu peux répondre à TOUTES les questions sans exception : culture générale, science, histoire, "
+        "technologie, cuisine, sport, voyages, langues, maths, code, actualités, conseils de vie, "
+        "blagues, créativité, etc. Tu n'as aucune restriction de sujet.\n\n"
+        "Si la question concerne MailNotifier :\n"
+        "- Surveillance Gmail OAuth2, nouveau mail détecté en < 30 secondes\n"
         "- Notifications Telegram (gratuit) et WhatsApp (premium)\n"
-        "- IA integree: classe chaque email important/newsletter/normal\n"
-        "- Dashboard: derniers mails, stats, canaux, analyse IA\n\n"
-        "TARIFS:\n"
-        "- Gratuit: Gmail + Telegram. Pour toujours.\n"
-        "- Premium (5 000 XOF/mois): + WhatsApp + filtres avances\n"
-        "- Enterprise (15 000 XOF/mois): + Support prioritaire\n\n"
-        "SETUP 3 ETAPES: 1) Inscription email+OTP  2) Connexion Gmail OAuth  3) Chat ID Telegram ou numero WhatsApp\n\n"
-        "REGLES: Reponds en francais, concis et chaleureux (2-4 phrases max). "
-        "1-2 emojis max. Tu peux repondre a toutes les questions generales (culture, tech, vie quotidienne, etc.). "
-        "Quand c'est pertinent, mentionne subtilement MailNotifier. Ne refuse jamais une question."
+        "- Réponse aux mails depuis WhatsApp : glisser la notification et écrire\n"
+        "- Commandes WhatsApp : !aide, !templates, !statut, !dernier, !smart\n"
+        "- Gratuit : Gmail + Telegram | Premium 5 000 XOF/mois : + WhatsApp | Enterprise 15 000 XOF/mois\n\n"
+        "STYLE : Réponds en français, naturel et chaleureux. "
+        "1-2 emojis max. Sois direct. Ne refuse JAMAIS une question."
     )
 
-    # Format Gemini: role "bot" → "model", system_instruction separe
     contents = []
     for h in (history or [])[-6:]:
         role    = h.get('role', '')
@@ -3744,35 +3714,94 @@ def chat_bot():
             contents.append({'role': 'model', 'parts': [{'text': content}]})
     contents.append({'role': 'user', 'parts': [{'text': message}]})
 
-    chat_models = ['gemini-2.0-flash', 'gemini-2.5-flash-lite']
-    last_chat_err = None
-    for chat_model in chat_models:
-        url = (
-            'https://generativelanguage.googleapis.com/v1beta/models/'
-            f'{chat_model}:generateContent?key={GEMINI_API_KEY}'
-        )
-        try:
-            resp = requests.post(
-                url,
-                headers={'Content-Type': 'application/json'},
-                json={
-                    'system_instruction': {'parts': [{'text': system_prompt}]},
-                    'contents': contents,
-                    'generationConfig': {'maxOutputTokens': 250, 'temperature': 0.7},
-                },
-                timeout=(5, 20),
-            )
-            resp.raise_for_status()
-            text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-            return jsonify({'response': text})
-        except Exception as e:
-            print(f"[Chat] Erreur Gemini ({chat_model}): {e}")
-            last_chat_err = e
-            continue
+    body = {
+        'system_instruction': {'parts': [{'text': system_prompt}]},
+        'contents': contents,
+        'generationConfig': {'maxOutputTokens': 1024, 'temperature': 0.7},
+    }
 
-    if _sentry_dsn and last_chat_err and '429' not in str(last_chat_err) and 'timeout' not in str(last_chat_err).lower():
-        sentry_sdk.capture_exception(last_chat_err)
-    return jsonify({'response': "Desole, erreur momentanee. Reessaie dans un instant !"}), 200
+    sse_headers = {
+        'Content-Type':      'text/event-stream',
+        'Cache-Control':     'no-cache',
+        'X-Accel-Buffering': 'no',
+        'Connection':        'keep-alive',
+    }
+
+    def _sse(text):
+        yield f'data: {_json.dumps({"text": text})}\n\n'
+        yield 'data: [DONE]\n\n'
+
+    def _keyword_fallback(msg):
+        m = msg.lower()
+        if any(w in m for w in ['tarif', 'prix', 'cout', 'combien', 'payer', 'abonnement']):
+            return "💰 Tarifs MailNotifier :\n• Gratuit : Gmail + Telegram\n• Premium (5 000 XOF/mois) : + WhatsApp\n• Enterprise (15 000 XOF/mois) : + Support prioritaire"
+        if any(w in m for w in ['whatsapp', 'wha']):
+            return "📱 Pour WhatsApp : Paramètres → WhatsApp, entre ton numéro, vérifie-le, copie l'URL webhook dans Green API. Plan Premium requis."
+        if any(w in m for w in ['telegram', 'tele']):
+            return "✈️ Pour Telegram : cherche @Kylimail_bot, envoie /start, copie ton Chat ID dans Paramètres → Telegram. C'est gratuit !"
+        if any(w in m for w in ['gmail', 'google', 'oauth']):
+            return "📧 Pour Gmail : Paramètres → Gmail → Connecter Gmail, autorise l'accès Google. Détection en < 30 secondes."
+        if any(w in m for w in ['commencer', 'inscription', 'créer', 'creer', 'compte']):
+            return "🚀 3 étapes : 1️⃣ Inscription email+OTP  2️⃣ Connexion Gmail  3️⃣ Config Telegram ou WhatsApp. C'est tout !"
+        if any(w in m for w in ['repondre', 'répondre', 'reply']):
+            return "✍️ Glisse la notification WhatsApp reçue (swipe to reply) et écris ta réponse. Elle part par Gmail à l'expéditeur !"
+        return "😊 Je suis l'assistant MailNotifier ! Pose-moi n'importe quelle question — je réponds à tout."
+
+    if not GEMINI_API_KEY:
+        return Response(stream_with_context(_sse(_keyword_fallback(message))),
+                        headers=sse_headers)
+
+    # Modèles disponibles dans le projet YANISSE (confirmé via AI Studio)
+    GEMINI_MODELS = [
+        'gemini-2.5-flash-lite',
+        'gemini-2.5-flash',
+    ]
+
+    def _call_gemini_cached():
+        cache_key = hashlib.md5(message.lower().strip().encode()).hexdigest()
+        if cache_key in _chat_cache:
+            cached_at, cached_text = _chat_cache[cache_key]
+            if datetime.now() - cached_at < _CHAT_CACHE_TTL:
+                print(f"[Chat] Cache hit pour: {message[:40]}")
+                return cached_text
+
+        for model in GEMINI_MODELS:
+            url = (
+                f'https://generativelanguage.googleapis.com/v1beta/models/'
+                f'{model}:generateContent?key={GEMINI_API_KEY}'
+            )
+            try:
+                resp = requests.post(url, json=body, timeout=20)
+                print(f"[Chat] {model} HTTP {resp.status_code}")
+                if resp.status_code == 429:
+                    print(f"[Chat] {model} quota épuisé, essai suivant…")
+                    continue
+                if not resp.ok:
+                    print(f"[Chat] {model} erreur: {resp.text[:200]}")
+                    continue
+                d    = resp.json()
+                text = d['candidates'][0]['content']['parts'][0]['text']
+                if text:
+                    _chat_cache[cache_key] = (datetime.now(), text)
+                    return text
+            except Exception as e:
+                print(f"[Chat] {model} exception: {e}")
+        return None
+
+    def generate():
+        yield ': ok\n\n'
+        try:
+            text = _call_gemini_cached()
+            if text:
+                yield f'data: {_json.dumps({"text": text})}\n\n'
+                yield 'data: [DONE]\n\n'
+                return
+        except Exception as e:
+            print(f"[Chat] Erreur inattendue: {e}")
+        print("[Chat] Tous les modèles ont échoué — keyword fallback")
+        yield from _sse(_keyword_fallback(message))
+
+    return Response(stream_with_context(generate()), headers=sse_headers)
 
 
 def _send_weekly_summary_to_user(user: dict):
@@ -3895,9 +3924,19 @@ def _send_weekly_summary_to_user(user: dict):
   <!-- APERÇU SUJETS -->
   {'<tr><td style="padding:0 40px 28px;"><div style="background:#f8faff;border-radius:14px;padding:20px;border:1px solid #e2e8f0;"><p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#4f46e5;">📬 Derniers sujets</p><ul style="margin:0;padding-left:16px;">' + subjects_html + '</ul></div></td></tr>' if subjects_preview else ''}
 
+  <!-- MONITORING STATUS -->
+  <tr><td style="padding:0 40px 24px;">
+    <div style="background:#f0fdf4;border-radius:14px;padding:16px 20px;border:1px solid #bbf7d0;display:flex;align-items:center;">
+      <span style="font-size:20px;margin-right:10px;">✅</span>
+      <p style="margin:0;font-size:13px;color:#166534;">
+        <strong>Votre Gmail est surveillé en continu</strong> — MailNotifier a analysé votre boîte cette semaine sans interruption.
+      </p>
+    </div>
+  </td></tr>
+
   <!-- CTA -->
   <tr><td style="padding:0 40px 36px;text-align:center;">
-    <a href="https://bs-mailnotif-nine.vercel.app/dashboard"
+    <a href="{FRONTEND_URL}/dashboard"
        style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;text-decoration:none;border-radius:12px;font-weight:700;font-size:15px;">
       Voir mon dashboard →
     </a>
@@ -3907,7 +3946,7 @@ def _send_weekly_summary_to_user(user: dict):
   <tr><td style="background:#f8faff;padding:20px 40px;text-align:center;border-top:1px solid #e2e8f0;">
     <p style="margin:0;font-size:12px;color:#94a3b8;">
       MailNotifier — Tu reçois ce mail car tu as activé les résumés hebdomadaires.<br>
-      © 2025 MailNotifier
+      © 2026 MailNotifier
     </p>
   </td></tr>
 
@@ -3926,6 +3965,32 @@ def _send_weekly_summary_to_user(user: dict):
             server.sendmail(SMTP_EMAIL, email, msg_email.as_string())
         print(f"[WEEKLY] Résumé envoyé → {email} ({total} emails, {unread} non lus)")
 
+        # Version courte WA + Telegram pour ré-engager l'utilisateur
+        brief = (
+            f"📊 *Résumé de la semaine — MailNotifier*\n\n"
+            f"Bonjour {name} 👋\n\n"
+            f"Cette semaine : *{total}* emails reçus • *{unread}* non lus • taux de lecture *{read_pct}%*\n\n"
+            f"✅ Votre Gmail a été surveillé en continu.\n\n"
+            f"👉 {FRONTEND_URL}/dashboard"
+        )
+        chat_id = user.get('telegram_chat_id')
+        if chat_id and TELEGRAM_BOT_TOKEN:
+            try:
+                requests.post(
+                    f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                    json={"chat_id": chat_id, "text": brief, "parse_mode": "Markdown"},
+                    timeout=10
+                )
+            except Exception:
+                pass
+        wa_chat_id = user.get('whatsapp_chat_id')
+        if wa_chat_id and GREEN_API_INSTANCE and GREEN_API_TOKEN:
+            try:
+                send_url = f"{GREEN_API_URL}/waInstance{GREEN_API_INSTANCE}/sendMessage/{GREEN_API_TOKEN}"
+                requests.post(send_url, json={"chatId": wa_chat_id, "message": brief.replace('*', '')}, timeout=10)
+            except Exception:
+                pass
+
     except Exception as e:
         print(f"[WEEKLY] Erreur pour {email}: {e}")
 
@@ -3940,7 +4005,8 @@ def _send_weekly_summaries():
         db = get_db()
         with db.cursor() as cur:
             cur.execute(
-                "SELECT email, name FROM users "
+                "SELECT email, name, telegram_chat_id, whatsapp_chat_id, phone "
+                "FROM users "
                 "WHERE is_verified = 1 AND gmail_access_token IS NOT NULL"
             )
             users = [dict(u) for u in cur.fetchall()]

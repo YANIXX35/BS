@@ -2149,7 +2149,10 @@ $bg:      #f0f4ff;
   // Login
   .login-section {
     padding: 48px 20px;
-    .auth-card { padding: 36px 32px; }
+    .auth-card {
+      padding: 36px 32px;
+      .fld-row { grid-template-columns: 1fr; }
+    }
   }
   .footer { padding: 40px 24px; }
 }
@@ -2249,7 +2252,7 @@ $bg:      #f0f4ff;
     .auth-card {
       padding: 28px 22px 36px;
       max-height: none;
-      border-radius: 0;
+      border-radius: 22px;
 
       .mob-brand { display: flex; }
 
@@ -2257,19 +2260,27 @@ $bg:      #f0f4ff;
         button { font-size: 13px; height: 36px; }
       }
 
-      .form-head h3 { font-size: 19px; }
+      .form-head {
+        h3 { font-size: 19px; }
+        p  { font-size: 13px; line-height: 1.5; }
+      }
 
-      .fld-row { grid-template-columns: 1fr; }
+      .form-fields { gap: 12px; }
+
+      .fld-row { grid-template-columns: 1fr !important; }
 
       .fld-group .fld-box {
         height: 50px;
         border-radius: 12px;
       }
 
+      .fld-group label { font-size: 12px; }
+
       .btn-auth {
         height: 52px;
         border-radius: 14px;
         font-size: 15px;
+        margin-top: 8px;
       }
 
       .otp-box { height: 64px !important; }
@@ -2325,11 +2336,18 @@ $bg:      #f0f4ff;
   .login-section {
     padding: 12px 10px 40px;
     .auth-wrap { border-radius: 18px; }
-    .auth-card { padding: 22px 18px 32px; }
-    .auth-card .mob-brand strong { font-size: 15px; }
-    .auth-card .auth-toggle button { font-size: 12px; height: 34px; }
-    .auth-card .fld-group .fld-box { height: 46px; }
-    .auth-card .btn-auth { height: 48px; font-size: 14px; }
+    .auth-card {
+      padding: 22px 16px 32px;
+      border-radius: 18px;
+      .mob-brand { gap: 10px; margin-bottom: 16px; padding-bottom: 16px; }
+      .mob-brand strong { font-size: 15px; }
+      .mob-brand-logo { width: 38px; height: 38px; }
+      .auth-toggle button { font-size: 12px; height: 34px; }
+      .form-fields { gap: 10px; }
+      .fld-group .fld-box { height: 46px; }
+      .fld-row { grid-template-columns: 1fr !important; }
+      .btn-auth { height: 48px; font-size: 14px; }
+    }
   }
 
   .footer { padding: 32px 14px; }
