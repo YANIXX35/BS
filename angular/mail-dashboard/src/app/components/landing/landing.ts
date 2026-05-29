@@ -1,4 +1,6 @@
 import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
+
+declare const google: any;
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -39,8 +41,9 @@ export class Landing implements OnInit, AfterViewInit {
   closeMobileMenu() { this.mobileMenuOpen = false; }
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
-  googleLoading = false;
-  googleError   = '';
+  googleClientId = '';
+  googleLoading  = false;
+  googleError    = '';
 
   // ── Login ──────────────────────────────────────────────────────────────────
   loginEmail = '';
@@ -183,27 +186,10 @@ export class Landing implements OnInit, AfterViewInit {
       }
     } catch { /* noop */ }
 
-    // Detect return from Google OAuth (unified signup + Gmail)
-    this.route.queryParams.subscribe(params => {
-      const googleToken = params['google_token'];
-      const googleError = params['google_error'];
-
-      if (googleToken) {
-        const name  = decodeURIComponent(params['gname']  || '');
-        const email = decodeURIComponent(params['gemail'] || '');
-        const role  = params['grole'] || 'user';
-        localStorage.setItem('token', googleToken);
-        localStorage.setItem('user', JSON.stringify({ name, email, role }));
-        this.router.navigate([role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
-        return;
-      }
-
-      if (googleError) {
-        this.googleError = `Erreur Google : ${googleError}`;
-        this.googleLoading = false;
-        this.router.navigate([], { replaceUrl: true, queryParams: {} });
-        this.cdr.detectChanges();
-      }
+    // Load Google client ID
+    this.authService.getPublicConfig().subscribe({
+      next: (cfg) => { if (cfg?.google_client_id) this.googleClientId = cfg.google_client_id; },
+      error: () => {}
     });
 
     // Detect return from Genius Pay
@@ -248,13 +234,71 @@ export class Landing implements OnInit, AfterViewInit {
 
   }
 
-  // ── Google Sign-In (OAuth2 redirect — identité + Gmail en un seul clic) ────
-  googleSignIn() {
+  // ── Google Sign-In (GIS code client — popup sans scopes Gmail) ────────────
+  private waitForGoogle(): Promise<void> {
+    return new Promise(resolve => {
+      if (typeof google !== 'undefined' && google?.accounts) { resolve(); return; }
+      const t = setInterval(() => {
+        if (typeof google !== 'undefined' && google?.accounts) { clearInterval(t); resolve(); }
+      }, 150);
+      setTimeout(() => { clearInterval(t); resolve(); }, 8000);
+    });
+  }
+
+  async googleSignIn() {
     if (this.googleLoading) return;
+    if (!this.googleClientId) {
+      this.googleError = 'Google Sign-In non disponible pour le moment';
+      return;
+    }
     this.googleLoading = true;
     this.googleError   = '';
     this.cdr.detectChanges();
-    window.location.href = `${environment.apiUrl}/api/auth/google`;
+
+    await this.waitForGoogle();
+    if (typeof google === 'undefined') {
+      this.googleLoading = false;
+      this.googleError   = 'Impossible de charger Google Sign-In';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    try {
+      const client = google.accounts.oauth2.initCodeClient({
+        client_id: this.googleClientId,
+        scope: 'openid email profile',
+        ux_mode: 'popup',
+        callback: (response: any) => {
+          if (response?.code) {
+            this.handleGoogleCode(response.code);
+          } else {
+            this.googleLoading = false;
+            this.googleError   = 'Connexion annulée';
+            this.cdr.detectChanges();
+          }
+        },
+      });
+      client.requestCode();
+    } catch {
+      this.googleLoading = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  private handleGoogleCode(code: string) {
+    this.authService.googleLoginCode(code).subscribe({
+      next: (res) => {
+        this.googleLoading = false;
+        if (res.token) localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
+        this.router.navigate([res.role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
+      },
+      error: (err) => {
+        this.googleLoading = false;
+        this.googleError = err.error?.error || 'Erreur de connexion Google';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
