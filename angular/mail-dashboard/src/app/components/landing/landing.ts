@@ -1,6 +1,4 @@
 import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
-
-declare const google: any;
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -41,9 +39,8 @@ export class Landing implements OnInit, AfterViewInit {
   closeMobileMenu() { this.mobileMenuOpen = false; }
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
-  googleClientId = '';
-  googleLoading  = false;
-  googleError    = '';
+  googleLoading = false;
+  googleError   = '';
 
   // ── Login ──────────────────────────────────────────────────────────────────
   loginEmail = '';
@@ -186,6 +183,29 @@ export class Landing implements OnInit, AfterViewInit {
       }
     } catch { /* noop */ }
 
+    // Detect return from Google OAuth (unified signup + Gmail)
+    this.route.queryParams.subscribe(params => {
+      const googleToken = params['google_token'];
+      const googleError = params['google_error'];
+
+      if (googleToken) {
+        const name  = decodeURIComponent(params['gname']  || '');
+        const email = decodeURIComponent(params['gemail'] || '');
+        const role  = params['grole'] || 'user';
+        localStorage.setItem('token', googleToken);
+        localStorage.setItem('user', JSON.stringify({ name, email, role }));
+        this.router.navigate([role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
+        return;
+      }
+
+      if (googleError) {
+        this.googleError = `Erreur Google : ${googleError}`;
+        this.googleLoading = false;
+        this.router.navigate([], { replaceUrl: true, queryParams: {} });
+        this.cdr.detectChanges();
+      }
+    });
+
     // Detect return from Genius Pay
     this.route.queryParams.subscribe(params => {
       const status = params['payment_status'];
@@ -226,90 +246,15 @@ export class Landing implements OnInit, AfterViewInit {
       try { this.paymentEmail = JSON.parse(stored).email || ''; } catch { /* noop */ }
     }
 
-    // Load Google client ID for Sign-In
-    this.authService.getPublicConfig().subscribe({
-      next: (cfg) => {
-        if (cfg?.google_client_id) {
-          this.googleClientId = cfg.google_client_id;
-        }
-      },
-      error: () => { /* Google Sign-In non disponible */ }
-    });
   }
 
-  // ── Google Sign-In ─────────────────────────────────────────────────────────
-  private waitForGoogle(): Promise<void> {
-    return new Promise(resolve => {
-      if (typeof google !== 'undefined' && google?.accounts) { resolve(); return; }
-      const t = setInterval(() => {
-        if (typeof google !== 'undefined' && google?.accounts) { clearInterval(t); resolve(); }
-      }, 150);
-      setTimeout(() => { clearInterval(t); resolve(); }, 6000);
-    });
-  }
-
-  async googleSignIn() {
+  // ── Google Sign-In (OAuth2 redirect — identité + Gmail en un seul clic) ────
+  googleSignIn() {
     if (this.googleLoading) return;
-    if (!this.googleClientId) {
-      this.googleError = 'Google Sign-In non disponible pour le moment';
-      return;
-    }
     this.googleLoading = true;
     this.googleError   = '';
     this.cdr.detectChanges();
-
-    await this.waitForGoogle();
-    if (typeof google === 'undefined') {
-      this.googleLoading = false;
-      this.googleError = 'Impossible de charger Google Sign-In';
-      this.cdr.detectChanges();
-      return;
-    }
-
-    try {
-      google.accounts.id.initialize({
-        client_id: this.googleClientId,
-        callback: (resp: any) => this.onGoogleCredential(resp),
-        ux_mode: 'popup',
-      });
-      google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          this.googleLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-    } catch {
-      this.googleLoading = false;
-      this.cdr.detectChanges();
-    }
-  }
-
-  private onGoogleCredential(response: any) {
-    if (!response?.credential) {
-      this.googleLoading = false;
-      this.googleError = 'Aucun identifiant Google reçu';
-      this.cdr.detectChanges();
-      return;
-    }
-    this.googleLoading = true;
-    this.googleError   = '';
-    this.loginError    = '';
-    this.cdr.detectChanges();
-
-    this.authService.googleLogin(response.credential).subscribe({
-      next: (res) => {
-        this.googleLoading = false;
-        if (res.token) localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
-        const target = res.role === 'admin' ? '/admin' : '/dashboard';
-        this.router.navigate([target], { replaceUrl: true });
-      },
-      error: (err) => {
-        this.googleLoading = false;
-        this.googleError = err.error?.error || 'Erreur de connexion Google';
-        this.cdr.detectChanges();
-      }
-    });
+    window.location.href = `${environment.apiUrl}/api/auth/google`;
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
