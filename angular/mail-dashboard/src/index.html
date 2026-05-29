@@ -12,6 +12,66 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
+  <!-- SEO & structured data — founder / organization -->
+  <meta name="description" content="NotifyMails — Surveillance Gmail en temps réel avec notifications Telegram et WhatsApp. Fondé par Kyli Yanisse.">
+  <meta property="og:title" content="NotifyMails">
+  <meta property="og:description" content="Recevez chaque nouveau mail Gmail instantanément sur Telegram et WhatsApp.">
+  <meta property="og:url" content="https://notifymails.com">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://notifymails.com">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://notifymails.com/#organization",
+        "name": "NotifyMails",
+        "url": "https://notifymails.com",
+        "description": "Application SaaS de surveillance Gmail avec notifications en temps réel sur Telegram et WhatsApp.",
+        "foundingDate": "2026",
+        "founder": {
+          "@type": "Person",
+          "@id": "https://notifymails.com/#founder",
+          "name": "Kyli Yanisse",
+          "email": "kyliyanisse@gmail.com",
+          "jobTitle": "Founder & Developer",
+          "url": "https://notifymails.com"
+        },
+        "sameAs": [
+          "https://github.com/YANIXX35"
+        ]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://notifymails.com/#website",
+        "url": "https://notifymails.com",
+        "name": "NotifyMails",
+        "publisher": {
+          "@id": "https://notifymails.com/#organization"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "NotifyMails",
+        "url": "https://notifymails.com",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "description": "Surveillez votre boîte Gmail et recevez des notifications instantanées sur Telegram et WhatsApp.",
+        "author": {
+          "@id": "https://notifymails.com/#founder"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "XOF"
+        }
+      }
+    ]
+  }
+  </script>
+
   <!--
     ANTI-FOUC — exécuté de façon synchrone AVANT le premier paint.
     Applique le thème sauvegardé depuis localStorage sur <html>
