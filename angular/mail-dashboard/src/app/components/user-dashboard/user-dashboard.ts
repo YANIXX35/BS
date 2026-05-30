@@ -449,19 +449,22 @@ export class UserDashboard implements OnInit, OnDestroy {
           localStorage.setItem('user', JSON.stringify(stored));
         }
 
-        // Sync thème depuis le serveur — force l'application même si local semble récent
-        const serverTs = s.theme_updated_at
-          ? new Date(s.theme_updated_at).getTime()
-          : 0;
-        this.themeService.applyServerConfig(this.user.email, {
-          ...(s.theme_mode === 'dark' || s.theme_mode === 'light'
-              ? { mode: s.theme_mode as 'light' | 'dark' }
-              : {}),
-          ...(s.theme_color     ? { primary:   s.theme_color     } : {}),
-          ...(s.theme_secondary ? { secondary: s.theme_secondary } : {}),
-          ...(s.font_family     ? { font:      s.font_family     } : {}),
-          ...(serverTs          ? { updatedAt: serverTs          } : {}),
-        });
+        // Sync thème — uniquement si ThemeService n'a pas déjà synchro < 5s
+        // (évite la race condition : PUT pas encore reçu par le serveur)
+        if (!this.themeService.isRecentlySynced) {
+          const serverTs = s.theme_updated_at
+            ? new Date(s.theme_updated_at).getTime()
+            : 0;
+          this.themeService.applyServerConfig(this.user.email, {
+            ...(s.theme_mode === 'dark' || s.theme_mode === 'light'
+                ? { mode: s.theme_mode as 'light' | 'dark' }
+                : {}),
+            ...(s.theme_color     ? { primary:   s.theme_color     } : {}),
+            ...(s.theme_secondary ? { secondary: s.theme_secondary } : {}),
+            ...(s.font_family     ? { font:      s.font_family     } : {}),
+            ...(serverTs          ? { updatedAt: serverTs          } : {}),
+          });
+        }
 
         if (s.avatar) {
           this.profilePhoto = s.avatar;

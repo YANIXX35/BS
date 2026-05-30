@@ -41,8 +41,8 @@ const FONT_URLS: Record<string, string> = {
 // localStorage key — namespaced per user
 const storageKey = (email: string) => `dashTheme2_${email}`;
 
-// How long (ms) after a successful server sync before we allow another re-apply
-const SYNC_DEBOUNCE_MS = 5_000;
+// How long (ms) after a local change before server can override (> auto-sync interval)
+const SYNC_DEBOUNCE_MS = 35_000;
 
 // CSS transition duration when toggling mode (matches CSS)
 const MODE_TRANSITION_MS = 280;
@@ -296,10 +296,13 @@ export class ThemeService {
   /**
    * Commit a config: update BehaviorSubject + localStorage.
    * localStorage write triggers StorageEvent in other tabs → instant cross-tab sync.
+   * Also marks _lastServerSyncMs so isRecentlySynced blocks auto-sync from
+   * overriding local changes before the PUT reaches the server.
    */
   private _commit(email: string, config: ThemeConfig): void {
     this._committed$.next(config);
     this._saveToStorage(email, config);
+    this._lastServerSyncMs = Date.now();
   }
 
   /** Apply all CSS custom properties to :root — single DOM write batch. */
