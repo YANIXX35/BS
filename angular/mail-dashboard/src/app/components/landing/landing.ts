@@ -1,6 +1,4 @@
 import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
-
-declare const google: any;
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -257,84 +255,13 @@ export class Landing implements OnInit, AfterViewInit {
 
   }
 
-  // ── Google Sign-In (GIS code client — popup sans scopes Gmail) ────────────
-  private waitForGoogle(): Promise<void> {
-    return new Promise(resolve => {
-      if (typeof google !== 'undefined' && google?.accounts) { resolve(); return; }
-      const t = setInterval(() => {
-        if (typeof google !== 'undefined' && google?.accounts) { clearInterval(t); resolve(); }
-      }, 150);
-      setTimeout(() => { clearInterval(t); resolve(); }, 8000);
-    });
-  }
-
-  private isMobile(): boolean {
-    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
-  }
-
-  async googleSignIn() {
+  // ── Google Sign-In — redirect flow (fonctionne sur mobile et desktop) ─────
+  googleSignIn() {
     if (this.googleLoading) return;
     this.googleLoading = true;
     this.googleError   = '';
     this.cdr.detectChanges();
-
-    // Mobile : redirect flow (les popups sont bloqués sur mobile)
-    if (this.isMobile()) {
-      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
-      return;
-    }
-
-    // Desktop : popup via initTokenClient
-    if (!this.googleClientId) {
-      this.googleLoading = false;
-      this.googleError   = 'Google Sign-In non disponible pour le moment';
-      this.cdr.detectChanges();
-      return;
-    }
-
-    await this.waitForGoogle();
-    if (typeof google === 'undefined') {
-      // Fallback redirect si GIS ne charge pas
-      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
-      return;
-    }
-
-    try {
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: this.googleClientId,
-        scope: 'openid email profile',
-        callback: (tokenResponse: any) => {
-          if (tokenResponse?.access_token) {
-            this.handleGoogleToken(tokenResponse.access_token);
-          } else {
-            this.googleLoading = false;
-            this.googleError   = tokenResponse?.error === 'access_denied' ? 'Connexion annulée' : 'Erreur Google';
-            this.cdr.detectChanges();
-          }
-        },
-      });
-      client.requestAccessToken();
-    } catch {
-      // Fallback redirect si le popup échoue
-      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
-    }
-  }
-
-  private handleGoogleToken(accessToken: string) {
-    this.authService.googleLoginToken(accessToken).subscribe({
-      next: (res) => {
-        this.googleLoading = false;
-        if (res.token) localStorage.setItem('token', res.token);
-        localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
-        if (res.avatar) localStorage.setItem('profilePhoto_' + res.email, res.avatar);
-        this.router.navigate([res.role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
-      },
-      error: (err) => {
-        this.googleLoading = false;
-        this.googleError = err.error?.error || 'Erreur de connexion Google';
-        this.cdr.detectChanges();
-      }
-    });
+    window.location.href = `${environment.apiUrl}/api/auth/google-login`;
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
