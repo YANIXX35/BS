@@ -512,6 +512,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.emailService.uploadAvatar(file).subscribe({
       next: (res) => {
         this.profilePhoto = res.url;
+        this.settings.avatar = res.url;
         localStorage.setItem('profilePhoto_' + this.user.email, res.url);
         this.avatarUploading = false;
         this.cdr.detectChanges();
