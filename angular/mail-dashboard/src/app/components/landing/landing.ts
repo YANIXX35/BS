@@ -192,6 +192,29 @@ export class Landing implements OnInit, AfterViewInit {
       error: () => {}
     });
 
+    // Retour du flow Google redirect (mobile / fallback)
+    this.route.queryParams.subscribe(params => {
+      const googleToken = params['google_token'];
+      const googleError = params['google_error'];
+      if (googleToken) {
+        const name   = decodeURIComponent(params['gname']   || '');
+        const email  = decodeURIComponent(params['gemail']  || '');
+        const role   = params['grole']  || 'user';
+        const avatar = decodeURIComponent(params['gavatar'] || '');
+        localStorage.setItem('token', googleToken);
+        localStorage.setItem('user', JSON.stringify({ name, email, role }));
+        if (avatar) localStorage.setItem('profilePhoto_' + email, avatar);
+        this.router.navigate([role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
+        return;
+      }
+      if (googleError) {
+        this.googleError   = `Erreur Google : ${googleError}`;
+        this.googleLoading = false;
+        this.router.navigate([], { replaceUrl: true, queryParams: {} });
+        this.cdr.detectChanges();
+      }
+    });
+
     // Detect return from Genius Pay
     this.route.queryParams.subscribe(params => {
       const status = params['payment_status'];
@@ -245,21 +268,34 @@ export class Landing implements OnInit, AfterViewInit {
     });
   }
 
+  private isMobile(): boolean {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 768;
+  }
+
   async googleSignIn() {
     if (this.googleLoading) return;
-    if (!this.googleClientId) {
-      this.googleError = 'Google Sign-In non disponible pour le moment';
-      return;
-    }
     this.googleLoading = true;
     this.googleError   = '';
     this.cdr.detectChanges();
 
+    // Mobile : redirect flow (les popups sont bloqués sur mobile)
+    if (this.isMobile()) {
+      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
+      return;
+    }
+
+    // Desktop : popup via initTokenClient
+    if (!this.googleClientId) {
+      this.googleLoading = false;
+      this.googleError   = 'Google Sign-In non disponible pour le moment';
+      this.cdr.detectChanges();
+      return;
+    }
+
     await this.waitForGoogle();
     if (typeof google === 'undefined') {
-      this.googleLoading = false;
-      this.googleError   = 'Impossible de charger Google Sign-In';
-      this.cdr.detectChanges();
+      // Fallback redirect si GIS ne charge pas
+      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
       return;
     }
 
@@ -279,8 +315,8 @@ export class Landing implements OnInit, AfterViewInit {
       });
       client.requestAccessToken();
     } catch {
-      this.googleLoading = false;
-      this.cdr.detectChanges();
+      // Fallback redirect si le popup échoue
+      window.location.href = `${environment.apiUrl}/api/auth/google-login`;
     }
   }
 
