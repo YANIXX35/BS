@@ -290,6 +290,7 @@ export class Landing implements OnInit, AfterViewInit {
         this.googleLoading = false;
         if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
+        if (res.avatar) localStorage.setItem('profilePhoto_' + res.email, res.avatar);
         this.router.navigate([res.role === 'admin' ? '/admin' : '/dashboard'], { replaceUrl: true });
       },
       error: (err) => {
