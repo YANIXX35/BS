@@ -535,7 +535,10 @@ export class UserDashboard implements OnInit, OnDestroy {
     const stored = JSON.parse(localStorage.getItem('user') || '{}');
     stored.name = this.editName;
     localStorage.setItem('user', JSON.stringify(stored));
-    this.emailService.updateUserSettings({ ...this.settings, email: this.user.email, name: this.editName }).subscribe();
+    // Ne PAS envoyer les champs thème — ils sont gérés exclusivement par ThemeService
+    // sinon les valeurs périmées de this.settings écrasent le thème actuel sur le serveur
+    const { theme_color, font_family, theme_mode, theme_secondary, theme_updated_at, ...rest } = this.settings;
+    this.emailService.updateUserSettings({ ...rest, email: this.user.email, name: this.editName }).subscribe();
     this.profileSaved = true;
     this.cdr.detectChanges();
     setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
@@ -785,7 +788,8 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.settingsLoading = true;
     this.settingsSaved   = false;
     this.settingsError   = '';
-    this.emailService.updateUserSettings({ ...this.settings, email: this.user.email }).subscribe({
+    const { theme_color, font_family, theme_mode, theme_secondary, theme_updated_at, ...channelSettings } = this.settings;
+    this.emailService.updateUserSettings({ ...channelSettings, email: this.user.email }).subscribe({
       next: () => {
         this.settingsLoading = false;
         this.settingsSaved   = true;
