@@ -264,29 +264,28 @@ export class Landing implements OnInit, AfterViewInit {
     }
 
     try {
-      const client = google.accounts.oauth2.initCodeClient({
+      const client = google.accounts.oauth2.initTokenClient({
         client_id: this.googleClientId,
         scope: 'openid email profile',
-        ux_mode: 'popup',
-        callback: (response: any) => {
-          if (response?.code) {
-            this.handleGoogleCode(response.code);
+        callback: (tokenResponse: any) => {
+          if (tokenResponse?.access_token) {
+            this.handleGoogleToken(tokenResponse.access_token);
           } else {
             this.googleLoading = false;
-            this.googleError   = 'Connexion annulée';
+            this.googleError   = tokenResponse?.error === 'access_denied' ? 'Connexion annulée' : 'Erreur Google';
             this.cdr.detectChanges();
           }
         },
       });
-      client.requestCode();
+      client.requestAccessToken();
     } catch {
       this.googleLoading = false;
       this.cdr.detectChanges();
     }
   }
 
-  private handleGoogleCode(code: string) {
-    this.authService.googleLoginCode(code).subscribe({
+  private handleGoogleToken(accessToken: string) {
+    this.authService.googleLoginToken(accessToken).subscribe({
       next: (res) => {
         this.googleLoading = false;
         if (res.token) localStorage.setItem('token', res.token);

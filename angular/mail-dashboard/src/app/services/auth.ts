@@ -52,6 +52,11 @@ export class AuthService {
       .pipe(timeout(15000));
   }
 
+  googleLoginToken(accessToken: string): Observable<any> {
+    return this.http.post(`${this.api}/google-token`, { access_token: accessToken }, { headers: this.headers })
+      .pipe(timeout(15000));
+  }
+
   getPublicConfig(): Observable<any> {
     return this.http.get(`${environment.apiUrl}/api/config`).pipe(timeout(10000));
   }
