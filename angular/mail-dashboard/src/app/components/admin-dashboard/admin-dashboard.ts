@@ -304,6 +304,12 @@ export class AdminDashboard implements OnInit {
       next: (s) => {
         this.adminSettings = s;
         // Server is the source of truth — override localStorage
+        if (s.name && s.name !== this.admin.name) {
+          this.admin.name = s.name;
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          stored.name  = s.name;
+          localStorage.setItem('user', JSON.stringify(stored));
+        }
         if (s.avatar) {
           this.profilePhoto = s.avatar;
           localStorage.setItem('profilePhoto_' + this.admin.email, s.avatar);

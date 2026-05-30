@@ -440,23 +440,28 @@ export class UserDashboard implements OnInit, OnDestroy {
         if (this.settings.whatsapp_enabled === undefined) this.settings.whatsapp_enabled = true;
         this.parsePhone();
 
-        // Delegate theme to ThemeService — server wins, no round-trip save.
-        // Skip if ThemeService already synced < 5 s ago (avoid double-apply
-        // when loadAndApply in app.ts and loadUserSettings fire close together).
-        if (!this.themeService.isRecentlySynced) {
-          const serverTs = s.theme_updated_at
-            ? new Date(s.theme_updated_at).getTime()
-            : 0;
-          this.themeService.applyServerConfig(this.user.email, {
-            ...(s.theme_mode === 'dark' || s.theme_mode === 'light'
-                ? { mode: s.theme_mode as 'light' | 'dark' }
-                : {}),
-            ...(s.theme_color     ? { primary:   s.theme_color     } : {}),
-            ...(s.theme_secondary ? { secondary: s.theme_secondary } : {}),
-            ...(s.font_family     ? { font:      s.font_family     } : {}),
-            ...(serverTs          ? { updatedAt: serverTs          } : {}),
-          });
+        // Sync nom depuis le serveur (source de vérité inter-appareils)
+        if (s.name && s.name !== this.user.name) {
+          this.user.name  = s.name;
+          this.editName   = s.name;
+          const stored    = JSON.parse(localStorage.getItem('user') || '{}');
+          stored.name     = s.name;
+          localStorage.setItem('user', JSON.stringify(stored));
         }
+
+        // Sync thème depuis le serveur — force l'application même si local semble récent
+        const serverTs = s.theme_updated_at
+          ? new Date(s.theme_updated_at).getTime()
+          : 0;
+        this.themeService.applyServerConfig(this.user.email, {
+          ...(s.theme_mode === 'dark' || s.theme_mode === 'light'
+              ? { mode: s.theme_mode as 'light' | 'dark' }
+              : {}),
+          ...(s.theme_color     ? { primary:   s.theme_color     } : {}),
+          ...(s.theme_secondary ? { secondary: s.theme_secondary } : {}),
+          ...(s.font_family     ? { font:      s.font_family     } : {}),
+          ...(serverTs          ? { updatedAt: serverTs          } : {}),
+        });
 
         if (s.avatar) {
           this.profilePhoto = s.avatar;
