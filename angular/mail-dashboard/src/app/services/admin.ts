@@ -11,6 +11,7 @@ export interface AdminUser {
   plan: string;
   is_verified: number;
   is_suspended: boolean;
+  is_banned: boolean;
   created_at: string;
 }
 
@@ -73,6 +74,10 @@ export class AdminService {
 
   suspendUser(id: number, suspended: boolean): Observable<any> {
     return this.http.patch(`${this.api}/users/${id}/suspend`, { is_suspended: suspended });
+  }
+
+  banUser(id: number, banned: boolean): Observable<any> {
+    return this.http.patch(`${this.api}/users/${id}/ban`, { is_banned: banned });
   }
 
   getUserEmailsAdmin(email: string): Observable<{ emails: any[]; error?: string }> {

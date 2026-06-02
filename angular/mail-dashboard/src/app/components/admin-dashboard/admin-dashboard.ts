@@ -553,6 +553,24 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  banUser(user: AdminUserDetail) {
+    const newState = !user.is_banned;
+    const action = newState ? 'bannir définitivement' : 'débannir';
+    if (!confirm(`Voulez-vous ${action} le compte de ${user.name} ?`)) return;
+    this.adminService.banUser(user.id, newState).subscribe({
+      next: () => {
+        user.is_banned = newState;
+        if (this.selectedUser?.id === user.id) this.selectedUser = { ...user };
+        this.snack.open(
+          newState ? `${user.name} banni` : `${user.name} débanni`,
+          '', { duration: 3000 }
+        );
+        this.cdr.detectChanges();
+      },
+      error: () => this.snack.open('Erreur lors du bannissement', '', { duration: 3000 })
+    });
+  }
+
   // ── USERS CRUD ──
   get filteredUsers(): AdminUserDetail[] {
     const q = (this.userSearch || this.globalSearch).toLowerCase();

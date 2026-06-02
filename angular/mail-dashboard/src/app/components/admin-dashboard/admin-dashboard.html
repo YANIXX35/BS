@@ -515,14 +515,16 @@
                 <span class="col-more">Actions</span>
               </div>
               @for (user of filteredUsers; track user.id) {
-                <div class="file-row" [class.selected]="selectedUser?.id === user.id" [class.suspended-row]="user.is_suspended" (click)="selectUser(user)">
+                <div class="file-row" [class.selected]="selectedUser?.id === user.id" [class.suspended-row]="user.is_suspended" [class.banned-row]="user.is_banned" (click)="selectUser(user)">
                   <div class="col-name">
-                    <div class="file-icon" [style.background]="getAvatarColor(user.email)" [class.suspended-av]="user.is_suspended">{{ user.name.charAt(0).toUpperCase() }}</div>
+                    <div class="file-icon" [style.background]="getAvatarColor(user.email)" [class.suspended-av]="user.is_suspended || user.is_banned">{{ user.name.charAt(0).toUpperCase() }}</div>
                     <div class="file-meta">
                       <span class="file-name">
                         {{ user.name }}
                         <span class="role-badge" [class]="user.role">{{ user.role }}</span>
-                        @if (user.is_suspended) {
+                        @if (user.is_banned) {
+                          <span class="banned-badge">Banni</span>
+                        } @else if (user.is_suspended) {
                           <span class="suspended-badge">Suspendu</span>
                         }
                       </span>
@@ -544,6 +546,12 @@
                         (click)="$event.stopPropagation(); suspendUser(user)">
                         <mat-icon [class]="user.is_suspended ? 'restore-icon' : 'suspend-icon'">
                           {{ user.is_suspended ? 'lock_open' : 'block' }}
+                        </mat-icon>
+                      </button>
+                      <button mat-icon-button matTooltip="{{ user.is_banned ? 'Débannir' : 'Bannir' }}"
+                        (click)="$event.stopPropagation(); banUser(user)">
+                        <mat-icon [class]="user.is_banned ? 'restore-icon' : 'ban-icon'">
+                          {{ user.is_banned ? 'gpp_good' : 'gpp_bad' }}
                         </mat-icon>
                       </button>
                       <button mat-icon-button (click)="$event.stopPropagation(); openEditUser(user)">
@@ -1024,6 +1032,10 @@
           <button mat-stroked-button class="dp-btn" [class.suspend-active]="selectedUser.is_suspended" (click)="suspendUser(selectedUser)">
             <mat-icon>{{ selectedUser.is_suspended ? 'lock_open' : 'block' }}</mat-icon>
             {{ selectedUser.is_suspended ? 'Réactiver' : 'Suspendre' }}
+          </button>
+          <button mat-stroked-button class="dp-btn" [class.ban-active]="selectedUser.is_banned" (click)="banUser(selectedUser)">
+            <mat-icon>{{ selectedUser.is_banned ? 'gpp_good' : 'gpp_bad' }}</mat-icon>
+            {{ selectedUser.is_banned ? 'Débannir' : 'Bannir' }}
           </button>
           <button mat-stroked-button class="dp-btn danger" (click)="deleteUser(selectedUser.id); selectedUser = null">
             <mat-icon>delete</mat-icon> Supprimer

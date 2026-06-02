@@ -449,6 +449,7 @@ def init_db():
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS gmail_connected_email VARCHAR(150)")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS fcm_token TEXT")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_suspended BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_chat_id VARCHAR(80)")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_enabled BOOLEAN DEFAULT TRUE")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT TRUE")
@@ -899,6 +900,11 @@ def login():
         
         if not verify_password(password, user['password']):
             return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
+
+        if user.get('is_banned'):
+            return jsonify({'error': 'Votre compte a été banni. Contactez le support.'}), 403
+        if user.get('is_suspended'):
+            return jsonify({'error': 'Votre compte est temporairement suspendu.'}), 403
 
         # Migration transparente : re-hasher les anciens comptes SHA256 vers bcrypt
         if not (user['password'].startswith('$2b$') or user['password'].startswith('$2a$')):
@@ -1377,6 +1383,8 @@ def admin_get_users():
                        CASE WHEN gmail_refresh_token IS NOT NULL THEN TRUE ELSE FALSE END as gmail_oauth_connected,
                        COALESCE(gmail_scope_v2, FALSE) as gmail_scope_v2,
                        CASE WHEN last_history_id IS NOT NULL THEN TRUE ELSE FALSE END as monitor_active,
+                       COALESCE(is_suspended, FALSE) as is_suspended,
+                       COALESCE(is_banned, FALSE) as is_banned,
                        created_at
                 FROM users ORDER BY created_at DESC
             """)
@@ -1668,6 +1676,24 @@ def admin_suspend_user(user_id):
             cur.execute("UPDATE users SET is_suspended=%s WHERE id=%s", (suspended, user_id))
         db.commit()
         action = 'suspendu' if suspended else 'reactive'
+        return jsonify({'message': f'Utilisateur {action}'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/admin/users/<int:user_id>/ban', methods=['PATCH'])
+@admin_required
+def admin_ban_user(user_id):
+    data = request.json or {}
+    banned = bool(data.get('is_banned', False))
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("UPDATE users SET is_banned=%s WHERE id=%s", (banned, user_id))
+        db.commit()
+        action = 'banni' if banned else 'debanni'
         return jsonify({'message': f'Utilisateur {action}'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
