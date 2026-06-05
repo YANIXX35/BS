@@ -16,6 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate } from '../../services/email';
+import { AuthService } from '../../services/auth';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
 import { environment } from '../../../environments/environment';
@@ -247,6 +248,7 @@ export class UserDashboard implements OnInit, OnDestroy {
 
   constructor(
     private emailService: EmailService,
+    private authService: AuthService,
     private themeService: ThemeService,
     private pushNotif: PushNotificationService,
     private sanitizer: DomSanitizer,
@@ -1066,6 +1068,7 @@ getSenderName(sender: string): string {
   }
 
   logout() {
+    this.authService.logout().subscribe({ error: () => {} });
     localStorage.clear();
     this.router.navigate(['/'], { replaceUrl: true });
   }

@@ -18,6 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser, UserActivity } from '../../services/admin';
 import { EmailService, Email, Stats, UserSettings } from '../../services/email';
+import { AuthService } from '../../services/auth';
 
 export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings' | 'activity';
 
@@ -175,6 +176,7 @@ export class AdminDashboard implements OnInit {
   constructor(
     private adminService: AdminService,
     private emailService: EmailService,
+    private authService: AuthService,
     private router: Router,
     private snack: MatSnackBar,
     private cdr: ChangeDetectorRef,
@@ -675,6 +677,7 @@ export class AdminDashboard implements OnInit {
   }
 
   logout() {
+    this.authService.logout().subscribe({ error: () => {} });
     localStorage.removeItem('user');
     this.router.navigate(['/']);
   }

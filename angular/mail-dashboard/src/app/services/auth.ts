@@ -60,4 +60,8 @@ export class AuthService {
   getPublicConfig(): Observable<any> {
     return this.http.get(`${environment.apiUrl}/api/config`).pipe(timeout(10000));
   }
+
+  logout(): Observable<any> {
+    return this.http.post(`${this.api}/logout`, {}).pipe(timeout(10000));
+  }
 }

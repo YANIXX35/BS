@@ -29,6 +29,30 @@ import psycopg2.pool
 import bcrypt
 import jwt
 import base64
+import secrets
+from cryptography.fernet import Fernet, InvalidToken
+
+# ── CHIFFREMENT DONNÉES SENSIBLES (Fernet symétrique) ─────────────────────────
+_FERNET_KEY = os.getenv('FERNET_KEY', '')
+_fernet: Fernet | None = None
+if _FERNET_KEY:
+    try:
+        _fernet = Fernet(_FERNET_KEY.encode())
+    except Exception:
+        print('[SECURITY] FERNET_KEY invalide — chiffrement désactivé')
+
+def _encrypt(value: str | None) -> str | None:
+    if not value or not _fernet:
+        return value
+    return _fernet.encrypt(value.encode()).decode()
+
+def _decrypt(value: str | None) -> str | None:
+    if not value or not _fernet:
+        return value
+    try:
+        return _fernet.decrypt(value.encode()).decode()
+    except (InvalidToken, Exception):
+        return value  # Donnée ancienne non chiffrée — retourner tel quel
 
 # ── CACHE MÉMOIRE (TTL simple, thread-safe) ────────────────────────────────────
 _cache: dict = {}
@@ -131,6 +155,16 @@ ALLOWED_ORIGINS = [
     "http://localhost:8081",
 ]
 CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options']  = 'nosniff'
+    response.headers['X-Frame-Options']          = 'DENY'
+    response.headers['X-XSS-Protection']         = '1; mode=block'
+    response.headers['Referrer-Policy']           = 'strict-origin-when-cross-origin'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Permissions-Policy']        = 'geolocation=(), microphone=(), camera=()'
+    return response
 
 # Initialiser SocketIO pour WebSocket avec les mêmes origines que CORS
 socketio = SocketIO(app, cors_allowed_origins=ALLOWED_ORIGINS, async_mode='threading')
@@ -243,12 +277,18 @@ def token_required(f):
         try:
             # Décoder le token
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-            user_id = payload['user_id']
+            user_id    = payload['user_id']
             user_email = payload['email']
-            
+            jti        = payload.get('jti')
+
             # Vérifier que l'utilisateur existe et n'est pas banni/suspendu
             db = get_db()
             with db.cursor() as cur:
+                # Vérifier blacklist JWT
+                if jti:
+                    cur.execute("SELECT 1 FROM revoked_tokens WHERE jti = %s", (jti,))
+                    if cur.fetchone():
+                        return jsonify({'error': 'Token révoqué — veuillez vous reconnecter'}), 401
                 cur.execute(
                     "SELECT id, email, is_suspended, is_banned FROM users WHERE id = %s AND email = %s",
                     (user_id, user_email)
@@ -322,12 +362,13 @@ def admin_required(f):
 
 
 def generate_token(user_id: int, email: str) -> str:
-    """Génère un token JWT pour l'utilisateur."""
+    """Génère un token JWT avec jti unique pour permettre la révocation."""
     payload = {
         'user_id': user_id,
-        'email': email,
-        'exp': datetime.utcnow() + timedelta(hours=24),  # Expire dans 24h
-        'iat': datetime.utcnow()
+        'email':   email,
+        'jti':     secrets.token_hex(16),
+        'exp':     datetime.utcnow() + timedelta(hours=24),
+        'iat':     datetime.utcnow()
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
@@ -544,6 +585,16 @@ def init_db():
             """)
             cur.execute("CREATE INDEX IF NOT EXISTS idx_wa_conv_wa_msg ON wa_conversations(wa_message_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_wa_conv_user ON wa_conversations(user_email)")
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS revoked_tokens (
+                    jti        VARCHAR(64) PRIMARY KEY,
+                    expires_at TIMESTAMP NOT NULL,
+                    revoked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_revoked_exp ON revoked_tokens(expires_at)")
+            # Nettoyer les tokens expirés au démarrage
+            cur.execute("DELETE FROM revoked_tokens WHERE expires_at < NOW()")
         db.commit()
         print("Tables verifiees/creees avec succes.")
     finally:
@@ -936,6 +987,31 @@ def login():
         }), 200
     finally:
         _return_db(db)
+
+
+@app.route('/api/auth/logout', methods=['POST'])
+@token_required
+def logout():
+    """Révoque le JWT courant — le token ne pourra plus être utilisé même avant expiration."""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        jti     = payload.get('jti')
+        exp     = datetime.utcfromtimestamp(payload['exp'])
+        if jti:
+            db = get_db()
+            try:
+                with db.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO revoked_tokens (jti, expires_at) VALUES (%s, %s) ON CONFLICT (jti) DO NOTHING",
+                        (jti, exp)
+                    )
+                db.commit()
+            finally:
+                _return_db(db)
+    except Exception:
+        pass
+    return jsonify({'message': 'Déconnexion réussie'}), 200
 
 
 @app.route('/api/config')
@@ -1864,8 +1940,8 @@ def _get_gmail_service(user_email: str):
     )
 
     creds = Credentials(
-        token=row.get('gmail_access_token'),
-        refresh_token=row['gmail_refresh_token'],
+        token=_decrypt(row.get('gmail_access_token')),
+        refresh_token=_decrypt(row['gmail_refresh_token']),
         token_uri='https://oauth2.googleapis.com/token',
         client_id=GOOGLE_CLIENT_ID,
         client_secret=GOOGLE_CLIENT_SECRET,
@@ -1991,8 +2067,8 @@ def gmail_oauth_callback():
                         gmail_scope_v2   = %s
                     WHERE email = %s AND is_verified = 1""",
                     (
-                        creds.token,
-                        creds.refresh_token,
+                        _encrypt(creds.token),
+                        _encrypt(creds.refresh_token),
                         int(creds.expiry.timestamp()) if creds.expiry else None,
                         gmail_email,
                         gmail_email,
