@@ -246,14 +246,21 @@ def token_required(f):
             user_id = payload['user_id']
             user_email = payload['email']
             
-            # Vérifier que l'utilisateur existe
+            # Vérifier que l'utilisateur existe et n'est pas banni/suspendu
             db = get_db()
             with db.cursor() as cur:
-                cur.execute("SELECT id, email FROM users WHERE id = %s AND email = %s", (user_id, user_email))
+                cur.execute(
+                    "SELECT id, email, is_suspended, is_banned FROM users WHERE id = %s AND email = %s",
+                    (user_id, user_email)
+                )
                 user = cur.fetchone()
-                
+
             if not user:
                 return jsonify({'error': 'Utilisateur non trouvé'}), 401
+            if user.get('is_banned'):
+                return jsonify({'error': 'Compte banni'}), 403
+            if user.get('is_suspended'):
+                return jsonify({'error': 'Compte suspendu'}), 403
                 
         except jwt.ExpiredSignatureError:
             return jsonify({'error': 'Token expiré'}), 401
@@ -2394,6 +2401,7 @@ def delete_template(template_id: int):
 
 
 @app.route('/api/whatsapp/webhook', methods=['POST'])
+@limiter.limit("200 per minute")
 def whatsapp_webhook():
     """Webhook Green API — commandes + réponse à email via WhatsApp."""
     try:

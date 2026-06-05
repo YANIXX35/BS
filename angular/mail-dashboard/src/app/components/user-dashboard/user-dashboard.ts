@@ -358,7 +358,7 @@ export class UserDashboard implements OnInit, OnDestroy {
 
     clearTimeout(this._pickerDebounce);
     clearTimeout(this._secondaryDebounce);
-    const url = `https://backend-mail-1.onrender.com/api/user/settings`;
+    const url = `${environment.apiUrl}/api/user/settings`;
     const payload: Record<string, string> = { email: this.user.email };
     if (hasPrimary)   payload['theme_color']     = this._pendingTheme!;
     if (hasSecondary) payload['theme_secondary']  = this._pendingSecondary!;
@@ -541,7 +541,9 @@ export class UserDashboard implements OnInit, OnDestroy {
     // Ne PAS envoyer les champs thème — ils sont gérés exclusivement par ThemeService
     // sinon les valeurs périmées de this.settings écrasent le thème actuel sur le serveur
     const { theme_color, font_family, theme_mode, theme_secondary, theme_updated_at, ...rest } = this.settings;
-    this.emailService.updateUserSettings({ ...rest, email: this.user.email, name: this.editName }).subscribe();
+    this.emailService.updateUserSettings({ ...rest, email: this.user.email, name: this.editName }).subscribe({
+      error: () => { this.profileSaved = false; this.cdr.detectChanges(); }
+    });
     this.profileSaved = true;
     this.cdr.detectChanges();
     setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
@@ -700,7 +702,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   copyWebhookUrl() {
-    navigator.clipboard.writeText('https://backend-mail-1.onrender.com/api/whatsapp/webhook').then(() => {
+    navigator.clipboard.writeText(`${environment.apiUrl}/api/whatsapp/webhook`).then(() => {
       this.webhookCopied = true;
       this.cdr.detectChanges();
       setTimeout(() => { this.webhookCopied = false; this.cdr.detectChanges(); }, 2000);

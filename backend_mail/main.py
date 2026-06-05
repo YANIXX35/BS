@@ -74,28 +74,28 @@ def token_file_for(user_id):
 
 
 def get_gmail_service(user):
-    """Connexion a Gmail via OAuth2 pour un utilisateur specifique."""
+    """Connexion a Gmail via OAuth2 pour un utilisateur specifique. Retourne None si token invalide/révoqué."""
     user_id = user['id']
     token_path = token_file_for(user_id)
 
-    creds = None
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    try:
+        creds = None
+        if os.path.exists(token_path):
+            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            with open(token_path, 'w') as f:
-                f.write(creds.to_json())
-        else:
-            print(f"[{user['name']}] Authentification OAuth2 requise pour {user['gmail_address']}")
-            print(f"[{user['name']}] Lance le navigateur pour autoriser l'acces...")
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_FILE, SCOPES)
-            creds = flow.run_local_server(port=0)
-            with open(token_path, 'w') as f:
-                f.write(creds.to_json())
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                with open(token_path, 'w') as f:
+                    f.write(creds.to_json())
+            else:
+                print(f"[{user['name']}] Token absent ou révoqué — re-authentification requise")
+                return None
 
-    return build('gmail', 'v1', credentials=creds)
+        return build('gmail', 'v1', credentials=creds)
+    except Exception as e:
+        print(f"[{user['name']}] Erreur Gmail OAuth: {e}")
+        return None
 
 
 def send_telegram(token, chat_id, message):
@@ -185,6 +185,10 @@ def monitor_user(user, stop_event):
         service = get_gmail_service(user)
     except Exception as e:
         print(f"[{name}] Impossible de se connecter a Gmail: {e}")
+        return
+
+    if not service:
+        print(f"[{name}] Token Gmail invalide ou révoqué — surveillance ignorée pour cet utilisateur")
         return
 
     notify_user(user, f"Mail Notifier demarre !\nJe surveille {gmail} pour {name}.")
