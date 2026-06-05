@@ -1,7 +1,8 @@
 import os
 import time
 import threading
-import pymysql
+import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -23,19 +24,23 @@ DEFAULT_GREEN_API_TOKEN = os.getenv('GREEN_API_TOKEN')
 DEFAULT_WHATSAPP_PHONE = os.getenv('WHATSAPP_PHONE')
 DEFAULT_GMAIL = os.getenv('GMAIL_ADDRESS')
 
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'user': os.getenv('DB_USER', 'root'),
-    'password': os.getenv('DB_PASSWORD', ''),
-    'database': os.getenv('DB_NAME', 'mal_yk'),
-    'charset': 'utf8mb4',
-}
+DB_CONFIG = dict(
+    host=os.getenv('DB_HOST'),
+    port=int(os.getenv('DB_PORT', 5432)),
+    user=os.getenv('DB_USER', 'avnadmin'),
+    password=os.getenv('DB_PASSWORD'),
+    dbname=os.getenv('DB_NAME', 'defaultdb'),
+    sslmode='require',
+    connect_timeout=10,
+)
 
 os.makedirs(TOKENS_DIR, exist_ok=True)
 
 
 def get_db():
-    return pymysql.connect(**DB_CONFIG, cursorclass=pymysql.cursors.DictCursor)
+    conn = psycopg2.connect(**DB_CONFIG, cursor_factory=psycopg2.extras.RealDictCursor)
+    conn.autocommit = True
+    return conn
 
 
 def load_users():

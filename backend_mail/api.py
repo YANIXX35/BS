@@ -2172,10 +2172,11 @@ def get_emails():
 
 
 @app.route('/api/email/<message_id>')
+@token_required
 def get_email_detail(message_id):
-    email = request.args.get('email', '').strip().lower()
-    if not email or not message_id:
-        return jsonify({"error": "email et message_id requis"}), 400
+    email = request.current_user['email']
+    if not message_id:
+        return jsonify({"error": "message_id requis"}), 400
     try:
         service = _get_gmail_service(email)
         if not service:
@@ -2290,7 +2291,7 @@ def reply_email():
 @token_required
 def get_templates():
     """Liste les templates personnalisés de l'utilisateur + les templates par défaut."""
-    user_email = request.user_email
+    user_email = request.current_user['email']
     custom = _get_user_templates(user_email)
     defaults = [
         {'id': None, 'name': 'OK, merci !', 'content': WA_REPLY_TEMPLATES['1'], 'is_default': True, 'key': '1'},
@@ -2309,7 +2310,7 @@ def get_templates():
 @token_required
 def create_template():
     """Crée un template personnalisé."""
-    user_email = request.user_email
+    user_email = request.current_user['email']
     body = request.get_json(silent=True) or {}
     name = _str(body.get('name', ''), 100)
     content = _str(body.get('content', ''), 2000)
@@ -2345,7 +2346,7 @@ def create_template():
 @token_required
 def update_template(template_id: int):
     """Met à jour un template personnalisé."""
-    user_email = request.user_email
+    user_email = request.current_user['email']
     body = request.get_json(silent=True) or {}
     name = _str(body.get('name', ''), 100)
     content = _str(body.get('content', ''), 2000)
@@ -2373,7 +2374,7 @@ def update_template(template_id: int):
 @token_required
 def delete_template(template_id: int):
     """Supprime un template personnalisé."""
-    user_email = request.user_email
+    user_email = request.current_user['email']
     db = get_db()
     try:
         with db.cursor() as cur:
@@ -2698,6 +2699,7 @@ def get_stats():
 # ─── USER SETTINGS ────────────────────────────────────────────────────────────
 
 @app.route('/api/user/whatsapp-check', methods=['GET'])
+@token_required
 def whatsapp_check_number():
     """Vérifie si un numéro est sur WhatsApp via checkWhatsapp."""
     phone = (request.args.get('phone') or '').strip()
