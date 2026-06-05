@@ -44,8 +44,10 @@ export class AdminService {
     return this.http.get<AdminStats>(`${this.api}/stats`);
   }
 
-  getUsers(): Observable<AdminUser[]> {
-    return this.http.get<AdminUser[]>(`${this.api}/users`);
+  getUsers(page = 1, limit = 100): Observable<{ users: AdminUser[]; total: number; page: number; pages: number }> {
+    return this.http.get<{ users: AdminUser[]; total: number; page: number; pages: number }>(
+      `${this.api}/users?page=${page}&limit=${limit}`
+    );
   }
 
   createUser(user: Partial<AdminUser> & { password?: string }): Observable<any> {

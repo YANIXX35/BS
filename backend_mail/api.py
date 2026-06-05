@@ -1380,9 +1380,18 @@ def admin_user_activity():
 @app.route('/api/admin/users', methods=['GET'])
 @admin_required
 def admin_get_users():
+    try:
+        page  = max(1, int(request.args.get('page', 1)))
+        limit = min(200, max(1, int(request.args.get('limit', 100))))
+    except (ValueError, TypeError):
+        page, limit = 1, 100
+    offset = (page - 1) * limit
+
     db = get_db()
     try:
         with db.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS total FROM users")
+            total = cur.fetchone()['total']
             cur.execute("""
                 SELECT id, name, email, is_verified, role, plan, phone,
                        gmail_address, telegram_chat_id, green_api_instance,
@@ -1394,7 +1403,8 @@ def admin_get_users():
                        COALESCE(is_banned, FALSE) as is_banned,
                        created_at
                 FROM users ORDER BY created_at DESC
-            """)
+                LIMIT %s OFFSET %s
+            """, (limit, offset))
             rows = cur.fetchall()
             users = []
             for u in rows:
@@ -1402,7 +1412,7 @@ def admin_get_users():
                 if u.get('created_at'):
                     u['created_at'] = u['created_at'].strftime('%Y-%m-%d %H:%M')
                 users.append(u)
-        return jsonify(users), 200
+        return jsonify({'users': users, 'total': total, 'page': page, 'pages': -(-total // limit)}), 200
     finally:
         _return_db(db)
 

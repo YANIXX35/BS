@@ -411,7 +411,7 @@ export class AdminDashboard implements OnInit {
       error: () => this.loading.stats = false
     });
     this.adminService.getUsers().subscribe({
-      next: u => { this.users = u as AdminUserDetail[]; this.loading.users = false; this.cdr.detectChanges(); },
+      next: r => { this.users = r.users as AdminUserDetail[]; this.loading.users = false; this.cdr.detectChanges(); },
       error: () => this.loading.users = false
     });
     this.adminService.getPayments().subscribe({
@@ -419,7 +419,8 @@ export class AdminDashboard implements OnInit {
       error: () => this.loading.payments = false
     });
     this.emailService.getStats(this.admin.email).subscribe({
-      next: s => { this.gmailStats = s; this.cdr.detectChanges(); }
+      next:  s => { this.gmailStats = s; this.cdr.detectChanges(); },
+      error: () => { this.gmailStats = null; }
     });
     this.emailService.getEmails(this.admin.email).subscribe({
       next: e => { this.emails = e.emails; this.loading.emails = false; this.cdr.detectChanges(); },
