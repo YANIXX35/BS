@@ -14,15 +14,17 @@
 
 
 // ── VARIABLES ──────────────────────────────────────────────────────────────────
-// $blue → var(--p) (CSS custom property, see :host above)
+// Static / accent colors
 $orange:  #f97316;
-$bg:      #edf0f8;
-$white:   #ffffff;
-$border:  #e8eaed;
-$text:    #1f2937;
-$muted:   #6b7280;
 $sidebar-w: 220px;
 $panel-w:   300px;
+
+// Theme-aware via CSS custom properties (see styles.scss)
+$bg:      var(--bg-color);
+$white:   var(--surface-color);
+$border:  var(--border-color);
+$text:    var(--text-color);
+$muted:   var(--muted-color);
 
 // ── LAYOUT ─────────────────────────────────────────────────────────────────────
 .admin-layout {
@@ -64,7 +66,8 @@ $panel-w:   300px;
       object-fit: contain;
       flex-shrink: 0;
       border-radius: 8px;
-      filter: drop-shadow(0 1px 4px rgba(26,35,126,0.15));
+      filter: drop-shadow(0 2px 8px rgba(99,102,241,0.50)) brightness(1.1);
+      transition: filter 0.25s;
     }
 
     span {
@@ -108,10 +111,10 @@ $panel-w:   300px;
 
     mat-icon { font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
 
-    &:hover { background: #f3f4f6; color: $text; }
+    &:hover { background: var(--hover-bg); color: $text; }
 
     &.active {
-      background: #eff6ff;
+      background: var(--p-light);
       color: var(--p);
       font-weight: 600;
       mat-icon { color: var(--p); }
@@ -119,7 +122,7 @@ $panel-w:   300px;
 
     &.logout {
       color: #ef4444;
-      &:hover { background: #fef2f2; }
+      &:hover { background: rgba(239,68,68,0.10); }
     }
   }
 
@@ -131,7 +134,7 @@ $panel-w:   300px;
     .storage-bar {
       margin-top: 12px;
       padding: 10px 8px;
-      background: #f8fafc;
+      background: var(--subtle-bg);
       border-radius: 10px;
 
       .storage-info {
@@ -189,13 +192,13 @@ $panel-w:   300px;
       display: flex;
       align-items: center;
       gap: 8px;
-      background: #f3f4f6;
+      background: var(--subtle-bg);
       border: 1px solid $border;
       border-radius: 10px;
       padding: 7px 14px;
       transition: border-color 0.15s;
 
-      &:focus-within { border-color: var(--p); background: $white; }
+      &:focus-within { border-color: var(--p); background: var(--surface-color); }
 
       mat-icon { color: $muted; font-size: 18px; width: 18px; height: 18px; flex-shrink: 0; }
 
@@ -223,7 +226,7 @@ $panel-w:   300px;
       border-radius: 8px; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       position: relative;
-      &:hover { background: #f3f4f6; }
+      &:hover { background: var(--hover-bg); }
       mat-icon { color: $muted; font-size: 22px; }
 
       &.notif-btn .notif-dot {
@@ -244,7 +247,7 @@ $panel-w:   300px;
       border: 1px solid $border;
       border-radius: 24px;
       cursor: pointer;
-      &:hover { background: #f3f4f6; }
+      &:hover { background: var(--hover-bg); }
 
       .chip-avatar {
         width: 28px; height: 28px;
@@ -391,7 +394,7 @@ $panel-w:   300px;
     }
 
     .count-badge {
-      background: #f3f4f6;
+      background: var(--subtle-bg);
       color: $muted;
       font-size: 12px;
       font-weight: 600;
@@ -429,9 +432,9 @@ $panel-w:   300px;
     transition: background 0.12s;
 
     &:last-child { border-bottom: none; }
-    &:hover { background: #f8fafc; }
-    &.selected { background: #eff6ff; }
-    &.unread-row { background: #f0f4ff; }
+    &:hover { background: var(--hover-bg); }
+    &.selected { background: var(--p-light); }
+    &.unread-row { background: var(--p-light); }
   }
 
   .col-name {
@@ -511,7 +514,7 @@ $panel-w:   300px;
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f3f4f6;
+  background: var(--subtle-bg);
   border: 1px solid $border;
   border-radius: 8px;
   padding: 5px 12px;
@@ -566,19 +569,19 @@ $panel-w:   300px;
 }
 
 // ── CHIPS ──────────────────────────────────────────────────────────────────────
-.new-chip  { background: #eff6ff; color: var(--p); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
-.read-chip { background: #f3f4f6; color: $muted; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.new-chip  { background: var(--p-light); color: var(--p); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+.read-chip { background: var(--subtle-bg); color: $muted; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
 
 // ── BADGES ─────────────────────────────────────────────────────────────────────
 .role-badge {
   padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
-  &.admin { background: #fbe9e7; color: #bf360c; }
-  &.user  { background: #e8eaf6; color: var(--p); }
+  &.admin { background: rgba(239,68,68,0.10); color: #ef4444; }
+  &.user  { background: var(--p-light); color: var(--p); }
 }
 
 .plan-badge {
   padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700;
-  &.free       { background: #f3f4f6; color: $muted; }
+  &.free       { background: var(--subtle-bg); color: $muted; }
   &.premium    { background: #fff8e1; color: #f57c00; }
   &.enterprise { background: #e8f5e9; color: #2e7d32; }
 }
@@ -814,7 +817,7 @@ $panel-w:   300px;
   border-radius: 8px; cursor: pointer;
   align-items: center; justify-content: center;
   flex-shrink: 0;
-  &:hover { background: #f3f4f6; }
+  &:hover { background: var(--hover-bg); }
   mat-icon { color: $muted; font-size: 22px; width: 22px; height: 22px; }
 }
 
@@ -1264,7 +1267,7 @@ $panel-w:   300px;
   cursor: pointer;
   transition: background 0.15s;
   flex-shrink: 0;
-  &:hover { background: #f8fafc; }
+  &:hover { background: var(--subtle-bg); }
 
   .sb-uf-avatar {
     width: 34px; height: 34px;
@@ -1332,7 +1335,7 @@ $panel-w:   300px;
   height: 34px;
   background: transparent;
   cursor: pointer;
-  &:hover { background: #f3f4f6; color: $text; }
+  &:hover { background: var(--subtle-bg); color: $text; }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -1541,7 +1544,7 @@ $panel-w:   300px;
   }
 
   .dc-period-tabs {
-    display: flex; gap: 3px; background: #f3f4f6; border-radius: 10px; padding: 3px;
+    display: flex; gap: 3px; background: var(--subtle-bg); border-radius: 10px; padding: 3px;
     .dc-tab {
       font-size: 11px; font-weight: 600; padding: 4px 9px;
       border-radius: 8px; color: $muted; cursor: pointer; white-space: nowrap;
@@ -1773,7 +1776,7 @@ $panel-w:   300px;
 .podium-card {
   flex: 1;
   min-width: 160px;
-  background: #f8fafc;
+  background: var(--subtle-bg);
   border: 2px solid #e2e8f0;
   border-radius: 14px;
   padding: 20px 16px;
@@ -1781,7 +1784,7 @@ $panel-w:   300px;
   transition: transform .15s;
   &:hover { transform: translateY(-2px); }
   &.gold   { border-color: #f59e0b; background: #fffbeb; }
-  &.silver { border-color: #94a3b8; background: #f8fafc; }
+  &.silver { border-color: #94a3b8; background: var(--subtle-bg); }
   &.bronze { border-color: #b45309; background: #fdf4e8; }
 }
 .podium-rank   { font-size: 28px; margin-bottom: 8px; }
@@ -1809,11 +1812,11 @@ $panel-w:   300px;
     font-weight: 600;
     color: #64748b;
     border-bottom: 2px solid #e2e8f0;
-    background: #f8fafc;
+    background: var(--subtle-bg);
   }
   td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
   tr.top-row td { background: rgba(26,35,126,.03); }
-  tr:hover td   { background: #f8fafc; }
+  tr:hover td   { background: var(--subtle-bg); }
 }
 .rank-cell  { font-weight: 700; color: #94a3b8; width: 36px; }
 .count-cell { font-weight: 700; color: var(--p); }

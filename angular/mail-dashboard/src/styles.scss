@@ -45,18 +45,28 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --bg-color:      #0f172a;
-  --surface-color: #1e293b;
-  --hover-bg:      #1e2d40;
-  --subtle-bg:     #1e293b;
+  --bg-color:      #07071a;
+  --surface-color: #0e0e2a;
+  --hover-bg:      rgba(99,102,241,0.08);
+  --subtle-bg:     rgba(255,255,255,0.04);
 
-  --border-color:  #334155;
-  --shadow:        0 1px 4px rgba(0,0,0,0.35), 0 4px 20px rgba(0,0,0,0.45);
+  --border-color:  rgba(255,255,255,0.10);
+  --shadow:        0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.5);
 
-  --text-color:    #f1f5f9;
-  --muted-color:   #94a3b8;
-  --text-sub:      #cbd5e1;
-  --text-faint:    #64748b;
+  --text-color:    #eef2ff;
+  --muted-color:   rgba(238,242,255,0.52);
+  --text-sub:      rgba(238,242,255,0.72);
+  --text-faint:    rgba(238,242,255,0.30);
+
+  // Primary accent stays vibrant indigo/violet in dark mode
+  --p:             #6366f1;
+  --p-light:       rgba(99,102,241,0.12);
+  --p-medium:      rgba(99,102,241,0.22);
+  --p-dark:        #4338ca;
+  --p-shift:       #818cf8;
+  --color-primary:   #6366f1;
+  --color-secondary: #818cf8;
+  --color-accent:    rgba(99,102,241,0.20);
 }
 
 html {
