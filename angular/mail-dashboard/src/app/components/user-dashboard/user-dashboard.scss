@@ -1551,7 +1551,9 @@ $r: 14px;
   // Spacing
   .content-pad { padding: 12px; }
   .dash-container { padding: 12px; }
-  .top-bar { padding: 12px 14px; gap: 10px; }
+  .top-bar { padding: 10px 14px; gap: 8px; }
+  .top-bar-left .page-title { font-size: 16px; }
+  .top-bar-left .page-sub { font-size: 11px; }
   .top-search { display: none; }
   .top-clock  { display: none; }
 
@@ -1592,6 +1594,75 @@ $r: 14px;
 
   .config-card-head { padding: 14px 16px 0 !important; gap: 12px !important; }
   .config-card .card-body { padding: 14px 16px !important; }
+
+  // Welcome banner
+  .welcome-line { flex-wrap: wrap; gap: 6px; font-size: 12px; }
+
+  // Gmail upgrade banner
+  .gmail-upgrade-banner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    .gub-btn { width: 100%; justify-content: center; margin-top: 4px; }
+  }
+
+  // Reader panel: full width on mobile
+  .reader-panel { width: 100vw !important; }
+
+  // Dashboard row single col
+  .dashboard-row { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 540px) {
+  // KPI grid: 2 compact columns
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kpi-card { padding: 12px 10px; }
+  .kpi-num { font-size: 20px; }
+  .kpi-ico { width: 32px; height: 32px; mat-icon { font-size: 16px; width: 16px; height: 16px; } }
+  .kpi-lbl { font-size: 10.5px; }
+  .kpi-trend { font-size: 10px; padding: 2px 5px; }
+
+  .content-pad { padding: 10px; }
+  .dash-container { padding: 10px; }
+
+  .card-header { padding: 12px 14px 0; }
+  .card-body { padding: 12px 14px 14px; }
+
+  .etbl-head, .etbl-row { padding: 8px 10px; }
+
+  // Verify row stack
+  .wa-verify-row { flex-direction: column; align-items: stretch;
+    button { width: 100%; justify-content: center; }
+  }
+
+  // Account stats compact
+  .acc-rp-stats .ars .ars-val { font-size: 14px; }
+
+  // Filter pills compact
+  .fpill { font-size: 11px; padding: 4px 8px; }
+
+  // Reader panel full screen
+  .reader-panel { width: 100vw !important; height: 100dvh !important; }
+  .reader-header { padding: 12px 14px; .reader-subject { font-size: 14px; } }
+  .reader-meta { padding: 10px 14px; }
+  .reader-body { padding: 14px; }
+  .reader-footer { padding: 10px 14px; }
+
+  // Modal bottom sheet
+  .modal-backdrop { align-items: flex-end; padding: 0; }
+  .modal-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 18px 18px 0 0;
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+
+  // Load more compact
+  .load-more-btn { font-size: 12px; padding: 7px 16px; }
+
+  // Top bar avatar smaller
+  .top-avatar { width: 32px; height: 32px; font-size: 13px; }
+  .top-search { display: none; }
 }
 
 @media (max-width: 480px) {
