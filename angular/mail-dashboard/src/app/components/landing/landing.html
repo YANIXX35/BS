@@ -10,6 +10,15 @@
     <a href="#pricing" (click)="closeMobileMenu()">Tarifs</a>
     <a href="#login" (click)="closeMobileMenu()">Connexion</a>
   </div>
+  <!-- Theme toggle -->
+  <button class="theme-toggle" (click)="toggleTheme()" [class.is-light]="!isDark" [attr.aria-label]="isDark ? 'Passer en mode clair' : 'Passer en mode sombre'" title="{{ isDark ? 'Mode clair' : 'Mode sombre' }}">
+    <span class="tt-track">
+      <span class="tt-icon tt-sun"><mat-icon>light_mode</mat-icon></span>
+      <span class="tt-thumb"></span>
+      <span class="tt-icon tt-moon"><mat-icon>dark_mode</mat-icon></span>
+    </span>
+  </button>
+
   <button mat-flat-button class="nav-cta" (click)="scrollTo('login')">
     Commencer gratuitement
   </button>

@@ -26,6 +26,7 @@ type Step = 'form' | 'otp' | 'success';
 export class Landing implements OnInit, AfterViewInit {
   scrolled = false;
   mobileMenuOpen = false;
+  isDark = true;
   statValues = { delay: 0, channels: 0, free: 0 };
   private statsAnimated = false;
 
@@ -37,6 +38,13 @@ export class Landing implements OnInit, AfterViewInit {
 
   toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
   closeMobileMenu() { this.mobileMenuOpen = false; }
+
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+    const theme = this.isDark ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('landingTheme', theme); } catch { /* noop */ }
+  }
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
   googleClientId = '';
@@ -171,6 +179,18 @@ export class Landing implements OnInit, AfterViewInit {
   ) {}
 
   ngOnInit() {
+    // Restore landing theme preference
+    try {
+      const saved = localStorage.getItem('landingTheme');
+      if (saved === 'light') {
+        this.isDark = false;
+        document.documentElement.setAttribute('data-theme', 'light');
+      } else {
+        this.isDark = true;
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
+    } catch { /* noop */ }
+
     // Si déjà connecté → rediriger directement vers le dashboard (bouton retour ne doit pas revenir ici)
     try {
       const stored = localStorage.getItem('user');
