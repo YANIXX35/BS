@@ -60,6 +60,15 @@ $r: 14px;
     mat-icon { color: white; font-size: 20px; width: 20px; height: 20px; }
   }
 
+  .sb-logo-img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 8px;
+    filter: drop-shadow(0 1px 4px rgba(26,35,126,0.18));
+  }
+
   .sb-brand {
     font-size: 15px; font-weight: 800;
     color: var(--text-color);

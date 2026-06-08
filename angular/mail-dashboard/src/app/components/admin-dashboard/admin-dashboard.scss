@@ -58,6 +58,15 @@ $panel-w:   300px;
       mat-icon { color: white; font-size: 18px; width: 18px; height: 18px; }
     }
 
+    .sb-logo-img {
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 8px;
+      filter: drop-shadow(0 1px 4px rgba(26,35,126,0.15));
+    }
+
     span {
       font-size: 15px;
       font-weight: 700;

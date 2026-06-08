@@ -1,0 +1,92 @@
+<svg width="100%" viewBox="0 0 680 820" role="img" style="" xmlns="http://www.w3.org/2000/svg">
+  <title style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">NotifyMails Logo Option 1 — Hermès avec enveloppe</title>
+  <desc style="fill:rgb(0, 0, 0);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto">Logo style grec antique avec une tête d'Hermès (dieu des messagers) coiffée d'ailes stylisées, avec une enveloppe intégrée</desc>
+
+  
+
+  <!-- Background card -->
+  <rect x="60" y="20" width="560" height="780" rx="16" fill="#0d0d0d" style="fill:rgb(13, 13, 13);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Option 1 label -->
+  <text x="340" y="68" text-anchor="middle" font-family="Georgia,serif" font-size="12" fill="#666" letter-spacing="4" style="fill:rgb(102, 102, 102);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:12px;font-weight:400;text-anchor:middle;dominant-baseline:auto">OPTION  01</text>
+
+  <!-- === HEAD shape === -->
+  <!-- Neck -->
+  <rect x="310" y="340" width="60" height="60" rx="4" fill="#f0e6d3" style="fill:rgb(240, 230, 211);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Shoulders hint -->
+  <ellipse cx="340" cy="400" rx="80" ry="22" fill="#f0e6d3" style="fill:rgb(240, 230, 211);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Head -->
+  <ellipse cx="340" cy="250" rx="90" ry="105" fill="#f0e6d3" style="fill:rgb(240, 230, 211);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Hair top band -->
+  <ellipse cx="340" cy="158" rx="82" ry="20" fill="#e8dcc8" style="fill:rgb(232, 220, 200);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Hair locks lines (chiseled effect) -->
+  <path d="M280 170 Q270 200 275 230" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M295 163 Q285 195 288 225" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M310 160 Q305 193 305 222" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M370 160 Q375 193 375 222" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M385 163 Q390 195 388 225" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M400 170 Q408 200 405 230" stroke="#c9b5a0" stroke-width="2" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Eyes — sculpted hollow style -->
+  <ellipse cx="312" cy="248" rx="14" ry="10" fill="#1a1008" style="fill:rgb(26, 16, 8);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <ellipse cx="368" cy="248" rx="14" ry="10" fill="#1a1008" style="fill:rgb(26, 16, 8);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Eye brow -->
+  <path d="M298 234 Q312 228 326 234" stroke="#c9b5a0" stroke-width="2.5" fill="none" stroke-linecap="round" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M354 234 Q368 228 382 234" stroke="#c9b5a0" stroke-width="2.5" fill="none" stroke-linecap="round" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2.5px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Nose bridge -->
+  <path d="M335 255 L332 278 Q340 285 348 278 L345 255" stroke="#c9b5a0" stroke-width="1.5" fill="#ede0cc" style="fill:rgb(237, 224, 204);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Mouth — serene greek expression -->
+  <path d="M322 305 Q340 316 358 305" stroke="#c9b5a0" stroke-width="2" fill="none" stroke-linecap="round" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:2px;stroke-linecap:round;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Lips slight detail -->
+  <path d="M328 305 Q340 310 352 305" stroke="#baa898" stroke-width="1" fill="none" style="fill:none;stroke:rgb(186, 168, 152);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Chin definition -->
+  <path d="M298 330 Q340 365 382 330" stroke="#d4c4ae" stroke-width="1.5" fill="none" style="fill:none;stroke:rgb(212, 196, 174);color:rgb(0, 0, 0);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Cheekbones shading -->
+  <ellipse cx="290" cy="285" rx="18" ry="12" fill="#e0d0bc" opacity="0.5" style="fill:rgb(224, 208, 188);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <ellipse cx="390" cy="285" rx="18" ry="12" fill="#e0d0bc" opacity="0.5" style="fill:rgb(224, 208, 188);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:0.5;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- === WINGED PETASOS (chapeau d'Hermès) === -->
+  <!-- Hat brim -->
+  <ellipse cx="340" cy="152" rx="95" ry="18" fill="#ddd0b8" style="fill:rgb(221, 208, 184);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Hat top dome -->
+  <ellipse cx="340" cy="138" rx="65" ry="28" fill="#e8dcc8" style="fill:rgb(232, 220, 200);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- LEFT WING -->
+  <path d="M245 148 Q200 120 175 90 Q195 105 215 118 Q190 85 195 55 Q215 80 228 108 Q210 68 228 45 Q245 75 248 105 Q240 70 258 52 Q265 82 258 112 Q258 80 272 68 Q274 98 262 125 Q245 148 245 148Z" fill="#f0e6d3" stroke="#c9b5a0" stroke-width="1" style="fill:rgb(240, 230, 211);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- RIGHT WING -->
+  <path d="M435 148 Q480 120 505 90 Q485 105 465 118 Q490 85 485 55 Q465 80 452 108 Q470 68 452 45 Q435 75 432 105 Q440 70 422 68 Q420 98 432 125 Q435 148 435 148Z" fill="#f0e6d3" stroke="#c9b5a0" stroke-width="1" style="fill:rgb(240, 230, 211);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- === ENVELOPE integrated at bottom of face === -->
+  <!-- Envelope body -->
+  <rect x="270" y="430" width="140" height="95" rx="5" fill="#f5f0e8" stroke="#c9b5a0" stroke-width="1.5" style="fill:rgb(245, 240, 232);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Envelope flap V -->
+  <path d="M270 430 L340 475 L410 430Z" fill="#ede0cc" stroke="#c9b5a0" stroke-width="1.5" stroke-linejoin="round" style="fill:rgb(237, 224, 204);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1.5px;stroke-linecap:butt;stroke-linejoin:round;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <!-- Envelope bottom corners lines -->
+  <path d="M270 525 L320 483" stroke="#c9b5a0" stroke-width="1" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <path d="M410 525 L360 483" stroke="#c9b5a0" stroke-width="1" fill="none" style="fill:none;stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <!-- Notification dot on envelope -->
+  <circle cx="397" cy="445" r="12" fill="#e05252" style="fill:rgb(224, 82, 82);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <text x="397" y="450" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="bold" fill="white" style="fill:rgb(255, 255, 255);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:auto">!</text>
+
+  <!-- === TEXT === -->
+  <text x="340" y="610" text-anchor="middle" font-family="Georgia,serif" font-size="34" font-weight="bold" fill="#f5f0e8" letter-spacing="4" style="fill:rgb(245, 240, 232);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:34px;font-weight:700;text-anchor:middle;dominant-baseline:auto">NOTIFY</text>
+  <text x="340" y="648" text-anchor="middle" font-family="Georgia,serif" font-size="34" font-weight="bold" fill="#f5f0e8" letter-spacing="4" style="fill:rgb(245, 240, 232);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:34px;font-weight:700;text-anchor:middle;dominant-baseline:auto">MAILS</text>
+
+  <!-- Divider line ornement -->
+  <line x1="220" y1="668" x2="460" y2="668" stroke="#c9b5a0" stroke-width="0.8" style="fill:rgb(0, 0, 0);stroke:rgb(201, 181, 160);color:rgb(0, 0, 0);stroke-width:0.8px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="340" cy="668" r="3" fill="#c9b5a0" style="fill:rgb(201, 181, 160);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="220" cy="668" r="2" fill="#c9b5a0" style="fill:rgb(201, 181, 160);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+  <circle cx="460" cy="668" r="2" fill="#c9b5a0" style="fill:rgb(201, 181, 160);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:&quot;Anthropic Sans&quot;, -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, sans-serif;font-size:16px;font-weight:400;text-anchor:start;dominant-baseline:auto"/>
+
+  <text x="340" y="695" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#8a7a6a" letter-spacing="7" style="fill:rgb(138, 122, 106);stroke:none;color:rgb(0, 0, 0);stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;opacity:1;font-family:Georgia, serif;font-size:11px;font-weight:400;text-anchor:middle;dominant-baseline:auto">REAL-TIME  ALERTS</text>
+
+</svg>
