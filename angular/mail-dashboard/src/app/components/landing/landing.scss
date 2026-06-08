@@ -2367,7 +2367,9 @@ $rose:      #f43f5e;
     width: 200px;
     right: 0;
     bottom: 0;
-    opacity: 0.75;
+    top: auto;
+    z-index: 1;          // au-dessus du fond, pas derrière les stats
+    opacity: 0.82;
     .mascot-img { width: 170px; }
     .mascot-ring { display: none; }
     .mascot-particles .mp { display: none; }
@@ -2375,19 +2377,38 @@ $rose:      #f43f5e;
   }
 }
 
+// ── MOBILE MASCOT : espace dédié en bas du hero ──────────────────────────────
+// On donne du padding-bottom au hero pour que le mascotte ait sa propre zone
+// visible sous le bloc stats, centré, pas recouvert par du contenu.
 @media (max-width: 540px) {
+  // Crée l'espace pour le mascotte
+  .hero { padding-bottom: 200px !important; }
+
   .hero-mascot {
-    display: block;
-    width: 150px;
-    right: 0;
-    bottom: 0;
-    opacity: 0.70;
-    z-index: 0;
-    .mascot-img { width: 130px; }
-    .mascot-ring { display: none; }
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    // Centré horizontalement en bas du hero
+    left: 50%;
+    right: auto;
+    bottom: 16px;
+    top: auto;
+    transform: translateX(-50%);
+    width: 160px;
+    z-index: 1;
+    opacity: 0.92;
+
+    .mascot-img {
+      width: 140px;
+    }
+    .mascot-ring   { display: none; }
     .mascot-particles { display: none; }
-    .mascot-glow { width: 160px; height: 160px; filter: blur(24px); bottom: 10px; }
-    .mascot-shadow { width: 90px; height: 12px; }
+    .mascot-glow {
+      width: 180px; height: 180px;
+      filter: blur(24px);
+      bottom: 12px;
+    }
+    .mascot-shadow { width: 100px; height: 12px; }
   }
 }
 
@@ -3069,6 +3090,7 @@ $rose:      #f43f5e;
 
   .hero {
     padding: 64px 14px 36px;
+    padding-bottom: 180px !important; // espace pour le mascotte
     .hero-content {
       h1 { font-size: 24px; }
       p { font-size: 14px; }
