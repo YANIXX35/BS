@@ -1,16 +1,28 @@
 import { Routes } from '@angular/router';
-import { Landing } from './components/landing/landing';
-import { UserDashboard } from './components/user-dashboard/user-dashboard';
-import { AdminDashboard } from './components/admin-dashboard/admin-dashboard';
-import { Privacy } from './components/legal/privacy';
-import { Terms } from './components/legal/terms';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '',           component: Landing },
-  { path: 'dashboard',  component: UserDashboard,  canActivate: [authGuard] },
-  { path: 'admin',      component: AdminDashboard, canActivate: [authGuard] },
-  { path: 'privacy',    component: Privacy },
-  { path: 'terms',      component: Terms },
-  { path: '**',         redirectTo: '' }
+  {
+    path: '',
+    loadComponent: () => import('./components/landing/landing').then(m => m.Landing)
+  },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./components/user-dashboard/user-dashboard').then(m => m.UserDashboard),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'admin',
+    loadComponent: () => import('./components/admin-dashboard/admin-dashboard').then(m => m.AdminDashboard),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./components/legal/privacy').then(m => m.Privacy)
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./components/legal/terms').then(m => m.Terms)
+  },
+  { path: '**', redirectTo: '' }
 ];

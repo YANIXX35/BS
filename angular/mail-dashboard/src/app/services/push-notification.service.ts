@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { initializeApp, getApps } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -15,14 +13,17 @@ export class PushNotificationService {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
     try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      // Firebase chargé uniquement si l'utilisateur accepte les notifications
+      const [{ initializeApp, getApps }, { getMessaging, getToken, onMessage }] = await Promise.all([
+        import('firebase/app'),
+        import('firebase/messaging'),
+      ]);
+
       const app = getApps().length ? getApps()[0] : initializeApp(environment.firebase);
       const messaging = getMessaging(app);
-
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') {
-        console.log('[FCM] Permission refusée');
-        return;
-      }
 
       const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
@@ -32,9 +33,8 @@ export class PushNotificationService {
       });
 
       if (token) {
-        console.log('[FCM] Token obtenu:', token.substring(0, 20) + '...');
         this.http.post(`${this.apiUrl}/api/fcm/register`, { email: userEmail, fcm_token: token })
-          .subscribe({ error: (e) => console.error('[FCM] Erreur enregistrement token:', e) });
+          .subscribe({ error: () => {} });
       }
 
       onMessage(messaging, (payload) => {
@@ -47,8 +47,6 @@ export class PushNotificationService {
         }
       });
 
-    } catch (e) {
-      console.error('[FCM] Erreur init:', e);
-    }
+    } catch { /* FCM non critique */ }
   }
 }

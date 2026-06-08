@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, HostListener, OnInit, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, NgZone, OnInit, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +21,8 @@ type Step = 'form' | 'otp' | 'success';
   imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, MatCardModule,
     MatInputModule, MatFormFieldModule, MatTabsModule, MatProgressSpinnerModule, FormsModule],
   templateUrl: './landing.html',
-  styleUrl: './landing.scss'
+  styleUrl: './landing.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Landing implements OnInit, AfterViewInit {
   scrolled = false;
@@ -29,11 +30,18 @@ export class Landing implements OnInit, AfterViewInit {
   isDark = true;
   statValues = { delay: 0, channels: 0, free: 0 };
   private statsAnimated = false;
+  private _scrollPending = false;
 
   @HostListener('window:scroll')
   onScroll() {
-    this.scrolled = window.scrollY > 20;
-    if (this.mobileMenuOpen) this.mobileMenuOpen = false;
+    if (this._scrollPending) return;
+    this._scrollPending = true;
+    requestAnimationFrame(() => {
+      this._scrollPending = false;
+      this.scrolled = window.scrollY > 20;
+      if (this.mobileMenuOpen) this.mobileMenuOpen = false;
+      this.cdr.markForCheck();
+    });
   }
 
   toggleMobileMenu() { this.mobileMenuOpen = !this.mobileMenuOpen; }
@@ -174,6 +182,7 @@ export class Landing implements OnInit, AfterViewInit {
     private paymentService: PaymentService,
     private emailService: EmailService,
     private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -229,7 +238,7 @@ export class Landing implements OnInit, AfterViewInit {
         this.googleError   = `Erreur Google : ${googleError}`;
         this.googleLoading = false;
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
 
@@ -248,13 +257,13 @@ export class Landing implements OnInit, AfterViewInit {
                 this.paymentSuccess = true;
                 this.paymentSuccessPlan = plan;
               }
-              this.cdr.detectChanges();
+              this.cdr.markForCheck();
             },
             error: () => {
               // Payment URL returned success but verify failed — show generic success
               this.paymentSuccess = true;
               this.paymentSuccessPlan = plan;
-              this.cdr.detectChanges();
+              this.cdr.markForCheck();
             }
           });
         } else {
@@ -280,7 +289,7 @@ export class Landing implements OnInit, AfterViewInit {
     if (this.googleLoading) return;
     this.googleLoading = true;
     this.googleError   = '';
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     window.location.href = `${environment.apiUrl}/api/auth/google-login`;
   }
 
@@ -311,7 +320,7 @@ export class Landing implements OnInit, AfterViewInit {
         const detail = err.error?.error || err.error?.message || err.message || '';
         const raw = err.error?.raw ? JSON.stringify(err.error.raw).slice(0, 120) : '';
         this.paymentError = detail + (raw ? ` — ${raw}` : '') || 'Erreur inconnue';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -330,14 +339,14 @@ export class Landing implements OnInit, AfterViewInit {
         this.loginSuccess = `Bienvenue ${res.name} !`;
         if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
         const route = res.role === 'admin' ? '/admin' : '/dashboard';
         setTimeout(() => this.router.navigate([route], { replaceUrl: true }), 1000);
       },
       error: (err) => {
         this.loginLoading = false;
         this.loginError = err.error?.error || 'Erreur de connexion';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -357,12 +366,12 @@ export class Landing implements OnInit, AfterViewInit {
       next: () => {
         this.regLoading = false;
         this.regStep = 'otp';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.regLoading = false;
         this.regError = err.error?.error || "Erreur lors de l'inscription";
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -384,13 +393,13 @@ export class Landing implements OnInit, AfterViewInit {
         this.regStep = 'success';
         if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: this.regEmail }));
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
         setTimeout(() => this.router.navigate(['/dashboard'], { replaceUrl: true }), 1500);
       },
       error: (err) => {
         this.otpLoading = false;
         this.otpError = err.error?.error || 'Code incorrect';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -432,12 +441,12 @@ export class Landing implements OnInit, AfterViewInit {
       next: () => {
         this.forgotLoading = false;
         this.forgotStep = 'reset';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.forgotLoading = false;
         this.forgotError = err.error?.error || "Erreur lors de l'envoi du code";
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -465,12 +474,12 @@ export class Landing implements OnInit, AfterViewInit {
       next: () => {
         this.forgotLoading = false;
         this.forgotStep = 'success';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.forgotLoading = false;
         this.forgotError = err.error?.error || 'Erreur lors de la réinitialisation';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -495,11 +504,9 @@ export class Landing implements OnInit, AfterViewInit {
       });
     }, { threshold: 0.5 });
 
-    setTimeout(() => {
-      document.querySelectorAll('.anim-card').forEach(el => cardObs.observe(el));
-      const statsEl = document.querySelector('.hero-stats');
-      if (statsEl) statsObs.observe(statsEl);
-    }, 150);
+    document.querySelectorAll('.anim-card').forEach(el => cardObs.observe(el));
+    const statsEl = document.querySelector('.hero-stats');
+    if (statsEl) statsObs.observe(statsEl);
   }
 
   private animateStats() {
@@ -509,16 +516,18 @@ export class Landing implements OnInit, AfterViewInit {
   }
 
   private animateValue(key: 'delay' | 'channels' | 'free', target: number, duration: number) {
-    const start = Date.now();
-    const tick = () => {
-      const elapsed = Date.now() - start;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      this.statValues[key] = Math.round(eased * target);
-      this.cdr.detectChanges();
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+    this.ngZone.runOutsideAngular(() => {
+      const start = Date.now();
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        this.statValues[key] = Math.round(eased * target);
+        this.ngZone.run(() => this.cdr.markForCheck());
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
   }
 
   // ── Chatbot methods ────────────────────────────────────────────────────────
@@ -541,7 +550,7 @@ export class Landing implements OnInit, AfterViewInit {
     this.chatLoading = true;
     const typing = { role: 'bot' as const, text: '', typing: false };
     this.chatMessages.push(typing);
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     this._scrollChat();
 
     const history = this.chatMessages.slice(0, -2).map(m => ({ role: m.role, text: m.text }));
@@ -567,16 +576,16 @@ export class Landing implements OnInit, AfterViewInit {
           if (raw === '[DONE]') break;
           try {
             const d = JSON.parse(raw);
-            if (d.text) { typing.text += d.text; this.cdr.detectChanges(); this._scrollChat(); }
+            if (d.text) { typing.text += d.text; this.cdr.markForCheck(); this._scrollChat(); }
           } catch {}
         }
       }
     } catch {
       typing.text = "Désolé, une erreur est survenue. Réessaie ! 😅";
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     } finally {
       this.chatLoading = false;
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     }
   }
 
@@ -586,7 +595,7 @@ export class Landing implements OnInit, AfterViewInit {
     msg.text = '';
     this._twInterval = setInterval(() => {
       msg.text += fullText[i++];
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
       if (i % 5 === 0) this._scrollChat();
       if (i >= fullText.length) clearInterval(this._twInterval);
     }, 14);

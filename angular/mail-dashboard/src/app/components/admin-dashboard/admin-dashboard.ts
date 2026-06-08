@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ElementRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, ChangeDetectorRef, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -47,7 +47,8 @@ interface AdminUserDetail extends AdminUser {
     MatProgressBarModule, MatProgressSpinnerModule, MatSnackBarModule
   ],
   templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.scss'
+  styleUrl: './admin-dashboard.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminDashboard implements OnInit {
   activeSection: Section = 'overview';
@@ -228,7 +229,7 @@ export class AdminDashboard implements OnInit {
       }).subscribe({
         error: (err) => console.error('[avatar save]', err)
       });
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
   }
@@ -239,8 +240,8 @@ export class AdminDashboard implements OnInit {
     stored.name = this.editName;
     localStorage.setItem('user', JSON.stringify(stored));
     this.profileSaved = true;
-    this.cdr.detectChanges();
-    setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
+    this.cdr.markForCheck();
+    setTimeout(() => { this.profileSaved = false; this.cdr.markForCheck(); }, 3000);
   }
 
   // ── THEME ──
@@ -268,7 +269,7 @@ export class AdminDashboard implements OnInit {
     host.style.setProperty('--p-medium', this.hexToRgba(color, 0.18));
     host.style.setProperty('--p-dark', this.shiftColor(color, -30));
     host.style.setProperty('--p-shift', this.shiftColor(color, 40));
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     if (!sync) return;
     clearTimeout(this._themeDebounce);
     this._themeDebounce = setTimeout(() => {
@@ -291,7 +292,7 @@ export class AdminDashboard implements OnInit {
       }
     }
     (this.el.nativeElement as HTMLElement).style.setProperty('--dash-font', `'${fontName}', sans-serif`);
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     if (!sync) return;
     clearTimeout(this._fontDebounce);
     this._fontDebounce = setTimeout(() => {
@@ -324,12 +325,12 @@ export class AdminDashboard implements OnInit {
           this.applyFont(s.font_family, false);
           localStorage.setItem('dashFont_admin_' + this.admin.email, s.font_family);
         }
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
     this.emailService.getGmailStatus(this.admin.email).subscribe({
-      next: (res) => { this.gmailConnected = res.connected; this.cdr.detectChanges(); },
+      next: (res) => { this.gmailConnected = res.connected; this.cdr.markForCheck(); },
       error: () => {}
     });
   }
@@ -360,7 +361,7 @@ export class AdminDashboard implements OnInit {
         this.gmailConnectedEmail = event.data.gmail_email;
         this.loadAdminGmailStatus();
       }
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     };
     window.addEventListener('message', onMessage);
 
@@ -371,7 +372,7 @@ export class AdminDashboard implements OnInit {
         if (this.gmailConnecting) {
           this.gmailConnecting = false;
           this.loadAdminGmailStatus();
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
       }
     }, 500);
@@ -382,7 +383,7 @@ export class AdminDashboard implements OnInit {
       next: () => {
         this.gmailConnected      = false;
         this.gmailConnectedEmail = '';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
@@ -396,43 +397,43 @@ export class AdminDashboard implements OnInit {
       next: () => {
         this.settingsLoading = false;
         this.settingsSaved = true;
-        this.cdr.detectChanges();
-        setTimeout(() => { this.settingsSaved = false; this.cdr.detectChanges(); }, 3000);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.settingsSaved = false; this.cdr.markForCheck(); }, 3000);
       },
       error: (err) => {
         this.settingsLoading = false;
         this.settingsError = err.error?.error || 'Erreur lors de la sauvegarde';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
 
   loadAll() {
     this.adminService.getStats().subscribe({
-      next: s => { this.stats = s; this.loading.stats = false; this.cdr.detectChanges(); },
+      next: s => { this.stats = s; this.loading.stats = false; this.cdr.markForCheck(); },
       error: () => this.loading.stats = false
     });
     this.adminService.getUsers().subscribe({
-      next: r => { this.users = r.users as AdminUserDetail[]; this.loading.users = false; this.cdr.detectChanges(); },
+      next: r => { this.users = r.users as AdminUserDetail[]; this.loading.users = false; this.cdr.markForCheck(); },
       error: () => this.loading.users = false
     });
     this.adminService.getPayments().subscribe({
-      next: p => { this.payments = p; this.loading.payments = false; this.cdr.detectChanges(); },
+      next: p => { this.payments = p; this.loading.payments = false; this.cdr.markForCheck(); },
       error: () => this.loading.payments = false
     });
     this.emailService.getStats(this.admin.email).subscribe({
-      next:  s => { this.gmailStats = s; this.cdr.detectChanges(); },
+      next:  s => { this.gmailStats = s; this.cdr.markForCheck(); },
       error: () => { this.gmailStats = null; }
     });
     this.emailService.getEmails(this.admin.email).subscribe({
-      next: e => { this.emails = e.emails; this.loading.emails = false; this.cdr.detectChanges(); },
+      next: e => { this.emails = e.emails; this.loading.emails = false; this.cdr.markForCheck(); },
       error: () => this.loading.emails = false
     });
     // Charger les settings admin depuis le serveur
     this.emailService.getUserSettings(this.admin.email).subscribe({
       next: s => {
         this.adminSettings = { ...this.adminSettings, ...s };
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
@@ -441,7 +442,7 @@ export class AdminDashboard implements OnInit {
       next: res => {
         this.gmailConnected      = res.connected;
         this.gmailConnectedEmail = res.gmail_email || '';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
@@ -450,8 +451,8 @@ export class AdminDashboard implements OnInit {
   loadUserActivity() {
     this.activityLoading = true;
     this.adminService.getUserActivity().subscribe({
-      next: data => { this.userActivity = data; this.activityLoading = false; this.cdr.detectChanges(); },
-      error: ()   => { this.activityLoading = false; this.cdr.detectChanges(); }
+      next: data => { this.userActivity = data; this.activityLoading = false; this.cdr.markForCheck(); },
+      error: ()   => { this.activityLoading = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -461,7 +462,7 @@ export class AdminDashboard implements OnInit {
     this.mobileMenuOpen = false;
     if (s === 'settings')  this.loadGmailScopeStatus();
     if (s === 'activity')  this.loadUserActivity();
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
   toggleMobileMenu() {
@@ -482,9 +483,9 @@ export class AdminDashboard implements OnInit {
         this.userEmails = res.emails || [];
         this.userEmailsError = res.error || '';
         this.loadingUserEmails = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
-      error: () => { this.loadingUserEmails = false; this.cdr.detectChanges(); }
+      error: () => { this.loadingUserEmails = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -498,9 +499,9 @@ export class AdminDashboard implements OnInit {
         this.gmailScopeUpgraded = res.upgraded;
         this.gmailScopePending  = res.pending;
         this.gmailScopeLoading  = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
-      error: () => { this.gmailScopeLoading = false; this.cdr.detectChanges(); }
+      error: () => { this.gmailScopeLoading = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -514,10 +515,10 @@ export class AdminDashboard implements OnInit {
         this.gmailScopePending++;
         this.gmailScopeResetting[email] = false;
         this.gmailScopeMsg = `Scope réinitialisé pour ${email}`;
-        this.cdr.detectChanges();
-        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.detectChanges(); }, 4000);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.markForCheck(); }, 4000);
       },
-      error: () => { this.gmailScopeResetting[email] = false; this.cdr.detectChanges(); }
+      error: () => { this.gmailScopeResetting[email] = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -531,10 +532,10 @@ export class AdminDashboard implements OnInit {
         this.gmailScopeUpgraded = 0;
         this.gmailScopeResetAll = false;
         this.gmailScopeMsg = `${res.reset_count} utilisateur(s) réinitialisé(s)`;
-        this.cdr.detectChanges();
-        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.detectChanges(); }, 4000);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.gmailScopeMsg = ''; this.cdr.markForCheck(); }, 4000);
       },
-      error: () => { this.gmailScopeResetAll = false; this.cdr.detectChanges(); }
+      error: () => { this.gmailScopeResetAll = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -550,7 +551,7 @@ export class AdminDashboard implements OnInit {
           newState ? `${user.name} suspendu` : `${user.name} réactivé`,
           '', { duration: 3000 }
         );
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => this.snack.open('Erreur lors de la suspension', '', { duration: 3000 })
     });
@@ -568,7 +569,7 @@ export class AdminDashboard implements OnInit {
           newState ? `${user.name} banni` : `${user.name} débanni`,
           '', { duration: 3000 }
         );
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => this.snack.open('Erreur lors du bannissement', '', { duration: 3000 })
     });

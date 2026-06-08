@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -29,7 +29,8 @@ import { environment } from '../../../environments/environment';
     MatDividerModule, MatTooltipModule, MatFormFieldModule, MatInputModule, MatSelectModule
   ],
   templateUrl: './user-dashboard.html',
-  styleUrl: './user-dashboard.scss'
+  styleUrl: './user-dashboard.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserDashboard implements OnInit, OnDestroy {
 
@@ -199,7 +200,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.currentPage = nextPage;
         this.totalPages  = e.pages;
         this.loadingMore = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => { this.loadingMore = false; }
     });
@@ -255,6 +256,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -276,7 +278,7 @@ export class UserDashboard implements OnInit, OnDestroy {
       this.secondaryColor = config.secondary;
       this.currentFont    = config.font;
       this.darkMode       = config.mode === 'dark';
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     });
 
     // Fallback: browser blocked the popup → full-page redirect still works
@@ -295,13 +297,17 @@ export class UserDashboard implements OnInit, OnDestroy {
       }
     });
 
-    this._clockInterval = setInterval(() => {
-      this.currentTime = new Date();
-      this.cdr.detectChanges();
-    }, 1000);
+    this.ngZone.runOutsideAngular(() => {
+      this._clockInterval = setInterval(() => {
+        this.ngZone.run(() => {
+          this.currentTime = new Date();
+          this.cdr.markForCheck();
+        });
+      }, 60000);
+    });
 
     this.emailService.getStats(this.user.email).subscribe({
-      next:  (s) => { this.stats = s; this.loadingStats = false; this.cdr.detectChanges(); },
+      next:  (s) => { this.stats = s; this.loadingStats = false; this.cdr.markForCheck(); },
       error: ()  => { this.loadingStats = false; }
     });
 
@@ -311,12 +317,10 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.currentPage = 1;
         this.totalPages  = e.pages;
         this.loadingEmails = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => { this.loadingEmails = false; }
     });
-
-    this.loadAiAnalysis();
 
     this.editName = this.user.name || '';
 
@@ -328,8 +332,14 @@ export class UserDashboard implements OnInit, OnDestroy {
     // Here we just load non-theme settings (channels, avatar, gmail status).
     this.loadUserSettings();
 
-    // Auto-sync toutes les 30 s pour cohérence multi-appareils
-    this._syncInterval = setInterval(() => this.loadUserSettings(), 30000);
+    // Auto-sync toutes les 5 min, seulement si l'onglet est visible
+    this.ngZone.runOutsideAngular(() => {
+      this._syncInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          this.ngZone.run(() => this.loadUserSettings());
+        }
+      }, 300000);
+    });
 
     // Page Visibility API — resync immédiat quand l'utilisateur revient sur l'onglet
     // (couvre le cas : changement thème sur mobile → retour sur PC)
@@ -474,7 +484,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         }
 
         this.refreshChannels();
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => { /* keep localStorage values as fallback */ }
     });
@@ -487,12 +497,12 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.gmailCanSend        = !res.connected || res.can_send;
         this.monitorLastOk       = res.monitor_last_ok ? this._timeAgo(res.monitor_last_ok) : '';
         this.refreshChannels();
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         // On error we keep gmailCanSend = false (default), which shows the banner
         // for connected users — safer than assuming send scope is OK.
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -512,7 +522,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     const reader = new FileReader();
     reader.onload = (e) => {
       this.profilePhoto = e.target?.result as string;
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     };
     reader.readAsDataURL(file);
 
@@ -525,12 +535,12 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.settings.avatar = res.url;
         localStorage.setItem('profilePhoto_' + this.user.email, res.url);
         this.avatarUploading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.avatarError = 'Erreur upload, réessaie.';
         this.avatarUploading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -544,11 +554,11 @@ export class UserDashboard implements OnInit, OnDestroy {
     // sinon les valeurs périmées de this.settings écrasent le thème actuel sur le serveur
     const { theme_color, font_family, theme_mode, theme_secondary, theme_updated_at, ...rest } = this.settings;
     this.emailService.updateUserSettings({ ...rest, email: this.user.email, name: this.editName }).subscribe({
-      error: () => { this.profileSaved = false; this.cdr.detectChanges(); }
+      error: () => { this.profileSaved = false; this.cdr.markForCheck(); }
     });
     this.profileSaved = true;
-    this.cdr.detectChanges();
-    setTimeout(() => { this.profileSaved = false; this.cdr.detectChanges(); }, 3000);
+    this.cdr.markForCheck();
+    setTimeout(() => { this.profileSaved = false; this.cdr.markForCheck(); }, 3000);
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -589,7 +599,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.gmailCanSend        = true;
         this.loadUserSettings();
       }
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     };
     window.addEventListener('message', onMessage);
 
@@ -600,7 +610,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         if (this.gmailConnecting) {
           this.gmailConnecting = false;
           this.loadUserSettings();
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }
       }
     }, 500);
@@ -614,7 +624,7 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.gmailConnectedEmail = '';
         this.gmailExpired        = false;
         this.refreshChannels();
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
@@ -661,11 +671,11 @@ export class UserDashboard implements OnInit, OnDestroy {
         } else {
           this.emailDetailBody = detail.body;
         }
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.emailDetailLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -706,8 +716,8 @@ export class UserDashboard implements OnInit, OnDestroy {
   copyWebhookUrl() {
     navigator.clipboard.writeText(`${environment.apiUrl}/api/whatsapp/webhook`).then(() => {
       this.webhookCopied = true;
-      this.cdr.detectChanges();
-      setTimeout(() => { this.webhookCopied = false; this.cdr.detectChanges(); }, 2000);
+      this.cdr.markForCheck();
+      setTimeout(() => { this.webhookCopied = false; this.cdr.markForCheck(); }, 2000);
     });
   }
 
@@ -721,11 +731,11 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.replySending = false;
         this.replySuccess = 'Réponse envoyée !';
         this.replyText    = '';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
         setTimeout(() => {
           this.replySuccess = '';
           this.replyOpen    = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 2500);
       },
       error: (err) => {
@@ -735,12 +745,12 @@ export class UserDashboard implements OnInit, OnDestroy {
           // Scope gmail.send manquant → re-auth automatique
           this.replyError = "Mise à jour des permissions Gmail en cours...";
           this.gmailCanSend = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
           setTimeout(() => { this.gmailConnecting = true; this._openGmailPopup(); }, 1500);
           return;
         }
         this.replyError = errData.error || "Erreur lors de l'envoi";
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -753,7 +763,7 @@ export class UserDashboard implements OnInit, OnDestroy {
       next: (result) => {
         this.aiAnalysis = result;
         this.aiLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         const msg: string = err.error?.error || '';
@@ -765,7 +775,7 @@ export class UserDashboard implements OnInit, OnDestroy {
           this.aiError = msg || 'Analyse IA indisponible';
         }
         this.aiLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -781,7 +791,7 @@ export class UserDashboard implements OnInit, OnDestroy {
           this.currentPage = 1;
           this.totalPages  = e.pages;
           this.loadingEmails = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         },
         error: () => { this.loadingEmails = false; }
       });
@@ -801,13 +811,13 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.settingsLoading = false;
         this.settingsSaved   = true;
         this.refreshChannels();
-        this.cdr.detectChanges();
-        setTimeout(() => { this.settingsSaved = false; this.cdr.detectChanges(); }, 3000);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.settingsSaved = false; this.cdr.markForCheck(); }, 3000);
       },
       error: (err) => {
         this.settingsLoading  = false;
         this.settingsError    = err.error?.error || 'Erreur lors de la sauvegarde';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -833,13 +843,13 @@ export class UserDashboard implements OnInit, OnDestroy {
           this.whatsappCheckResult  = 'error';
           this.whatsappCheckMessage = 'Ce numéro n\'est pas sur WhatsApp.';
         }
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {
         this.whatsappCheckLoading = false;
         this.whatsappCheckResult  = 'error';
         this.whatsappCheckMessage = 'Erreur lors de la vérification.';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -875,9 +885,9 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.defaultTemplates = res.defaults;
         this.customTemplates  = res.custom;
         this.templatesLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
-      error: () => { this.templatesLoading = false; this.cdr.detectChanges(); }
+      error: () => { this.templatesLoading = false; this.cdr.markForCheck(); }
     });
   }
 
@@ -901,13 +911,13 @@ export class UserDashboard implements OnInit, OnDestroy {
         this.newTplContent = '';
         this.newTplSaving  = false;
         this.newTplSuccess = true;
-        this.cdr.detectChanges();
-        setTimeout(() => { this.newTplSuccess = false; this.cdr.detectChanges(); }, 2500);
+        this.cdr.markForCheck();
+        setTimeout(() => { this.newTplSuccess = false; this.cdr.markForCheck(); }, 2500);
       },
       error: (err) => {
         this.newTplSaving = false;
         this.newTplError  = err.error?.error || 'Erreur lors de la création.';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -938,12 +948,12 @@ export class UserDashboard implements OnInit, OnDestroy {
         }
         this.editTplId     = null;
         this.editTplSaving = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.editTplSaving = false;
         this.editTplError  = err.error?.error || 'Erreur mise à jour.';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
@@ -953,7 +963,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.emailService.deleteTemplate(tpl.id).subscribe({
       next: () => {
         this.customTemplates = this.customTemplates.filter(t => t.id !== tpl.id);
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: () => {}
     });
@@ -1012,7 +1022,7 @@ getSenderName(sender: string): string {
     this.chatLoading = true;
     const typing = { role: 'bot' as const, text: '', typing: false };
     this.chatMessages.push(typing);
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
     this._scrollChatPanel();
     const history = this.chatMessages.slice(0, -2).map(m => ({ role: m.role, text: m.text }));
     try {
@@ -1037,16 +1047,16 @@ getSenderName(sender: string): string {
           if (raw === '[DONE]') break;
           try {
             const d = JSON.parse(raw);
-            if (d.text) { typing.text += d.text; this.cdr.detectChanges(); this._scrollChatPanel(); }
+            if (d.text) { typing.text += d.text; this.cdr.markForCheck(); this._scrollChatPanel(); }
           } catch {}
         }
       }
     } catch {
       typing.text = "Désolé, une erreur est survenue. Réessaie ! 😅";
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     } finally {
       this.chatLoading = false;
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
     }
   }
 
@@ -1056,7 +1066,7 @@ getSenderName(sender: string): string {
     msg.text = '';
     this._twInterval = setInterval(() => {
       msg.text += fullText[i++];
-      this.cdr.detectChanges();
+      this.cdr.markForCheck();
       if (i % 5 === 0) this._scrollChatPanel();
       if (i >= fullText.length) clearInterval(this._twInterval);
     }, 14);
