@@ -2364,18 +2364,31 @@ $rose:      #f43f5e;
 
 @media (max-width: 768px) {
   .hero-mascot {
-    width: 220px;
+    width: 200px;
     right: 0;
     bottom: 0;
-    opacity: 0.25;    // Plus discret sur mobile — le contenu prime
-    .mascot-img { width: 180px; }
+    opacity: 0.75;
+    .mascot-img { width: 170px; }
     .mascot-ring { display: none; }
     .mascot-particles .mp { display: none; }
+    .mascot-glow { width: 200px; height: 200px; filter: blur(28px); }
   }
 }
 
 @media (max-width: 540px) {
-  .hero-mascot { display: none; }
+  .hero-mascot {
+    display: block;
+    width: 150px;
+    right: 0;
+    bottom: 0;
+    opacity: 0.70;
+    z-index: 0;
+    .mascot-img { width: 130px; }
+    .mascot-ring { display: none; }
+    .mascot-particles { display: none; }
+    .mascot-glow { width: 160px; height: 160px; filter: blur(24px); bottom: 10px; }
+    .mascot-shadow { width: 90px; height: 12px; }
+  }
 }
 
 // ── SCROLL ANIMATIONS ──────────────────────────────────────────────────────────
@@ -2616,16 +2629,30 @@ $rose:      #f43f5e;
     box-shadow: 0 40px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(99,102,241,0.15) !important;
   }
 
-  // Mascot: silhouette sombre sur fond clair
+  // Mascot: silhouette noire sur fond clair
+  // mix-blend-mode: multiply = fond blanc de l'image disparaît, personnage noir reste visible
   .hero-mascot {
     .mascot-img {
-      filter: invert(0) drop-shadow(0 0 14px rgba(99,102,241,0.3)) brightness(0.08) !important;
+      // Pas d'invert (personnage noir = parfait sur fond clair)
+      // multiply : blanc × fond = fond (disparaît), noir × fond = noir (visible)
+      filter: drop-shadow(0 4px 24px rgba(99,102,241,0.45)) drop-shadow(0 0 40px rgba(124,58,237,0.30)) !important;
       mix-blend-mode: multiply !important;
-      opacity: 0.12 !important;
+      opacity: 0.82 !important;
     }
-    .mascot-glow { opacity: 0.3 !important; }
-    .mascot-ring { border-color: rgba(99,102,241,0.15) !important; }
-    .mp { opacity: 0.35 !important; }
+    .mascot-glow {
+      opacity: 0.45 !important;
+      background: radial-gradient(
+        circle,
+        rgba(99,102,241,0.40) 0%,
+        rgba(124,58,237,0.20) 30%,
+        transparent 70%
+      ) !important;
+    }
+    .mascot-ring { border-color: rgba(99,102,241,0.20) !important; }
+    .mp { opacity: 0.50 !important; }
+    .mascot-shadow {
+      background: radial-gradient(ellipse, rgba(99,102,241,0.30) 0%, transparent 70%) !important;
+    }
   }
 
   // ── SECTION HEADERS ──
