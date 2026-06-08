@@ -2172,6 +2172,212 @@ $rose:      #f43f5e;
   }
 }
 
+// ── HERO MASCOT ────────────────────────────────────────────────────────────────
+
+@keyframes mascotFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg) scale(1); }
+  25%       { transform: translateY(-18px) rotate(1deg) scale(1.02); }
+  50%       { transform: translateY(-28px) rotate(3deg) scale(1.04); }
+  75%       { transform: translateY(-12px) rotate(0deg) scale(1.01); }
+}
+@keyframes mascotGlowPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(-50%) scale(1); }
+  50%       { opacity: 0.85; transform: translateX(-50%) scale(1.15); }
+}
+@keyframes mascotShadowAnim {
+  0%, 100% { transform: scaleX(1); opacity: 0.5; filter: blur(8px); }
+  50%       { transform: scaleX(0.75); opacity: 0.2; filter: blur(14px); }
+}
+@keyframes mascotRingExpand {
+  0%   { transform: translate(-50%, -50%) scale(0.7); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+@keyframes mpOrbit {
+  0%   { transform: rotate(var(--a)) translateX(var(--r)) scale(1);   opacity: 0.8; }
+  50%  { transform: rotate(calc(var(--a) + 180deg)) translateX(var(--r)) scale(1.3); opacity: 0.4; }
+  100% { transform: rotate(calc(var(--a) + 360deg)) translateX(var(--r)) scale(1);   opacity: 0.8; }
+}
+@keyframes mascotEntrance {
+  0%   { opacity: 0; transform: translateY(60px) scale(0.7) rotate(-8deg); }
+  60%  { transform: translateY(-10px) scale(1.05) rotate(2deg); }
+  80%  { transform: translateY(4px) scale(0.99) rotate(-1deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+}
+
+.hero-mascot {
+  position: absolute;
+  // Centré en fond — droit/bas dans le hero
+  right: 6%;
+  bottom: 0;
+  width: 420px;
+  z-index: 0;          // Derrière le contenu (z-index: 1)
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: mascotEntrance 1.2s 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  // Anneaux lumineux qui pulsent autour du personnage
+  .mascot-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid rgba(99,102,241,0.30);
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+  }
+  .mascot-ring-1 {
+    width: 340px; height: 340px;
+    margin-top: -80px;
+    animation: mascotRingExpand 3.0s 0.0s ease-out infinite;
+  }
+  .mascot-ring-2 {
+    width: 340px; height: 340px;
+    margin-top: -80px;
+    animation: mascotRingExpand 3.0s 1.0s ease-out infinite;
+  }
+  .mascot-ring-3 {
+    width: 340px; height: 340px;
+    margin-top: -80px;
+    animation: mascotRingExpand 3.0s 2.0s ease-out infinite;
+  }
+
+  // Halo lumineux sous le mascotte
+  .mascot-glow {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(99,102,241,0.60) 0%,
+      rgba(124,58,237,0.35) 25%,
+      rgba(6,182,212,0.18) 50%,
+      transparent 70%
+    );
+    filter: blur(38px);
+    animation: mascotGlowPulse 4s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  // Le personnage lui-même
+  .mascot-img {
+    position: relative;
+    z-index: 2;
+    width: 340px;
+    height: auto;
+    // invert(1) : personnage noir → blanc ; fond blanc → noir
+    // screen sur fond sombre : le noir disparaît, le blanc reste → siluette blanche
+    filter:
+      invert(1)
+      drop-shadow(0 0 18px rgba(99,102,241,1))
+      drop-shadow(0 0 40px rgba(139,92,246,0.75))
+      drop-shadow(0 0 80px rgba(6,182,212,0.45))
+      brightness(1.15);
+    mix-blend-mode: screen;
+    animation: mascotFloat 5s ease-in-out infinite;
+    transform-origin: bottom center;
+  }
+
+  // Ombre portée qui rétrécit quand le personnage monte
+  .mascot-shadow {
+    position: relative;
+    z-index: 1;
+    width: 180px; height: 18px;
+    background: radial-gradient(ellipse, rgba(99,102,241,0.55) 0%, rgba(124,58,237,0.25) 40%, transparent 70%);
+    border-radius: 50%;
+    animation: mascotShadowAnim 5s ease-in-out infinite;
+    margin-top: -6px;
+  }
+
+  // Petites particules qui orbitent autour du personnage
+  .mascot-particles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0; height: 0;
+    z-index: 3;
+  }
+
+  .mp {
+    position: absolute;
+    border-radius: 50%;
+    transform-origin: 0 0;
+  }
+
+  .mp1 {
+    width: 8px; height: 8px;
+    background: radial-gradient(circle, $primary2, transparent);
+    box-shadow: 0 0 8px $primary;
+    --a: 0deg; --r: 160px;
+    animation: mpOrbit 6.0s 0.0s linear infinite;
+  }
+  .mp2 {
+    width: 6px; height: 6px;
+    background: radial-gradient(circle, $cyan, transparent);
+    box-shadow: 0 0 6px $cyan;
+    --a: 60deg; --r: 140px;
+    animation: mpOrbit 7.0s 0.5s linear infinite;
+  }
+  .mp3 {
+    width: 10px; height: 10px;
+    background: radial-gradient(circle, $violet, transparent);
+    box-shadow: 0 0 10px $violet;
+    --a: 120deg; --r: 170px;
+    animation: mpOrbit 5.5s 1.0s linear infinite;
+  }
+  .mp4 {
+    width: 5px; height: 5px;
+    background: radial-gradient(circle, $pink, transparent);
+    box-shadow: 0 0 6px $pink;
+    --a: 200deg; --r: 130px;
+    animation: mpOrbit 8.0s 0.2s linear infinite;
+  }
+  .mp5 {
+    width: 7px; height: 7px;
+    background: radial-gradient(circle, $primary2, transparent);
+    box-shadow: 0 0 8px $primary;
+    --a: 280deg; --r: 155px;
+    animation: mpOrbit 6.5s 1.5s linear infinite;
+  }
+  .mp6 {
+    width: 9px; height: 9px;
+    background: radial-gradient(circle, $cyan, transparent);
+    box-shadow: 0 0 9px $cyan;
+    --a: 330deg; --r: 145px;
+    animation: mpOrbit 7.5s 0.8s linear infinite;
+  }
+}
+
+// Responsive mascot
+@media (max-width: 1100px) {
+  .hero-mascot {
+    width: 320px;
+    right: 2%;
+    .mascot-img { width: 260px; }
+    .mp1, .mp3 { --r: 120px; }
+    .mp2, .mp4, .mp5, .mp6 { --r: 110px; }
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-mascot {
+    width: 220px;
+    right: 0;
+    bottom: 0;
+    opacity: 0.25;    // Plus discret sur mobile — le contenu prime
+    .mascot-img { width: 180px; }
+    .mascot-ring { display: none; }
+    .mascot-particles .mp { display: none; }
+  }
+}
+
+@media (max-width: 540px) {
+  .hero-mascot { display: none; }
+}
+
 // ── SCROLL ANIMATIONS ──────────────────────────────────────────────────────────
 .anim-card {
   opacity: 0;
