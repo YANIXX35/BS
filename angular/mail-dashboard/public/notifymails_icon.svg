@@ -1,0 +1,51 @@
+<svg viewBox="160 35 360 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="NotifyMails">
+  <!-- Neck -->
+  <rect x="310" y="340" width="60" height="60" rx="4" fill="#f0e6d3"/>
+  <!-- Shoulders -->
+  <ellipse cx="340" cy="400" rx="80" ry="22" fill="#f0e6d3"/>
+  <!-- Head -->
+  <ellipse cx="340" cy="250" rx="90" ry="105" fill="#f0e6d3"/>
+  <!-- Hair top band -->
+  <ellipse cx="340" cy="158" rx="82" ry="20" fill="#e8dcc8"/>
+  <!-- Hair locks -->
+  <path d="M280 170 Q270 200 275 230" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <path d="M295 163 Q285 195 288 225" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <path d="M310 160 Q305 193 305 222" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <path d="M370 160 Q375 193 375 222" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <path d="M385 163 Q390 195 388 225" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <path d="M400 170 Q408 200 405 230" stroke="#c9b5a0" stroke-width="2" fill="none"/>
+  <!-- Eyes -->
+  <ellipse cx="312" cy="248" rx="14" ry="10" fill="#1a1008"/>
+  <ellipse cx="368" cy="248" rx="14" ry="10" fill="#1a1008"/>
+  <!-- Eyebrows -->
+  <path d="M298 234 Q312 228 326 234" stroke="#c9b5a0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M354 234 Q368 228 382 234" stroke="#c9b5a0" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Nose -->
+  <path d="M335 255 L332 278 Q340 285 348 278 L345 255" stroke="#c9b5a0" stroke-width="1.5" fill="#ede0cc"/>
+  <!-- Mouth -->
+  <path d="M322 305 Q340 316 358 305" stroke="#c9b5a0" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M328 305 Q340 310 352 305" stroke="#baa898" stroke-width="1" fill="none"/>
+  <!-- Chin -->
+  <path d="M298 330 Q340 365 382 330" stroke="#d4c4ae" stroke-width="1.5" fill="none"/>
+  <!-- Cheeks -->
+  <ellipse cx="290" cy="285" rx="18" ry="12" fill="#e0d0bc" opacity="0.5"/>
+  <ellipse cx="390" cy="285" rx="18" ry="12" fill="#e0d0bc" opacity="0.5"/>
+  <!-- Hat brim -->
+  <ellipse cx="340" cy="152" rx="95" ry="18" fill="#ddd0b8"/>
+  <!-- Hat dome -->
+  <ellipse cx="340" cy="138" rx="65" ry="28" fill="#e8dcc8"/>
+  <!-- LEFT WING -->
+  <path d="M245 148 Q200 120 175 90 Q195 105 215 118 Q190 85 195 55 Q215 80 228 108 Q210 68 228 45 Q245 75 248 105 Q240 70 258 52 Q265 82 258 112 Q258 80 272 68 Q274 98 262 125 Q245 148 245 148Z" fill="#f0e6d3" stroke="#c9b5a0" stroke-width="1"/>
+  <!-- RIGHT WING -->
+  <path d="M435 148 Q480 120 505 90 Q485 105 465 118 Q490 85 485 55 Q465 80 452 108 Q470 68 452 45 Q435 75 432 105 Q440 70 422 68 Q420 98 432 125 Q435 148 435 148Z" fill="#f0e6d3" stroke="#c9b5a0" stroke-width="1"/>
+  <!-- Envelope body -->
+  <rect x="270" y="430" width="140" height="95" rx="5" fill="#f5f0e8" stroke="#c9b5a0" stroke-width="1.5"/>
+  <!-- Envelope flap -->
+  <path d="M270 430 L340 475 L410 430Z" fill="#ede0cc" stroke="#c9b5a0" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Envelope corners -->
+  <path d="M270 525 L320 483" stroke="#c9b5a0" stroke-width="1" fill="none"/>
+  <path d="M410 525 L360 483" stroke="#c9b5a0" stroke-width="1" fill="none"/>
+  <!-- Notification dot -->
+  <circle cx="397" cy="445" r="12" fill="#e05252"/>
+  <text x="397" y="450" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="bold" fill="white">!</text>
+</svg>
