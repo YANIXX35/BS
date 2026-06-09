@@ -158,49 +158,27 @@ CORS(app, resources={r"/api/*": {"origins": ALLOWED_ORIGINS}}, supports_credenti
 
 @app.after_request
 def set_security_headers(response):
-    response.headers['X-Content-Type-Options']  = 'nosniff'
-    response.headers['X-Frame-Options']          = 'DENY'
-    response.headers['X-XSS-Protection']         = '1; mode=block'
-    response.headers['Referrer-Policy']           = 'strict-origin-when-cross-origin'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Permissions-Policy']        = 'geolocation=(), microphone=(), camera=()'
-    return response
-
-# Initialiser SocketIO pour WebSocket avec les mêmes origines que CORS
-socketio = SocketIO(app, cors_allowed_origins=ALLOWED_ORIGINS, async_mode='threading')
-
-# Rate limiting (mémoire locale — réinitialisé au redémarrage)
-# Désactivé en environnement de test (TESTING=1) pour éviter les conflits avec threading mocks
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=[],
-    storage_uri="memory://",
-    enabled=not bool(os.getenv('TESTING')),
-)
-
-@app.after_request
-def add_security_headers(response):
     origin = request.headers.get('Origin', '')
-    
-    # CORS : Autoriser explicitement l'origin Vercel
+
+    # CORS : uniquement les origines explicitement autorisées — pas de wildcard
     if origin in ALLOWED_ORIGINS:
-        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Origin']      = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
-    else:
-        # Pour le développement, autoriser toutes les origins (à commenter en prod)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-    
-    # Headers CORS complets
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Expires'
+    # Origines inconnues : aucun header CORS → le navigateur bloquera la requête
+
+    response.headers['Access-Control-Allow-Headers'] = (
+        'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Expires'
+    )
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-    response.headers['Access-Control-Max-Age'] = '86400'  # 24 heures
-    
-    # Headers de sécurité
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Access-Control-Max-Age']        = '86400'
+    response.headers['Cache-Control']                 = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma']                        = 'no-cache'
+    response.headers['X-Content-Type-Options']        = 'nosniff'
+    response.headers['X-Frame-Options']               = 'DENY'
+    response.headers['X-XSS-Protection']              = '1; mode=block'
+    response.headers['Referrer-Policy']               = 'strict-origin-when-cross-origin'
+    response.headers['Strict-Transport-Security']     = 'max-age=31536000; includeSubDomains'
+    response.headers['Permissions-Policy']            = 'geolocation=(), microphone=(), camera=()'
     return response
 
 @app.route('/api/<path:path>', methods=['OPTIONS'])
@@ -222,7 +200,12 @@ def handle_options(path):
 SMTP_EMAIL        = os.getenv('SMTP_EMAIL')
 SMTP_PASSWORD     = os.getenv('SMTP_PASSWORD')
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-JWT_SECRET_KEY    = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+JWT_SECRET_KEY    = os.getenv('JWT_SECRET_KEY')
+if not JWT_SECRET_KEY:
+    raise RuntimeError(
+        "[SECURITY] JWT_SECRET_KEY non définie dans les variables d'environnement. "
+        "Générez une clé avec : python -c \"import secrets; print(secrets.token_hex(32))\""
+    )
 JWT_ALGORITHM     = 'HS256'
 
 # ─── GREEN-API (WhatsApp) — instance partagée admin ───────────────────────────
@@ -880,6 +863,7 @@ def forgot_password():
 
 
 @app.route('/api/auth/reset-password', methods=['POST'])
+@limiter.limit("5 per minute; 10 per hour")
 def reset_password():
     """Réinitialise le mot de passe avec le code OTP."""
     data = request.json
@@ -4190,7 +4174,7 @@ def api_version():
 
 
 @app.route('/api/chatbot', methods=['POST'])
-@limiter.limit("60 per hour; 10 per minute")
+@limiter.limit("20 per hour; 3 per minute")
 def chat_bot():
     """Chatbot IA MailNotifier — gemini-1.5-flash (1500 req/jour) + cache + fallback."""
     data    = request.get_json() or {}
@@ -4201,7 +4185,6 @@ def chat_bot():
         return jsonify({'error': 'message requis'}), 400
 
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    print(f"[Chat] Clé utilisée: ...{GEMINI_API_KEY[-8:] if GEMINI_API_KEY else 'AUCUNE'}")
 
     system_prompt = (
         "Tu es un assistant IA intelligent, sympathique et polyvalent intégré dans MailNotifier.\n\n"
