@@ -3404,8 +3404,81 @@ $rose:      #f43f5e;
 
 @media (max-width: 540px) {
   .chat-widget {
-    bottom: 16px; right: 16px;
-    .chat-panel { width: calc(100vw - 32px); }
+    bottom: 0; right: 0; left: 0;
+    padding: 0;
+    gap: 0;
+
+    // FAB stays bottom-right when chat is closed
+    .chat-fab {
+      align-self: flex-end;
+      margin: 0 16px 20px 0;
+    }
+
+    // Hide FAB when panel is open — header close button handles dismissal
+    &:has(.chat-panel) .chat-fab { display: none; }
+
+    // Panel becomes a full-width bottom sheet
+    .chat-panel {
+      width: 100%;
+      border-radius: 24px 24px 0 0;
+      border-bottom: none;
+      max-height: 82vh;
+
+      // Drag handle hint
+      &::before {
+        content: '';
+        display: block;
+        width: 36px; height: 4px;
+        border-radius: 2px;
+        background: rgba(255,255,255,0.2);
+        margin: 10px auto 0;
+        flex-shrink: 0;
+      }
+
+      .chat-messages {
+        max-height: calc(82vh - 210px);
+        min-height: 140px;
+      }
+
+      .chat-msg .chat-bubble {
+        max-width: 72%;
+        font-size: 14px;
+      }
+
+      // Horizontal scroll instead of wrapping
+      .chat-suggestions {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0 12px 12px;
+        &::-webkit-scrollbar { display: none; }
+      }
+
+      .chat-input-row {
+        // Extra bottom padding for iOS home indicator
+        padding: 10px 12px calc(16px + env(safe-area-inset-bottom, 0px));
+
+        // font-size 16px prevents iOS from zooming on input focus
+        .chat-input {
+          font-size: 16px;
+          min-height: 44px;
+          padding: 10px 16px;
+        }
+
+        // 44px minimum tap target
+        .chat-send-btn {
+          width: 44px; height: 44px;
+          mat-icon { font-size: 20px; width: 20px; height: 20px; }
+        }
+      }
+
+      // Bigger tap target for close button
+      .chat-close-btn {
+        padding: 8px;
+        mat-icon { font-size: 22px; }
+      }
+    }
   }
 }
 
