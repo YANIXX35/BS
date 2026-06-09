@@ -82,7 +82,11 @@
               ],
               "outputHashing": "all",
               "sourceMap": false,
-              "optimization": true,
+              "optimization": {
+                "scripts": true,
+                "styles": { "minify": true, "inlineCritical": true },
+                "fonts": { "inline": false }
+              },
               "extractLicenses": false
             },
             "staging": {
