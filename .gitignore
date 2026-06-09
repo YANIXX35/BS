@@ -8,6 +8,11 @@ tokens/
 *.json.key
 client_secret_*.json
 
+# Angular environments (contiennent les clés API Firebase)
+angular/mail-dashboard/src/environments/environment.ts
+angular/mail-dashboard/src/environments/environment.prod.ts
+angular/mail-dashboard/src/environments/environment.staging.ts
+
 # Python
 __pycache__/
 *.py[cod]

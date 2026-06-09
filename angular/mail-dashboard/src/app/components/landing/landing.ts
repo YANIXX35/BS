@@ -224,6 +224,8 @@ export class Landing implements OnInit, AfterViewInit {
       const googleToken = params['google_token'];
       const googleError = params['google_error'];
       if (googleToken) {
+        // Effacer le token de l'URL immédiatement avant tout traitement
+        window.history.replaceState({}, '', window.location.pathname);
         const name   = decodeURIComponent(params['gname']   || '');
         const email  = decodeURIComponent(params['gemail']  || '');
         const role   = params['grole']  || 'user';
@@ -256,19 +258,17 @@ export class Landing implements OnInit, AfterViewInit {
               if (res.status === 'paid') {
                 this.paymentSuccess = true;
                 this.paymentSuccessPlan = plan;
+              } else {
+                this.paymentError = 'Paiement non confirmé. Contactez le support si vous avez été débité.';
               }
               this.cdr.markForCheck();
             },
             error: () => {
-              // Payment URL returned success but verify failed — show generic success
-              this.paymentSuccess = true;
-              this.paymentSuccessPlan = plan;
+              this.paymentError = 'Impossible de vérifier le paiement. Contactez le support avec votre référence : ' + txId;
+              this.showPayModal = true;
               this.cdr.markForCheck();
             }
           });
-        } else {
-          this.paymentSuccess = true;
-          this.paymentSuccessPlan = plan;
         }
         // Clean URL
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
