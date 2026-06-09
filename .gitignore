@@ -8,9 +8,8 @@ tokens/
 *.json.key
 client_secret_*.json
 
-# Angular environments — environment.ts ignoré (clés locales)
-# environment.prod.ts est suivi par git (clé Firebase restreinte par domaine)
-angular/mail-dashboard/src/environments/environment.ts
+# Angular environments — clés Firebase restreintes par domaine, tracking OK
+# environment.staging.ts ignoré (non utilisé en prod)
 angular/mail-dashboard/src/environments/environment.staging.ts
 
 # Python
