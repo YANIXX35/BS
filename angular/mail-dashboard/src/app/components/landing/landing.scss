@@ -2740,20 +2740,49 @@ $rose:      #f43f5e;
     background: #ffffff !important;
     border-color: #d1d5db !important;
     box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    .plan-header .plan-name { color: #0f172a !important; }
-    .plan-header .plan-price .price-amount { color: #4f46e5 !important; }
+
+    .plan-header .plan-name { color: #0f172a !important; font-weight: 800; }
+    .plan-header .plan-price .price-amount { color: #4f46e5 !important; -webkit-text-fill-color: #4f46e5 !important; }
     .plan-header .plan-price .price-period { color: #475569 !important; }
     .plan-features li { color: #1e293b !important; font-weight: 500; }
     .plan-features li.disabled { color: #94a3b8 !important; mat-icon { color: #94a3b8 !important; } }
-    .plan-btn.free-btn { background: #f1f5f9 !important; border-color: #d1d5db !important; color: #475569 !important; }
+
+    // Bouton plan gratuit
+    .plan-btn.free-btn {
+      background: #f1f5f9 !important;
+      border: 1.5px solid #94a3b8 !important;
+      color: #374151 !important;
+      &:hover { background: #e2e8f0 !important; color: #0f172a !important; }
+    }
+    // Bouton payer (non-featured)
+    .plan-btn.pay-btn:not(.featured-btn) {
+      background: #6366f1 !important;
+      color: #ffffff !important;
+      border: none !important;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35) !important;
+      &:hover { background: #4f46e5 !important; box-shadow: 0 6px 20px rgba(99,102,241,0.45) !important; }
+    }
+
     &:hover { box-shadow: 0 14px 44px rgba(99,102,241,0.14) !important; }
   }
   .pricing-card.featured {
     background: linear-gradient(135deg, #eef2ff 0%, #f0f4ff 100%) !important;
     border-color: rgba(99,102,241,0.45) !important;
     box-shadow: 0 12px 40px rgba(99,102,241,0.20) !important;
+
     .plan-header .plan-name { color: #312e81 !important; }
-    .plan-header .plan-price .price-amount { background: linear-gradient(135deg, #6366f1, #06b6d4) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+    .plan-header .plan-price .price-amount {
+      background: linear-gradient(135deg, #6366f1, #06b6d4) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+    }
+    // Bouton featured reste le gradient violet-rose
+    .plan-btn.featured-btn {
+      background: linear-gradient(110deg, #6366f1, #7c3aed, #ec4899) !important;
+      color: #ffffff !important;
+      box-shadow: 0 6px 24px rgba(99,102,241,0.45) !important;
+    }
   }
   .pricing-note { color: #475569 !important; strong { color: #0f172a !important; } }
 
