@@ -93,6 +93,7 @@ export class Landing implements OnInit, AfterViewInit {
   paymentError = '';
   paymentSuccess = false;
   paymentSuccessPlan = '';
+  private pendingPlan: 'test' | 'premium' | 'enterprise' | '' = '';
 
   // ── Chatbot ────────────────────────────────────────────────────────────────
   chatOpen     = false;
@@ -308,6 +309,19 @@ export class Landing implements OnInit, AfterViewInit {
 
   // ── Payment ────────────────────────────────────────────────────────────────
   openPayModal(plan: 'test' | 'premium' | 'enterprise') {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.pendingPlan = plan;
+      this.loginError = `Connectez-vous pour accéder au plan ${plan === 'test' ? 'Test' : plan === 'premium' ? 'Premium' : 'Enterprise'}.`;
+      this.authTab = 'login';
+      this.cdr.markForCheck();
+      this.scrollTo('login');
+      return;
+    }
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user?.email) this.paymentEmail = user.email;
+    } catch { /* noop */ }
     this.payPlan = plan;
     this.paymentError = '';
     this.paymentLoading = false;
@@ -353,8 +367,22 @@ export class Landing implements OnInit, AfterViewInit {
         if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
         this.cdr.markForCheck();
-        const route = res.role === 'admin' ? '/admin' : '/dashboard';
-        setTimeout(() => this.router.navigate([route], { replaceUrl: true }), 1000);
+        if (this.pendingPlan) {
+          const plan = this.pendingPlan as 'test' | 'premium' | 'enterprise';
+          this.pendingPlan = '';
+          setTimeout(() => {
+            this.loginSuccess = '';
+            this.paymentEmail = res.email || '';
+            this.payPlan = plan;
+            this.paymentError = '';
+            this.paymentLoading = false;
+            this.showPayModal = true;
+            this.cdr.markForCheck();
+          }, 800);
+        } else {
+          const route = res.role === 'admin' ? '/admin' : '/dashboard';
+          setTimeout(() => this.router.navigate([route], { replaceUrl: true }), 1000);
+        }
       },
       error: (err) => {
         this.loginLoading = false;
