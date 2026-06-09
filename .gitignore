@@ -8,9 +8,9 @@ tokens/
 *.json.key
 client_secret_*.json
 
-# Angular environments (contiennent les clés API Firebase)
+# Angular environments — environment.ts ignoré (clés locales)
+# environment.prod.ts est suivi par git (clé Firebase restreinte par domaine)
 angular/mail-dashboard/src/environments/environment.ts
-angular/mail-dashboard/src/environments/environment.prod.ts
 angular/mail-dashboard/src/environments/environment.staging.ts
 
 # Python
