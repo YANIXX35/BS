@@ -214,6 +214,7 @@ GENIUSPAY_API_SECRET    = os.getenv('GENIUSPAY_API_SECRET', '')
 GENIUSPAY_WEBHOOK_SECRET = os.getenv('GENIUSPAY_WEBHOOK_SECRET', '')
 
 PLAN_PRICES = {
+    'test':       200,   # plan de test uniquement — minimum GeniusPay
     'premium':    2000,
     'enterprise': 5000,
 }

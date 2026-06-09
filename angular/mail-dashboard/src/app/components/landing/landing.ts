@@ -142,8 +142,21 @@ export class Landing implements OnInit, AfterViewInit {
         { label: 'Surveillance Gmail',      ok: true  },
         { label: 'Notifications Telegram',  ok: true  },
         { label: 'Notifications WhatsApp',  ok: false },
-        { label: 'Filtres avances',         ok: false },
+        { label: 'Filtres avancés',         ok: false },
         { label: 'Support prioritaire',     ok: false },
+      ],
+    },
+    {
+      id: 'test',
+      name: 'Test (200 XOF)',
+      price: '200',
+      period: 'XOF — test unique',
+      color: 'free',
+      test: true,
+      features: [
+        { label: 'Paiement de test réel',   ok: true  },
+        { label: 'Vérifie le webhook',      ok: true  },
+        { label: 'À supprimer après test',  ok: true  },
       ],
     },
     {
