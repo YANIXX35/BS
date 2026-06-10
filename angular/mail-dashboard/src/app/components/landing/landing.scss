@@ -3524,3 +3524,31 @@ $rose:      #f43f5e;
   @keyframes gridMove    { 0% { transform: translateY(0); } 100% { transform: translateY(40px); } }
   @keyframes orbFloat    { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 }
+
+// ── LITE MODE — activé automatiquement sur appareils/réseaux lents ────────────
+// Déclenché par landing.ts via [data-perf="lite"] sur <html>
+:host-context([data-perf="lite"]) {
+  // Stopper toutes les animations infinites
+  *, *::before, *::after {
+    animation: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
+  }
+
+  // Rendre les cards visibles sans attendre le scroll (plus d'IntersectionObserver)
+  .anim-card {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  // Supprimer les éléments décoratifs lourds
+  .orb, .grid-overlay { display: none !important; }
+  .mascot-ring, .mascot-glow, .mascot-shadow { display: none !important; }
+  .phone-glow { display: none !important; }
+  .hero-bg::before { display: none !important; }
+
+  // Fond hero simplifié (dégradé statique sans aurora animée)
+  .hero { background: linear-gradient(160deg, #0a0a2e 0%, #12124a 50%, #0e0e35 100%) !important; }
+}

@@ -213,6 +213,14 @@ export class Landing implements OnInit, AfterViewInit {
       }
     } catch { /* noop */ }
 
+    // Perf: restore lite mode instantly if already activated this session
+    try {
+      if (sessionStorage.getItem('perf-lite') === '1') {
+        document.documentElement.setAttribute('data-perf', 'lite');
+      }
+    } catch { /* noop */ }
+    this.checkPerformance();
+
     // Si déjà connecté → rediriger directement vers le dashboard (bouton retour ne doit pas revenir ici)
     try {
       const stored = localStorage.getItem('user');
@@ -525,6 +533,50 @@ export class Landing implements OnInit, AfterViewInit {
     document.querySelectorAll('.anim-card').forEach(el => cardObs.observe(el));
     const statsEl = document.querySelector('.hero-stats');
     if (statsEl) statsObs.observe(statsEl);
+  }
+
+  // ── Adaptive performance mode ──────────────────────────────────────────────
+
+  private checkPerformance() {
+    this.ngZone.runOutsideAngular(() => {
+      // Signal 1: slow/2G network → switch immediately
+      const conn = (navigator as any).connection;
+      if (conn?.effectiveType && ['slow-2g', '2g'].includes(conn.effectiveType)) {
+        this.activateLiteMode(); return;
+      }
+
+      // Signal 2: low-memory device (< 2 GB RAM) → switch immediately
+      const mem = (navigator as any).deviceMemory;
+      if (mem !== undefined && mem < 2) {
+        this.activateLiteMode(); return;
+      }
+
+      // Signal 3: FPS below 30 measured over 600ms of animation frames
+      let frames = 0;
+      const t0 = performance.now();
+      const tick = () => {
+        frames++;
+        if (performance.now() - t0 < 600) {
+          requestAnimationFrame(tick);
+        } else {
+          const fps = frames / ((performance.now() - t0) / 1000);
+          if (fps < 30) this.activateLiteMode();
+        }
+      };
+      requestAnimationFrame(tick);
+
+      // Signal 4: navigation took more than 4s (very slow connection/device)
+      window.addEventListener('load', () => {
+        const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+        if (nav && nav.loadEventEnd - nav.fetchStart > 4000) this.activateLiteMode();
+      }, { once: true });
+    });
+  }
+
+  private activateLiteMode() {
+    if (document.documentElement.getAttribute('data-perf') === 'lite') return;
+    document.documentElement.setAttribute('data-perf', 'lite');
+    try { sessionStorage.setItem('perf-lite', '1'); } catch { /* noop */ }
   }
 
   private animateStats() {
