@@ -337,7 +337,7 @@ export class Landing implements OnInit, AfterViewInit {
     this.paymentError = '';
 
     this.paymentService.initiate(this.payPlan, this.paymentEmail).pipe(
-      timeout(20000)
+      timeout(35000)
     ).subscribe({
       next: (res) => {
         this.paymentLoading = false;
