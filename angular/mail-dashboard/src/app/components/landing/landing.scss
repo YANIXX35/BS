@@ -772,6 +772,8 @@ $rose:      #f43f5e;
   padding: 100px 80px;
   background: $bg;
   position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 700px;
 
   &::before {
     content: '';
@@ -883,6 +885,8 @@ $rose:      #f43f5e;
   padding: 100px 80px;
   background: $bg2;
   position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 650px;
 
   &::before {
     content: '';
@@ -981,6 +985,8 @@ $rose:      #f43f5e;
   padding: 100px 80px;
   background: $bg;
   position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
 
   &::before {
     content: '';
@@ -1517,6 +1523,8 @@ $rose:      #f43f5e;
   background: $bg2;
   position: relative;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 750px;
 
   .login-bg {
     position: absolute; inset: 0;
@@ -3480,6 +3488,16 @@ $rose:      #f43f5e;
       }
     }
   }
+}
+
+// ── ACCESSIBILITY — respect user's motion preference ──────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .anim-card { opacity: 1 !important; transform: none !important; }
 }
 
 // ── MOBILE PERFORMANCE — disable GPU-heavy effects that crash iOS Safari ───────
