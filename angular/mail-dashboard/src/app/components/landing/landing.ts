@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, NgZone, OnInit, AfterViewInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, NgZone, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { timeout } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -335,17 +336,22 @@ export class Landing implements OnInit, AfterViewInit {
     this.paymentLoading = true;
     this.paymentError = '';
 
-    this.paymentService.initiate(this.payPlan, this.paymentEmail).subscribe({
+    this.paymentService.initiate(this.payPlan, this.paymentEmail).pipe(
+      timeout(20000)
+    ).subscribe({
       next: (res) => {
         this.paymentLoading = false;
-        // Redirect to Genius Pay checkout
         window.location.href = res.payment_url;
       },
       error: (err) => {
         this.paymentLoading = false;
-        const detail = err.error?.error || err.error?.message || err.message || '';
-        const raw = err.error?.raw ? JSON.stringify(err.error.raw).slice(0, 120) : '';
-        this.paymentError = detail + (raw ? ` — ${raw}` : '') || 'Erreur inconnue';
+        if (err.name === 'TimeoutError') {
+          this.paymentError = 'GeniusPay ne répond pas. Réessayez dans quelques instants.';
+        } else {
+          const detail = err.error?.error || err.error?.message || err.message || '';
+          const raw = err.error?.raw ? JSON.stringify(err.error.raw).slice(0, 120) : '';
+          this.paymentError = detail + (raw ? ` — ${raw}` : '') || 'Erreur inconnue';
+        }
         this.cdr.markForCheck();
       }
     });
