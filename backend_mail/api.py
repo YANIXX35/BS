@@ -143,6 +143,15 @@ def _init_firebase():
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max request body
 
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+)
+
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
 # CORS restreint aux origines connues
 ALLOWED_ORIGINS = [
     "https://yanixx35.github.io",
@@ -1609,10 +1618,9 @@ def admin_delete_payment(pay_id):
 # ─── GENIUSPAY — PAIEMENTS UTILISATEUR ───────────────────────────────────────
 
 @app.route('/api/payments/initiate', methods=['POST'])
-@token_required
 @limiter.limit("10 per minute")
 def payment_initiate():
-    """Crée un paiement GeniusPay et retourne l'URL de checkout."""
+    """Crée un paiement GeniusPay et retourne l'URL de checkout. Pas de JWT requis."""
     data  = request.get_json() or {}
     plan  = _str(data.get('plan', ''), 20).lower()
     email = _str(data.get('email', ''), 150).lower()
@@ -1624,15 +1632,18 @@ def payment_initiate():
     if not GENIUSPAY_API_KEY or not GENIUSPAY_API_SECRET:
         return jsonify({'error': 'Paiement non configuré côté serveur'}), 503
 
-    amount  = PLAN_PRICES[plan]
-    user_id = request.current_user['id']
+    amount = PLAN_PRICES[plan]
 
+    # Lookup user by email — inscription obligatoire
     db = get_db()
     try:
         with db.cursor() as cur:
-            cur.execute("SELECT name FROM users WHERE id = %s", (user_id,))
+            cur.execute("SELECT id, name FROM users WHERE email = %s", (email,))
             u = cur.fetchone()
-        user_name = u['name'] if u else email.split('@')[0]
+        if not u:
+            return jsonify({'error': 'Aucun compte trouvé avec cet email. Veuillez créer un compte d\'abord.'}), 404
+        user_id   = u['id']
+        user_name = u['name'] or email.split('@')[0]
     finally:
         _return_db(db)
 
@@ -1651,13 +1662,29 @@ def payment_initiate():
         'Content-Type': 'application/json',
     }
 
+    print(f'[GeniusPay] → POST {GENIUSPAY_BASE_URL}/payments | plan={plan} amount={amount} email={email}')
     try:
         resp = requests.post(
             f'{GENIUSPAY_BASE_URL}/payments',
-            json=payload, headers=headers, timeout=15
+            json=payload, headers=headers, timeout=25
         )
-        resp.raise_for_status()
+        print(f'[GeniusPay] ← {resp.status_code} ({len(resp.content)} bytes)')
+        if not resp.ok:
+            body = {}
+            try: body = resp.json()
+            except Exception: pass
+            msg = body.get('message') or body.get('error') or f'HTTP {resp.status_code}'
+            print(f'[GeniusPay] initiate {resp.status_code}: {resp.text[:400]}')
+            if resp.status_code == 403:
+                msg = 'Clés API GeniusPay invalides ou compte marchand non activé'
+            elif resp.status_code == 401:
+                msg = 'Authentification GeniusPay échouée — vérifier les clés API'
+            return jsonify({'error': msg}), 502
         gp = resp.json()
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Impossible de joindre GeniusPay (connexion refusée)'}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'GeniusPay ne répond pas (délai dépassé)'}), 504
     except requests.exceptions.RequestException as e:
         print(f'[GeniusPay] Erreur initiate: {e}')
         return jsonify({'error': 'Erreur de communication avec GeniusPay'}), 502
@@ -1684,10 +1711,9 @@ def payment_initiate():
 
 
 @app.route('/api/payments/verify', methods=['POST'])
-@token_required
 @limiter.limit("20 per minute")
 def payment_verify():
-    """Vérifie le statut d'un paiement GeniusPay via sa référence."""
+    """Vérifie le statut d'un paiement GeniusPay via sa référence. Pas de JWT requis."""
     data      = request.get_json() or {}
     reference = _str(data.get('tx_id') or data.get('reference', ''), 60)
     plan      = _str(data.get('plan', ''), 20).lower()
@@ -1708,8 +1734,20 @@ def payment_verify():
             f'{GENIUSPAY_BASE_URL}/payments/{reference}',
             headers=headers, timeout=15
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            body = {}
+            try: body = resp.json()
+            except Exception: pass
+            msg = body.get('message') or body.get('error') or f'HTTP {resp.status_code}'
+            print(f'[GeniusPay] verify {resp.status_code}: {resp.text[:400]}')
+            if resp.status_code == 403:
+                msg = 'Clés API GeniusPay invalides ou compte marchand non activé'
+            return jsonify({'error': msg}), 502
         gp = resp.json()
+    except requests.exceptions.ConnectionError:
+        return jsonify({'error': 'Impossible de joindre GeniusPay (connexion refusée)'}), 502
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'GeniusPay ne répond pas (délai dépassé)'}), 504
     except requests.exceptions.RequestException as e:
         print(f'[GeniusPay] Erreur verify: {e}')
         return jsonify({'error': 'Erreur de communication avec GeniusPay'}), 502
@@ -1717,16 +1755,18 @@ def payment_verify():
     gp_data = gp.get('data', {})
     status  = gp_data.get('status', '')
 
-    if status == 'completed':
-        user_id = request.current_user['id']
+    if status == 'completed' and email and plan:
         db = get_db()
         try:
             with db.cursor() as cur:
-                cur.execute("UPDATE users SET plan = %s WHERE id = %s", (plan, user_id))
-                cur.execute(
-                    "UPDATE payments SET status = 'paid' WHERE reference = %s",
-                    (reference,)
-                )
+                cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+                u = cur.fetchone()
+                if u:
+                    cur.execute("UPDATE users SET plan = %s WHERE id = %s", (plan, u['id']))
+                    cur.execute(
+                        "UPDATE payments SET status = 'paid' WHERE reference = %s",
+                        (reference,)
+                    )
             db.commit()
         finally:
             _return_db(db)
@@ -4401,7 +4441,7 @@ def chat_bot():
         "- Notifications Telegram (gratuit) et WhatsApp (premium)\n"
         "- Réponse aux mails depuis WhatsApp : glisser la notification et écrire\n"
         "- Commandes WhatsApp : !aide, !templates, !statut, !dernier, !smart\n"
-        "- Gratuit : Gmail + Telegram | Premium 5 000 XOF/mois : + WhatsApp | Enterprise 15 000 XOF/mois\n\n"
+        "- Gratuit : Gmail + Telegram | Premium 2 000 XOF/mois : + WhatsApp | Enterprise 5 000 XOF/mois\n\n"
         "STYLE : Réponds en français, naturel et chaleureux. "
         "1-2 emojis max. Sois direct. Ne refuse JAMAIS une question."
     )
@@ -4436,7 +4476,7 @@ def chat_bot():
     def _keyword_fallback(msg):
         m = msg.lower()
         if any(w in m for w in ['tarif', 'prix', 'cout', 'combien', 'payer', 'abonnement']):
-            return "💰 Tarifs MailNotifier :\n• Gratuit : Gmail + Telegram\n• Premium (5 000 XOF/mois) : + WhatsApp\n• Enterprise (15 000 XOF/mois) : + Support prioritaire"
+            return "💰 Tarifs MailNotifier :\n• Gratuit : Gmail + Telegram\n• Premium (2 000 XOF/mois) : + WhatsApp\n• Enterprise (5 000 XOF/mois) : + Support prioritaire"
         if any(w in m for w in ['whatsapp', 'wha']):
             return "📱 Pour WhatsApp : Paramètres → WhatsApp, entre ton numéro, vérifie-le, copie l'URL webhook dans Green API. Plan Premium requis."
         if any(w in m for w in ['telegram', 'tele']):

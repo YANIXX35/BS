@@ -1,5 +1,7 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, NgZone, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { timeout } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,7 +27,7 @@ type Step = 'form' | 'otp' | 'success';
   styleUrl: './landing.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class Landing implements OnInit, AfterViewInit {
+export class Landing implements OnInit, AfterViewInit, OnDestroy {
   scrolled = false;
   mobileMenuOpen = false;
   isDark = true;
@@ -107,6 +109,7 @@ export class Landing implements OnInit, AfterViewInit {
     "Telegram ou WhatsApp ?",
   ];
   private _twInterval: any = null;
+  private _destroy$ = new Subject<void>();
 
   // ── Forgot Password ────────────────────────────────────────────────────────
   showForgotModal = false;
@@ -242,7 +245,7 @@ export class Landing implements OnInit, AfterViewInit {
     });
 
     // Retour du flow Google redirect (mobile / fallback)
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntil(this._destroy$)).subscribe(params => {
       const googleToken = params['google_token'];
       const googleError = params['google_error'];
       if (googleToken) {
@@ -267,7 +270,7 @@ export class Landing implements OnInit, AfterViewInit {
     });
 
     // Detect return from Genius Pay
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.pipe(takeUntil(this._destroy$)).subscribe(params => {
       const status = params['payment_status'];
       const plan   = params['plan'];
       const email  = params['email'];
@@ -680,6 +683,12 @@ export class Landing implements OnInit, AfterViewInit {
   private _scrollChat() {
     const el = document.querySelector('.chat-messages');
     if (el) el.scrollTop = el.scrollHeight;
+  }
+
+  ngOnDestroy() {
+    this._destroy$.next();
+    this._destroy$.complete();
+    clearInterval(this._twInterval);
   }
 
   scrollTo(id: string) {
