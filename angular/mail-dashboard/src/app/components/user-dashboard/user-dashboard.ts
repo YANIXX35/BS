@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate } from '../../services/email';
+import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate, CustomRule, SecurityCheckResult } from '../../services/email';
 import { AuthService } from '../../services/auth';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
@@ -681,12 +681,15 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   closeEmail() {
-    this.selectedEmail = null;
+    this.selectedEmail   = null;
     this.emailDetailBody = '';
-    this.replyOpen = false;
-    this.replyText = '';
-    this.replyError = '';
-    this.replySuccess = '';
+    this.replyOpen       = false;
+    this.replyText       = '';
+    this.replyError      = '';
+    this.replySuccess    = '';
+    this.securityResult  = null;
+    this.securityError   = '';
+    this.securityLoading = false;
   }
 
   openReply() {
@@ -1081,6 +1084,102 @@ getSenderName(sender: string): string {
     this.authService.logout().subscribe({ error: () => {} });
     localStorage.clear();
     this.router.navigate(['/'], { replaceUrl: true });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RÈGLES DE TRI PERSONNALISÉES (Phase 2)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  rules: CustomRule[] = [];
+  rulesLoading = false;
+  newRuleType: 'vip' | 'sender' | 'keyword' = 'vip';
+  newRuleValue = '';
+  newRuleCategory: 'important' | 'newsletter' | 'normal' = 'important';
+  newRuleSaving = false;
+  newRuleError  = '';
+  newRuleSuccess = false;
+
+  loadRules() {
+    if (this.rulesLoading) return;
+    this.rulesLoading = true;
+    this.emailService.getRules().subscribe({
+      next: (res) => {
+        this.rules = res.rules;
+        this.rulesLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.rulesLoading = false; this.cdr.markForCheck(); }
+    });
+  }
+
+  saveNewRule() {
+    const value = this.newRuleValue.trim().toLowerCase();
+    if (!value) { this.newRuleError = 'Valeur requise.'; this.cdr.markForCheck(); return; }
+    this.newRuleSaving = true;
+    this.newRuleError  = '';
+    this.emailService.createRule(this.newRuleType, value, this.newRuleCategory).subscribe({
+      next: (res) => {
+        this.rules.push(res.rule);
+        this.newRuleValue   = '';
+        this.newRuleSaving  = false;
+        this.newRuleSuccess = true;
+        this.cdr.markForCheck();
+        setTimeout(() => { this.newRuleSuccess = false; this.cdr.markForCheck(); }, 2500);
+      },
+      error: (err) => {
+        this.newRuleSaving = false;
+        this.newRuleError  = err.error?.error || 'Erreur lors de la création.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  toggleRule(rule: CustomRule) {
+    const prev = rule.active;
+    rule.active = !prev;
+    this.cdr.markForCheck();
+    this.emailService.updateRule(rule.id, { active: rule.active }).subscribe({
+      error: () => { rule.active = prev; this.cdr.markForCheck(); }
+    });
+  }
+
+  deleteRule(rule: CustomRule) {
+    if (!confirm(`Supprimer la règle "${rule.value}" ?`)) return;
+    this.emailService.deleteRule(rule.id).subscribe({
+      next: () => {
+        this.rules = this.rules.filter(r => r.id !== rule.id);
+        this.cdr.markForCheck();
+      },
+      error: () => {}
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DÉTECTION PHISHING (Phase 2)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  securityResult: SecurityCheckResult | null = null;
+  securityLoading = false;
+  securityError   = '';
+
+  checkEmailSecurity() {
+    if (!this.selectedEmail) return;
+    this.securityLoading = true;
+    this.securityResult  = null;
+    this.securityError   = '';
+    this.cdr.markForCheck();
+    this.emailService.checkEmailSecurity(this.selectedEmail.id).subscribe({
+      next: (res) => {
+        this.securityResult  = res;
+        this.securityLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.securityError   = err.error?.error || 'Erreur analyse sécurité.';
+        this.securityLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

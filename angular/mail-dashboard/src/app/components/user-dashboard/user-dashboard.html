@@ -727,6 +727,75 @@
       }
     </div>
 
+    <!-- ── RÈGLES DE TRI PERSONNALISÉES ─────────────────────────────────────── -->
+    <div class="settings-group">
+      <h3 class="settings-group-title"><mat-icon>filter_list</mat-icon> Règles de tri personnalisées</h3>
+
+      @if (!rules.length && !rulesLoading) {
+        <button class="tpl-btn tpl-btn-add rules-load-btn" (click)="loadRules()">
+          <mat-icon>add</mat-icon> Charger mes règles
+        </button>
+      }
+      @if (rulesLoading) {
+        <div class="rules-loading"><mat-spinner diameter="20" /></div>
+      }
+
+      @if (rules.length > 0) {
+        <div class="rules-list">
+          @for (rule of rules; track rule.id) {
+            <div class="rule-item" [class.rule-inactive]="!rule.active">
+              <span class="rule-type-badge rule-type-{{ rule.rule_type }}">
+                @if (rule.rule_type === 'vip') { VIP }
+                @if (rule.rule_type === 'sender') { Expéditeur }
+                @if (rule.rule_type === 'keyword') { Mot-clé }
+              </span>
+              <span class="rule-value">{{ rule.value }}</span>
+              <span class="rule-arrow">→</span>
+              <span class="rule-cat rule-cat-{{ rule.category }}">{{ rule.category }}</span>
+              <div class="rule-actions">
+                <button mat-icon-button class="rule-toggle-btn"
+                        [matTooltip]="rule.active ? 'Désactiver' : 'Activer'"
+                        (click)="toggleRule(rule)">
+                  <mat-icon>{{ rule.active ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+                </button>
+                <button mat-icon-button class="rule-del-btn" matTooltip="Supprimer"
+                        (click)="deleteRule(rule)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Formulaire ajout règle -->
+      @if (rules.length >= 0 && !rulesLoading) {
+        <div class="rule-add-form">
+          <p class="tpl-group-label">Ajouter une règle</p>
+          <div class="rule-form-row">
+            <select class="rule-select" [(ngModel)]="newRuleType">
+              <option value="vip">VIP (expéditeur exact)</option>
+              <option value="sender">Expéditeur (domaine ou partiel)</option>
+              <option value="keyword">Mot-clé (objet / contenu)</option>
+            </select>
+            <input class="tpl-input rule-value-input" [(ngModel)]="newRuleValue"
+                   placeholder="Ex: boss@company.com ou newsletter" />
+            <select class="rule-select" [(ngModel)]="newRuleCategory">
+              <option value="important">Important</option>
+              <option value="newsletter">Newsletter</option>
+              <option value="normal">Normal</option>
+            </select>
+          </div>
+          @if (newRuleError) { <p class="tpl-err">{{ newRuleError }}</p> }
+          @if (newRuleSuccess) { <p class="tpl-ok">✅ Règle ajoutée !</p> }
+          <button class="tpl-btn tpl-btn-add" (click)="saveNewRule()" [disabled]="newRuleSaving">
+            @if (newRuleSaving) { <mat-spinner diameter="16" /> }
+            @else { <mat-icon>add</mat-icon> Ajouter }
+          </button>
+        </div>
+      }
+    </div>
+
     <!-- ── SÉCURITÉ : 2FA ──────────────────────────────────────────────────── -->
     <div class="settings-group">
       <h3 class="settings-group-title"><mat-icon>security</mat-icon> Sécurité</h3>
@@ -857,6 +926,43 @@
           <pre class="reader-text-body">{{ selectedEmail.body }}</pre>
         } @else {
           <p class="reader-snippet">{{ selectedEmail.snippet }}</p>
+        }
+      </div>
+
+      <!-- ─── SÉCURITÉ EMAIL ─── -->
+      <div class="security-check-bar">
+        @if (!securityResult && !securityLoading) {
+          <button class="sec-check-btn" (click)="checkEmailSecurity()">
+            <mat-icon>shield</mat-icon> Analyser la sécurité
+          </button>
+        }
+        @if (securityLoading) {
+          <div class="sec-loading"><mat-spinner diameter="18" /><span>Analyse en cours…</span></div>
+        }
+        @if (securityError) {
+          <p class="sec-error"><mat-icon>error_outline</mat-icon> {{ securityError }}</p>
+        }
+        @if (securityResult) {
+          <div class="sec-result sec-risk-{{ securityResult.risk }}">
+            <div class="sec-result-header">
+              <mat-icon>{{ securityResult.risk === 'low' ? 'verified_user' : securityResult.risk === 'medium' ? 'warning' : 'gpp_bad' }}</mat-icon>
+              <span class="sec-risk-label">
+                @if (securityResult.risk === 'low') { Email sûr }
+                @else if (securityResult.risk === 'medium') { Suspicious }
+                @else { PHISHING DÉTECTÉ }
+              </span>
+              <span class="sec-score">Score : {{ securityResult.score }}/100</span>
+              <button class="sec-close-btn" (click)="securityResult = null"><mat-icon>close</mat-icon></button>
+            </div>
+            <p class="sec-verdict">{{ securityResult.verdict }}</p>
+            @if (securityResult.indicators.length > 0) {
+              <ul class="sec-indicators">
+                @for (ind of securityResult.indicators; track ind) {
+                  <li><mat-icon>chevron_right</mat-icon>{{ ind }}</li>
+                }
+              </ul>
+            }
+          </div>
         }
       </div>
 

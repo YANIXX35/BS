@@ -74,6 +74,23 @@ export interface GmailStatus {
   monitor_last_ok?: string | null;
 }
 
+export interface CustomRule {
+  id: number;
+  rule_type: 'vip' | 'sender' | 'keyword';
+  value: string;
+  category: 'important' | 'newsletter' | 'normal';
+  active: boolean;
+  created_at?: string;
+}
+
+export interface SecurityCheckResult {
+  score: number;
+  risk: 'low' | 'medium' | 'high';
+  indicators: string[];
+  verdict: string;
+  method?: string;
+}
+
 export interface UserSettings {
   name: string;
   email: string;
@@ -205,5 +222,29 @@ export class EmailService {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/user/account`, {
       body: { password }
     });
+  }
+
+  // ─── RÈGLES DE TRI ──────────────────────────────────────────────────────────
+
+  getRules(): Observable<{ rules: CustomRule[] }> {
+    return this.http.get<{ rules: CustomRule[] }>(`${this.apiUrl}/rules`);
+  }
+
+  createRule(rule_type: string, value: string, category: string): Observable<{ rule: CustomRule }> {
+    return this.http.post<{ rule: CustomRule }>(`${this.apiUrl}/rules`, { rule_type, value, category });
+  }
+
+  updateRule(id: number, patch: Partial<Pick<CustomRule, 'category' | 'active'>>): Observable<{ success: boolean }> {
+    return this.http.put<{ success: boolean }>(`${this.apiUrl}/rules/${id}`, patch);
+  }
+
+  deleteRule(id: number): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/rules/${id}`);
+  }
+
+  // ─── SÉCURITÉ EMAIL ─────────────────────────────────────────────────────────
+
+  checkEmailSecurity(message_id: string): Observable<SecurityCheckResult> {
+    return this.http.post<SecurityCheckResult>(`${this.apiUrl}/email/security-check`, { message_id });
   }
 }

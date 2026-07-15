@@ -605,6 +605,19 @@ def init_db():
             """)
             cur.execute("CREATE INDEX IF NOT EXISTS idx_wa_conv_wa_msg ON wa_conversations(wa_message_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_wa_conv_user ON wa_conversations(user_email)")
+            # Règles de tri personnalisées (Phase 2)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS custom_rules (
+                    id SERIAL PRIMARY KEY,
+                    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    rule_type VARCHAR(20) NOT NULL,
+                    value VARCHAR(300) NOT NULL,
+                    category VARCHAR(20) NOT NULL DEFAULT 'important',
+                    active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_custom_rules_user ON custom_rules(user_id)")
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS revoked_tokens (
                     jti        VARCHAR(64) PRIMARY KEY,
@@ -2578,6 +2591,8 @@ def get_emails():
         if not service:
             return jsonify(EMPTY)
 
+        user_rules = _load_user_rules(request.current_user['id'])
+
         # Paramètre de pagination Gmail (pageToken pour pages > 1)
         kwargs: dict = {'userId': 'me', 'maxResults': limit, 'labelIds': ['INBOX']}
         if page > 1:
@@ -2615,7 +2630,7 @@ def get_emails():
                     "date":     hdrs.get('Date', ''),
                     "snippet":  snippet,
                     "unread":   'UNREAD' in msg.get('labelIds', []),
-                    "category": _classify_email(sender, subject, snippet),
+                    "category": _classify_email(sender, subject, snippet, user_rules),
                 })
             except HttpError:
                 continue
@@ -2665,6 +2680,7 @@ def get_email_detail(message_id):
         subject = hdrs.get('Subject', '(Sans objet)')
         sender  = hdrs.get('From', 'Inconnu')
         snippet = msg.get('snippet', '')
+        user_rules = _load_user_rules(request.current_user['id'])
 
         return jsonify({
             "id":        message_id,
@@ -2676,7 +2692,7 @@ def get_email_detail(message_id):
             "body":      body,
             "body_type": mime_type,
             "unread":    'UNREAD' in msg.get('labelIds', []),
-            "category":  _classify_email(sender, subject, snippet),
+            "category":  _classify_email(sender, subject, snippet, user_rules),
         })
     except Exception as e:
         print(f"[ERROR] get_email_detail: {e}")
@@ -2851,6 +2867,298 @@ def delete_template(template_id: int):
         return jsonify({'error': 'Erreur suppression'}), 500
     finally:
         _return_db(db)
+
+
+# ─── RÈGLES DE TRI PERSONNALISÉES (Phase 2) ───────────────────────────────────
+
+_VALID_RULE_TYPES = {'vip', 'sender', 'keyword'}
+_VALID_CATEGORIES = {'important', 'newsletter', 'normal'}
+
+def _invalidate_rules_cache(user_id: int):
+    _cache_set(f"rules:{user_id}", None, ttl=1)
+
+
+@app.route('/api/rules', methods=['GET'])
+@token_required
+@limiter.limit("30 per minute")
+def get_rules():
+    user_id = request.current_user['id']
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute(
+                "SELECT id, rule_type, value, category, active, created_at "
+                "FROM custom_rules WHERE user_id=%s ORDER BY id",
+                (user_id,)
+            )
+            rules = [dict(r) for r in cur.fetchall()]
+        return jsonify({'rules': rules}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/rules', methods=['POST'])
+@token_required
+@limiter.limit("20 per minute")
+def create_rule():
+    user_id   = request.current_user['id']
+    data      = request.get_json(silent=True) or {}
+    rule_type = _str(data.get('rule_type', ''), 20).strip().lower()
+    value     = _str(data.get('value', ''), 300).strip().lower()
+    category  = _str(data.get('category', 'important'), 20).strip().lower()
+
+    if rule_type not in _VALID_RULE_TYPES:
+        return jsonify({'error': f'rule_type invalide (vip, sender, keyword)'}), 400
+    if not value:
+        return jsonify({'error': 'value requis'}), 400
+    if category not in _VALID_CATEGORIES:
+        return jsonify({'error': 'category invalide (important, newsletter, normal)'}), 400
+
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT COUNT(*) AS cnt FROM custom_rules WHERE user_id=%s", (user_id,))
+            if (cur.fetchone() or {}).get('cnt', 0) >= 30:
+                return jsonify({'error': 'Limite de 30 règles atteinte'}), 429
+            cur.execute(
+                "INSERT INTO custom_rules (user_id, rule_type, value, category) "
+                "VALUES (%s,%s,%s,%s) RETURNING id, rule_type, value, category, active, created_at",
+                (user_id, rule_type, value, category)
+            )
+            rule = dict(cur.fetchone())
+        db.commit()
+        _invalidate_rules_cache(user_id)
+        return jsonify({'rule': rule}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/rules/<int:rule_id>', methods=['PUT'])
+@token_required
+@limiter.limit("20 per minute")
+def update_rule(rule_id: int):
+    user_id  = request.current_user['id']
+    data     = request.get_json(silent=True) or {}
+    category = _str(data.get('category', ''), 20).strip().lower()
+    active   = data.get('active')
+
+    if category and category not in _VALID_CATEGORIES:
+        return jsonify({'error': 'category invalide'}), 400
+
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            if category and active is not None:
+                cur.execute(
+                    "UPDATE custom_rules SET category=%s, active=%s WHERE id=%s AND user_id=%s",
+                    (category, bool(active), rule_id, user_id)
+                )
+            elif category:
+                cur.execute(
+                    "UPDATE custom_rules SET category=%s WHERE id=%s AND user_id=%s",
+                    (category, rule_id, user_id)
+                )
+            elif active is not None:
+                cur.execute(
+                    "UPDATE custom_rules SET active=%s WHERE id=%s AND user_id=%s",
+                    (bool(active), rule_id, user_id)
+                )
+            if cur.rowcount == 0:
+                return jsonify({'error': 'Règle introuvable'}), 404
+        db.commit()
+        _invalidate_rules_cache(user_id)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/rules/<int:rule_id>', methods=['DELETE'])
+@token_required
+@limiter.limit("20 per minute")
+def delete_rule(rule_id: int):
+    user_id = request.current_user['id']
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("DELETE FROM custom_rules WHERE id=%s AND user_id=%s", (rule_id, user_id))
+            if cur.rowcount == 0:
+                return jsonify({'error': 'Règle introuvable'}), 404
+        db.commit()
+        _invalidate_rules_cache(user_id)
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        _return_db(db)
+
+
+# ─── DÉTECTION PHISHING / SPAM VIA IA (Phase 2) ───────────────────────────────
+
+@app.route('/api/email/security-check', methods=['POST'])
+@token_required
+@limiter.limit("10 per minute")
+def email_security_check():
+    """Analyse un email pour détecter phishing/spam via Gemini."""
+    user_email = request.current_user['email']
+    data       = request.get_json(silent=True) or {}
+    message_id = _str(data.get('message_id', ''), 100).strip()
+
+    if not message_id:
+        return jsonify({'error': 'message_id requis'}), 400
+
+    cache_key = f"seccheck:{user_email}:{message_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return jsonify(cached)
+
+    try:
+        service = _get_gmail_service(user_email)
+        if not service:
+            return jsonify({'error': 'Gmail non connecté'}), 403
+
+        msg  = service.users().messages().get(
+            userId='me', id=message_id, format='full'
+        ).execute()
+        hdrs = {h['name']: h['value'] for h in msg.get('payload', {}).get('headers', [])}
+
+        def _extract_text(payload, depth=0):
+            if depth > 5:
+                return ''
+            mime = payload.get('mimeType', '')
+            if mime == 'text/plain':
+                data_b64 = payload.get('body', {}).get('data', '')
+                if data_b64:
+                    import base64
+                    return base64.urlsafe_b64decode(data_b64 + '==').decode('utf-8', errors='replace')
+            result = ''
+            for part in payload.get('parts', []):
+                result += _extract_text(part, depth + 1)
+            return result
+
+        subject = hdrs.get('Subject', '(Sans objet)')[:200]
+        sender  = hdrs.get('From', 'Inconnu')[:200]
+        reply_to = hdrs.get('Reply-To', '')[:200]
+        body_text = _extract_text(msg.get('payload', {}))[:1200]
+        snippet   = msg.get('snippet', '')[:300]
+
+        GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+        def _static_analysis():
+            indicators = []
+            score = 0
+            text_all = f"{subject} {sender} {reply_to} {snippet} {body_text}".lower()
+
+            phish_keywords = [
+                'cliquez ici immédiatement', 'votre compte sera suspendu', 'confirmer votre mot de passe',
+                'urgence', 'gagnant', 'loterie', 'héritage', 'prince', 'wire transfer',
+                'verify your account', 'your account has been', 'limited time', 'act now',
+                'click here to verify', 'update your billing', 'confirm your identity',
+                'suspended', 'unauthorized access', 'compte bloqué', 'vérifiez votre identité',
+            ]
+            urgency_keywords = ['urgent', 'immédiatement', 'expire dans', 'dernière chance', 'dernières 24h']
+            suspicious_domains = [
+                '.ru', '.tk', '.ml', '.cf', '.gq', 'noreply@', 'support@secure-',
+                'security@', 'verify@', 'account-', '-secure.', '.xyz',
+            ]
+
+            for k in phish_keywords:
+                if k in text_all:
+                    indicators.append(f'Contenu suspect : "{k}"')
+                    score += 20
+
+            for k in urgency_keywords:
+                if k in text_all:
+                    indicators.append(f'Langage d\'urgence : "{k}"')
+                    score += 10
+
+            for d in suspicious_domains:
+                if d in sender.lower() or d in reply_to.lower():
+                    indicators.append(f'Domaine suspect dans expéditeur : "{d}"')
+                    score += 25
+
+            if reply_to and reply_to.lower() != sender.lower():
+                indicators.append('Reply-To différent de l\'expéditeur')
+                score += 15
+
+            score = min(score, 100)
+            risk = 'low' if score < 30 else ('medium' if score < 60 else 'high')
+            verdict = (
+                'Aucun indicateur de phishing détecté.' if risk == 'low' else
+                'Cet email contient des éléments suspects. Restez vigilant.' if risk == 'medium' else
+                'ALERTE : Cet email présente de forts indicateurs de phishing. Ne cliquez aucun lien.'
+            )
+            return {
+                'score': score, 'risk': risk,
+                'indicators': indicators[:8],
+                'verdict': verdict,
+                'method': 'static',
+            }
+
+        if not GEMINI_API_KEY:
+            result = _static_analysis()
+            _cache_set(cache_key, result, ttl=1800)
+            return jsonify(result)
+
+        prompt = f"""Analyse cet email et détecte s'il s'agit de phishing, spam ou arnaque.
+
+Expéditeur: {sender}
+Reply-To: {reply_to or 'identique à expéditeur'}
+Objet: {subject}
+Contenu: {body_text or snippet}
+
+Réponds UNIQUEMENT avec ce JSON (pas d'autres textes) :
+{{
+  "score": <0-100, 0=sain, 100=phishing certain>,
+  "risk": "<low|medium|high>",
+  "indicators": ["<indicateur 1>", "<indicateur 2>"],
+  "verdict": "<1 phrase de conclusion>"
+}}"""
+
+        GEMINI_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+        body = {
+            'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
+            'generationConfig': {'maxOutputTokens': 512, 'temperature': 0.1},
+        }
+
+        result = None
+        for model in GEMINI_MODELS:
+            try:
+                url  = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}'
+                resp = requests.post(url, json=body, timeout=20)
+                if not resp.ok:
+                    continue
+                raw  = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
+                # Extraire le JSON de la réponse (Gemini peut ajouter du Markdown)
+                import json as _json_mod
+                start = raw.find('{')
+                end   = raw.rfind('}') + 1
+                if start != -1 and end > start:
+                    parsed = _json_mod.loads(raw[start:end])
+                    parsed['method'] = 'gemini'
+                    result = parsed
+                    break
+            except Exception as e:
+                print(f"[Security] Gemini {model} error: {e}")
+                continue
+
+        if result is None:
+            result = _static_analysis()
+
+        _cache_set(cache_key, result, ttl=1800)
+        return jsonify(result)
+
+    except Exception as e:
+        print(f"[Security] Erreur: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/whatsapp/webhook', methods=['POST'])
@@ -3882,22 +4190,59 @@ _NEWSLETTER_DOMAINS = [
     'mailjet', 'sendinblue', 'brevo', 'campaignmonitor', 'aweber',
 ]
 
-def _classify_email(sender: str, subject: str, snippet: str) -> str:
+def _classify_email(sender: str, subject: str, snippet: str, rules: list | None = None) -> str:
     sender_l  = sender.lower()
     subject_l = subject.lower()
     text      = f"{sender_l} {subject_l} {snippet.lower()}"
 
-    # Newsletter: sender domain or keywords
+    # Custom rules take priority over built-in classification
+    if rules:
+        for rule in rules:
+            if not rule.get('active', True):
+                continue
+            val  = rule['value'].lower()
+            rtype = rule['rule_type']
+            cat   = rule['category']
+            if rtype == 'vip' and val in sender_l:
+                return cat
+            elif rtype == 'sender' and val in sender_l:
+                return cat
+            elif rtype == 'keyword' and val in text:
+                return cat
+
+    # Built-in classification
     if any(d in sender_l for d in _NEWSLETTER_DOMAINS):
         return 'newsletter'
     if any(k in text for k in _NEWSLETTER_KEYWORDS):
         return 'newsletter'
-    # Important: keywords in subject (higher weight) or text
     if any(k in subject_l for k in _IMPORTANT_KEYWORDS):
         return 'important'
     if any(k in text for k in _IMPORTANT_KEYWORDS):
         return 'important'
     return 'normal'
+
+
+def _load_user_rules(user_id: int) -> list:
+    """Charge les règles actives d'un utilisateur depuis la DB (cache 2 min)."""
+    cache_key = f"rules:{user_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute(
+                "SELECT id, rule_type, value, category, active FROM custom_rules "
+                "WHERE user_id = %s AND active = TRUE ORDER BY id",
+                (user_id,)
+            )
+            rules = [dict(r) for r in cur.fetchall()]
+        _cache_set(cache_key, rules, ttl=120)
+        return rules
+    except Exception:
+        return []
+    finally:
+        _return_db(db)
 
 
 @app.route('/api/fcm/register', methods=['POST'])
