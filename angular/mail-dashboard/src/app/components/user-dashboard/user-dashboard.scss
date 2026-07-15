@@ -956,6 +956,114 @@ $r: 14px;
 
 .save-row { display: flex; justify-content: flex-end; margin-top: 8px; }
 
+// ── SÉCURITÉ & RGPD ───────────────────────────────────────────────
+.settings-group {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+
+  &.settings-group-danger {
+    border-color: rgba(239,68,68,0.25);
+    background: rgba(239,68,68,0.03);
+  }
+}
+
+.settings-group-title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 16px; font-size: 14.5px; font-weight: 700; color: var(--text-color);
+  mat-icon { font-size: 19px; color: var(--p); }
+}
+
+.setting-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px 0;
+  & + .setting-row { border-top: 1px solid var(--border-color); }
+
+  &.setting-row-danger .setting-label { color: #dc2626; }
+}
+
+.setting-info {
+  display: flex; flex-direction: column; gap: 3px;
+  .setting-label { font-size: 14px; font-weight: 600; color: var(--text-color); }
+  .setting-desc  { font-size: 12.5px; color: var(--muted-color); line-height: 1.45; }
+  .danger-desc   { color: rgba(220,38,38,.75); }
+}
+
+.setting-control { flex-shrink: 0; }
+
+.btn-toggle-2fa {
+  display: flex; align-items: center; gap: 7px;
+  border-radius: 20px !important; font-size: 13.5px; font-weight: 600;
+  padding: 0 16px !important; height: 36px;
+  border: 1.5px solid var(--border-color) !important; color: var(--muted-color) !important;
+  transition: all 0.2s;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &.active {
+    border-color: var(--p) !important; color: var(--p) !important;
+    background: var(--p-light) !important;
+  }
+}
+
+.btn-export-data {
+  display: flex; align-items: center; gap: 7px;
+  border-radius: 8px !important; font-size: 13.5px; font-weight: 600; height: 36px;
+  border: 1.5px solid var(--p) !important; color: var(--p) !important;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover:not(:disabled) { background: var(--p-light) !important; }
+}
+
+.btn-delete-account {
+  display: flex; align-items: center; gap: 7px;
+  border-radius: 8px !important; font-size: 13.5px; font-weight: 600; height: 36px;
+  background: rgba(220,38,38,.1) !important; color: #dc2626 !important;
+  mat-icon { font-size: 17px; width: 17px; height: 17px; }
+  &:hover:not(:disabled) { background: rgba(220,38,38,.2) !important; }
+}
+
+.twofa-confirm-box {
+  background: var(--bg-color); border: 1px solid var(--border-color);
+  border-radius: 10px; padding: 14px 16px; margin-top: 12px;
+
+  .twofa-confirm-label { font-size: 13px; color: var(--text-sub); margin: 0 0 10px; }
+
+  .twofa-confirm-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+}
+
+.twofa-input {
+  flex: 1; min-width: 160px; height: 38px;
+  border: 1.5px solid var(--border-color); border-radius: 8px;
+  padding: 0 12px; font-size: 13.5px; font-family: var(--dash-font);
+  background: var(--surface-color); color: var(--text-color); outline: none;
+  transition: border-color 0.15s;
+  &:focus { border-color: var(--p); }
+}
+
+.btn-confirm-2fa {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--p) !important; color: #fff !important;
+  border-radius: 8px !important; font-size: 13.5px; font-weight: 600; height: 36px; padding: 0 16px !important;
+  mat-spinner { --mdc-circular-progress-active-indicator-color: #fff; }
+}
+
+// ── MODAL SUPPRESSION COMPTE ─────────────────────────────────────
+.modal-danger .modal-danger-icon { font-size: 26px; color: #dc2626; flex-shrink: 0; }
+.modal-body { margin-bottom: 20px; }
+.delete-warning-text { font-size: 14px; color: var(--text-color); line-height: 1.6; margin: 0 0 16px; }
+.delete-confirm-label { font-size: 13px; font-weight: 600; color: var(--text-sub); margin: 0 0 10px; }
+
+.btn-delete-confirm {
+  display: flex; align-items: center; gap: 8px;
+  background: #dc2626 !important; color: #fff !important;
+  border-radius: 10px !important; font-size: 14px; height: 40px;
+  mat-icon { font-size: 18px; }
+  mat-spinner { --mdc-circular-progress-active-indicator-color: #fff; }
+  &:disabled { opacity: 0.6; }
+}
+
 // ── GMAIL OAUTH ────────────────────────────────────────────────────
 .gmail-oauth-hint { font-size: 13px; color: var(--muted-color); margin: 0 0 14px; }
 

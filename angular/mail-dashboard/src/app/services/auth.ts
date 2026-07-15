@@ -64,4 +64,14 @@ export class AuthService {
   logout(): Observable<any> {
     return this.http.post(`${this.api}/logout`, {}).pipe(timeout(10000));
   }
+
+  verify2fa(tempToken: string, code: string): Observable<any> {
+    return this.http.post(`${this.api}/2fa/validate`, { temp_token: tempToken, code }, { headers: this.headers })
+      .pipe(timeout(15000));
+  }
+
+  toggle2fa(password: string, enabled: boolean): Observable<any> {
+    return this.http.post(`${this.api}/2fa/toggle`, { password, enabled }, { headers: this.headers })
+      .pipe(timeout(15000));
+  }
 }

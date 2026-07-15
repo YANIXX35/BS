@@ -281,6 +281,9 @@ def token_required(f):
         try:
             # Décoder le token
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+            # Rejeter les tokens temporaires 2FA (scope='2fa_pending')
+            if payload.get('scope') == '2fa_pending':
+                return jsonify({'error': 'Token 2FA temporaire — veuillez valider votre code'}), 401
             user_id    = payload['user_id']
             user_email = payload['email']
             jti        = payload.get('jti')
@@ -514,6 +517,14 @@ def init_db():
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0")
             cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS monitor_last_ok TIMESTAMP")
+            # 2FA — deuxième facteur par email OTP
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_fa_enabled BOOLEAN DEFAULT FALSE")
+            # Abonnement — expiration et rappels (Phase 3)
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_renew_sent BOOLEAN DEFAULT FALSE")
+            # Heures calmes (Phase 4)
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS quiet_start VARCHAR(5)")
+            cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS quiet_end   VARCHAR(5)")
             # Pré-remplir le chatId @lid connu pour kyliyanisse (checkWhatsapp retourne 404 sur ce serveur)
             cur.execute("""
                 UPDATE users SET whatsapp_chat_id='62508954075303@lid'
@@ -987,6 +998,34 @@ def login():
                 (email,)
             )
         db.commit()
+
+        # 2FA : si activée, émettre un token temporaire + envoyer OTP
+        if user.get('two_fa_enabled'):
+            temp_payload = {
+                'user_id': user['id'],
+                'email':   email,
+                'jti':     secrets.token_hex(16),
+                'scope':   '2fa_pending',
+                'exp':     datetime.utcnow() + timedelta(minutes=10),
+                'iat':     datetime.utcnow()
+            }
+            temp_token = jwt.encode(temp_payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+            otp_code   = str(random.randint(100000, 999999))
+            expires    = datetime.utcnow() + timedelta(minutes=10)
+            with db.cursor() as cur:
+                cur.execute("DELETE FROM otp_codes WHERE email = %s", (email,))
+                cur.execute(
+                    "INSERT INTO otp_codes (email, code, name, expires_at) VALUES (%s, %s, %s, %s)",
+                    (email, otp_code, user['name'], expires)
+                )
+            db.commit()
+            threading.Thread(
+                target=send_otp_email,
+                args=(email, user['name'], otp_code),
+                daemon=True
+            ).start()
+            return jsonify({'requires_2fa': True, 'temp_token': temp_token}), 200
+
         token = generate_token(user['id'], email)
         return jsonify({
             'message': 'Connexion reussie',
@@ -1023,6 +1062,102 @@ def logout():
         pass
     return jsonify({'message': 'Déconnexion réussie'}), 200
 
+
+@app.route('/api/auth/2fa/validate', methods=['POST'])
+@limiter.limit("5 per minute")
+def validate_2fa():
+    """Valide le code OTP du deuxième facteur et retourne un JWT complet."""
+    data       = request.json or {}
+    temp_token = _str(data.get('temp_token'), 512)
+    code       = _str(data.get('code'), 10)
+
+    if not temp_token or not code:
+        return jsonify({'error': 'temp_token et code requis'}), 400
+
+    try:
+        payload = jwt.decode(temp_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Session 2FA expirée — veuillez vous reconnecter'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Token invalide'}), 401
+
+    if payload.get('scope') != '2fa_pending':
+        return jsonify({'error': 'Token invalide'}), 401
+
+    user_id = payload['user_id']
+    email   = payload['email']
+
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM otp_codes WHERE email = %s AND code = %s AND expires_at > NOW()",
+                (email, code)
+            )
+            row = cur.fetchone()
+
+        if not row:
+            return jsonify({'error': 'Code invalide ou expiré'}), 401
+
+        with db.cursor() as cur:
+            cur.execute("DELETE FROM otp_codes WHERE email = %s", (email,))
+            cur.execute("SELECT id, name, role FROM users WHERE id = %s", (user_id,))
+            user = cur.fetchone()
+        db.commit()
+
+        if not user:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 401
+
+        token = generate_token(user_id, email)
+        return jsonify({
+            'message': 'Connexion réussie',
+            'name':    user['name'],
+            'email':   email,
+            'role':    user.get('role', 'user'),
+            'token':   token,
+        }), 200
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/auth/2fa/toggle', methods=['POST'])
+@token_required
+@limiter.limit("5 per minute")
+def toggle_2fa():
+    """Active ou désactive la 2FA pour l'utilisateur connecté (confirmation mot de passe requise)."""
+    user_id = request.current_user['id']
+
+    data     = request.json or {}
+    password = data.get('password')
+    enabled  = data.get('enabled')
+
+    if password is None or enabled is None:
+        return jsonify({'error': 'password et enabled requis'}), 400
+    if not isinstance(password, str) or len(password) > 128:
+        return jsonify({'error': 'Mot de passe invalide'}), 400
+
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+            user = cur.fetchone()
+
+        if not user:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 404
+
+        if not verify_password(password, user['password']):
+            return jsonify({'error': 'Mot de passe incorrect'}), 401
+
+        with db.cursor() as cur:
+            cur.execute("UPDATE users SET two_fa_enabled = %s WHERE id = %s", (bool(enabled), user_id))
+        db.commit()
+
+        return jsonify({
+            'message':        '2FA activée' if enabled else '2FA désactivée',
+            'two_fa_enabled': bool(enabled)
+        }), 200
+    finally:
+        _return_db(db)
 
 
 @app.route('/api/config')
@@ -3106,6 +3241,129 @@ def upload_avatar():
     except Exception as e:
         print(f"[Cloudinary] Erreur upload pour {email}: {e}")
         return jsonify({'error': 'Erreur lors de l\'upload'}), 500
+
+
+@app.route('/api/user/export', methods=['GET'])
+@token_required
+@limiter.limit("3 per day")
+def export_user_data():
+    """Exporte toutes les données personnelles de l'utilisateur (conformité RGPD)."""
+    user_id    = request.current_user['id']
+    user_email = request.current_user['email']
+
+    db = get_db()
+    try:
+        export = {}
+
+        def _serial(v):
+            return v.isoformat() if hasattr(v, 'isoformat') else v
+
+        def _row(r):
+            return {k: _serial(v) for k, v in r.items()}
+
+        with db.cursor() as cur:
+            cur.execute("""
+                SELECT id, name, email, role, plan, phone, gmail_connected_email,
+                       telegram_chat_id, is_verified, two_fa_enabled,
+                       created_at, last_login, login_count
+                FROM users WHERE id = %s
+            """, (user_id,))
+            row = cur.fetchone()
+            export['profile'] = _row(row) if row else {}
+
+            cur.execute("""
+                SELECT id, plan, amount, status, reference, created_at
+                FROM payments WHERE user_id = %s ORDER BY created_at DESC
+            """, (user_id,))
+            export['payments'] = [_row(r) for r in cur.fetchall()]
+
+            cur.execute(
+                "SELECT name, content, created_at FROM wa_templates WHERE user_email = %s",
+                (user_email,)
+            )
+            export['wa_templates'] = [_row(r) for r in cur.fetchall()]
+
+            cur.execute(
+                "SELECT preference_key, preference_value, updated_at FROM user_preferences WHERE user_id = %s",
+                (user_id,)
+            )
+            export['preferences'] = [_row(r) for r in cur.fetchall()]
+
+            cur.execute(
+                "SELECT last_sender, last_subject, last_snippet, updated_at FROM wa_context WHERE user_email = %s",
+                (user_email,)
+            )
+            row = cur.fetchone()
+            export['email_context'] = _row(row) if row else {}
+
+        import json as _json
+        response = app.response_class(
+            response=_json.dumps(export, ensure_ascii=False, indent=2, default=str),
+            status=200,
+            mimetype='application/json'
+        )
+        response.headers['Content-Disposition'] = (
+            f'attachment; filename="mailnotifier-data-{user_id}.json"'
+        )
+        return response
+    finally:
+        _return_db(db)
+
+
+@app.route('/api/user/account', methods=['DELETE'])
+@token_required
+@limiter.limit("1 per hour")
+def delete_account():
+    """Supprime définitivement le compte et toutes les données associées (RGPD)."""
+    user_id    = request.current_user['id']
+    user_email = request.current_user['email']
+
+    data     = request.json or {}
+    password = data.get('password')
+
+    if not password or not isinstance(password, str):
+        return jsonify({'error': 'Mot de passe requis pour confirmer la suppression'}), 400
+
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute("SELECT password, gmail_refresh_token FROM users WHERE id = %s", (user_id,))
+            user = cur.fetchone()
+
+        if not user:
+            return jsonify({'error': 'Utilisateur non trouvé'}), 404
+
+        if not verify_password(password, user['password']):
+            return jsonify({'error': 'Mot de passe incorrect'}), 401
+
+        # Révoquer les tokens OAuth Gmail
+        raw_refresh = user.get('gmail_refresh_token')
+        if raw_refresh:
+            try:
+                refresh_token = _decrypt(raw_refresh)
+                if refresh_token:
+                    requests.post(
+                        'https://oauth2.googleapis.com/revoke',
+                        params={'token': refresh_token}, timeout=5
+                    )
+            except Exception:
+                pass
+
+        # Suppression en cascade de toutes les données utilisateur
+        with db.cursor() as cur:
+            cur.execute("DELETE FROM wa_templates     WHERE user_email = %s", (user_email,))
+            cur.execute("DELETE FROM wa_context        WHERE user_email = %s", (user_email,))
+            cur.execute("DELETE FROM wa_conversations  WHERE user_email = %s", (user_email,))
+            cur.execute("DELETE FROM whatsapp_email_map WHERE user_email = %s", (user_email,))
+            cur.execute("DELETE FROM user_preferences  WHERE user_id    = %s", (user_id,))
+            cur.execute("DELETE FROM otp_codes         WHERE email      = %s", (user_email,))
+            cur.execute("DELETE FROM payments          WHERE user_id    = %s", (user_id,))
+            cur.execute("DELETE FROM users             WHERE id         = %s", (user_id,))
+        db.commit()
+
+        return jsonify({'message': 'Compte supprimé définitivement'}), 200
+    finally:
+        _return_db(db)
 
 
 @app.route('/api/user/settings', methods=['GET'])

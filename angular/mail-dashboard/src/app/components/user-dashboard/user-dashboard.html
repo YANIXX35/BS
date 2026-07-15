@@ -727,6 +727,84 @@
       }
     </div>
 
+    <!-- ── SÉCURITÉ : 2FA ──────────────────────────────────────────────────── -->
+    <div class="settings-group">
+      <h3 class="settings-group-title"><mat-icon>security</mat-icon> Sécurité</h3>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-label">Double authentification (2FA)</span>
+          <span class="setting-desc">Un code OTP par email vous sera demandé à chaque connexion.</span>
+        </div>
+        <div class="setting-control">
+          <button mat-stroked-button class="btn-toggle-2fa"
+                  [class.active]="settings.two_fa_enabled"
+                  (click)="startToggle2fa()">
+            <mat-icon>{{ settings.two_fa_enabled ? 'lock' : 'lock_open' }}</mat-icon>
+            {{ settings.two_fa_enabled ? 'Activée' : 'Désactivée' }}
+          </button>
+        </div>
+      </div>
+
+      @if (twoFaToggling) {
+        <div class="twofa-confirm-box">
+          <p class="twofa-confirm-label">
+            Confirmez votre mot de passe pour {{ twoFaPendingEnabled ? 'activer' : 'désactiver' }} la 2FA&nbsp;:
+          </p>
+          <div class="twofa-confirm-row">
+            <input class="twofa-input" type="password" [(ngModel)]="twoFaPassword"
+                   placeholder="Mot de passe" (keyup.enter)="confirmToggle2fa()" />
+            <button mat-flat-button class="btn-confirm-2fa"
+                    (click)="confirmToggle2fa()" [disabled]="twoFaToggleLoading">
+              @if (twoFaToggleLoading) { <mat-spinner diameter="16" /> }
+              @else { Confirmer }
+            </button>
+            <button mat-stroked-button (click)="cancelToggle2fa()" [disabled]="twoFaToggleLoading">
+              Annuler
+            </button>
+          </div>
+          @if (twoFaToggleError) {
+            <div class="alert error">{{ twoFaToggleError }}</div>
+          }
+        </div>
+      }
+
+      @if (twoFaToggleMsg) {
+        <div class="alert success">{{ twoFaToggleMsg }}</div>
+      }
+    </div>
+
+    <!-- ── RGPD : MES DONNÉES ──────────────────────────────────────────────── -->
+    <div class="settings-group settings-group-danger">
+      <h3 class="settings-group-title"><mat-icon>privacy_tip</mat-icon> Mes données &amp; Conformité</h3>
+
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-label">Exporter mes données</span>
+          <span class="setting-desc">Téléchargez une archive JSON de votre compte (profil, paiements, préférences).</span>
+        </div>
+        <div class="setting-control">
+          <button mat-stroked-button class="btn-export-data"
+                  (click)="exportUserData()" [disabled]="exportLoading">
+            @if (exportLoading) { <mat-spinner diameter="16" /> }
+            @else { <mat-icon>download</mat-icon> Exporter }
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-row setting-row-danger">
+        <div class="setting-info">
+          <span class="setting-label">Supprimer mon compte</span>
+          <span class="setting-desc danger-desc">Action irréversible — toutes vos données seront effacées définitivement.</span>
+        </div>
+        <div class="setting-control">
+          <button mat-flat-button class="btn-delete-account" (click)="openDeleteModal()">
+            <mat-icon>delete_forever</mat-icon> Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="save-row">
       <button mat-flat-button class="btn-save" (click)="saveSettings()" [disabled]="settingsLoading">
         @if (settingsLoading) { <mat-spinner diameter="20" /> }
@@ -1056,6 +1134,38 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════ MODAL SUPPRESSION COMPTE ══════════════════════ -->
+@if (showDeleteModal) {
+<div class="modal-backdrop" (click)="closeDeleteModal()">
+  <div class="modal-box modal-danger" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <mat-icon class="modal-danger-icon">warning</mat-icon>
+      <h3>Supprimer mon compte</h3>
+      <button class="modal-close" (click)="closeDeleteModal()"><mat-icon>close</mat-icon></button>
+    </div>
+    <div class="modal-body">
+      <p class="delete-warning-text">
+        Cette action est <strong>irréversible</strong>. Toutes vos données (emails surveillés, paiements, templates, préférences) seront définitivement supprimées.
+      </p>
+      <p class="delete-confirm-label">Entrez votre mot de passe pour confirmer :</p>
+      <input class="twofa-input" type="password" [(ngModel)]="deleteConfirmPassword"
+             placeholder="Mot de passe" (keyup.enter)="confirmDeleteAccount()" />
+      @if (deleteError) {
+        <div class="alert alert-error" style="margin-top:10px">{{ deleteError }}</div>
+      }
+    </div>
+    <div class="modal-actions">
+      <button mat-stroked-button (click)="closeDeleteModal()" [disabled]="deleteLoading">Annuler</button>
+      <button mat-flat-button class="btn-delete-confirm"
+              (click)="confirmDeleteAccount()" [disabled]="deleteLoading">
+        @if (deleteLoading) { <mat-spinner diameter="18" /> }
+        @else { <mat-icon>delete_forever</mat-icon> Supprimer définitivement }
+      </button>
+    </div>
+  </div>
+</div>
+}
 
 <!-- ══════════════════════ CHATBOT FLOTTANT ══════════════════════ -->
 <div class="dash-chat-widget">

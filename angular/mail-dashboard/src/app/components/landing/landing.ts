@@ -70,6 +70,13 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   loginSuccess = '';
   authTab: 'login' | 'register' = 'login';
 
+  // ── 2FA ────────────────────────────────────────────────────────────────────
+  show2faModal = false;
+  twoFaTempToken = '';
+  twoFaCode = '';
+  twoFaError = '';
+  twoFaLoading = false;
+
   // ── Register ───────────────────────────────────────────────────────────────
   regName = '';
   regEmail = '';
@@ -371,6 +378,15 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
     this.authService.login(this.loginEmail, this.loginPassword).subscribe({
       next: (res) => {
         this.loginLoading = false;
+        // Vérification 2FA requise
+        if (res.requires_2fa) {
+          this.twoFaTempToken = res.temp_token;
+          this.twoFaCode      = '';
+          this.twoFaError     = '';
+          this.show2faModal   = true;
+          this.cdr.markForCheck();
+          return;
+        }
         this.loginSuccess = `Bienvenue ${res.name} !`;
         if (res.token) localStorage.setItem('token', res.token);
         localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
@@ -381,6 +397,31 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
       error: (err) => {
         this.loginLoading = false;
         this.loginError = err.error?.error || 'Erreur de connexion';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  verify2fa() {
+    if (this.twoFaCode.length !== 6) {
+      this.twoFaError = 'Le code doit contenir 6 chiffres';
+      return;
+    }
+    this.twoFaLoading = true;
+    this.twoFaError   = '';
+    this.authService.verify2fa(this.twoFaTempToken, this.twoFaCode).subscribe({
+      next: (res) => {
+        this.twoFaLoading  = false;
+        this.show2faModal  = false;
+        if (res.token) localStorage.setItem('token', res.token);
+        localStorage.setItem('user', JSON.stringify({ name: res.name, email: res.email, role: res.role }));
+        this.cdr.markForCheck();
+        const route = res.role === 'admin' ? '/admin' : '/dashboard';
+        setTimeout(() => this.router.navigate([route], { replaceUrl: true }), 500);
+      },
+      error: (err) => {
+        this.twoFaLoading = false;
+        this.twoFaError   = err.error?.error || 'Code invalide';
         this.cdr.markForCheck();
       }
     });

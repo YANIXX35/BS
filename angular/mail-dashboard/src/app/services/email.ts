@@ -90,6 +90,10 @@ export interface UserSettings {
   theme_updated_at?: string;   // ISO timestamp — used for conflict detection
   telegram_enabled?: boolean;
   whatsapp_enabled?: boolean;
+  two_fa_enabled?: boolean;
+  plan_expires_at?: string | null;
+  quiet_start?: string;
+  quiet_end?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -191,5 +195,15 @@ export class EmailService {
 
   deleteTemplate(id: number): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/templates/${id}`);
+  }
+
+  exportData(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/user/export`, { responseType: 'blob' });
+  }
+
+  deleteAccount(password: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/user/account`, {
+      body: { password }
+    });
   }
 }

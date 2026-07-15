@@ -1082,4 +1082,121 @@ getSenderName(sender: string): string {
     localStorage.clear();
     this.router.navigate(['/'], { replaceUrl: true });
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2FA TOGGLE
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  twoFaToggling        = false;
+  twoFaPendingEnabled  = false;
+  twoFaPassword        = '';
+  twoFaToggleLoading   = false;
+  twoFaToggleMsg       = '';
+  twoFaToggleError     = '';
+
+  startToggle2fa() {
+    this.twoFaPendingEnabled = !this.settings.two_fa_enabled;
+    this.twoFaPassword       = '';
+    this.twoFaToggleMsg      = '';
+    this.twoFaToggleError    = '';
+    this.twoFaToggling       = true;
+    this.cdr.markForCheck();
+  }
+
+  cancelToggle2fa() {
+    this.twoFaToggling = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmToggle2fa() {
+    if (!this.twoFaPassword.trim()) {
+      this.twoFaToggleError = 'Mot de passe requis.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.twoFaToggleLoading = true;
+    this.twoFaToggleError   = '';
+    this.authService.toggle2fa(this.twoFaPassword, this.twoFaPendingEnabled).subscribe({
+      next: () => {
+        this.settings.two_fa_enabled = this.twoFaPendingEnabled;
+        this.twoFaToggling           = false;
+        this.twoFaToggleLoading      = false;
+        this.twoFaToggleMsg          = this.twoFaPendingEnabled
+          ? 'Double authentification activée.'
+          : 'Double authentification désactivée.';
+        this.cdr.markForCheck();
+        setTimeout(() => { this.twoFaToggleMsg = ''; this.cdr.markForCheck(); }, 3500);
+      },
+      error: (err) => {
+        this.twoFaToggleLoading = false;
+        this.twoFaToggleError   = err.error?.error || 'Mot de passe incorrect.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RGPD — EXPORT & SUPPRESSION DE COMPTE
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  exportLoading        = false;
+  showDeleteModal      = false;
+  deleteConfirmPassword = '';
+  deleteLoading        = false;
+  deleteError          = '';
+
+  exportUserData() {
+    this.exportLoading = true;
+    this.cdr.markForCheck();
+    this.emailService.exportData().subscribe({
+      next: (blob) => {
+        const url  = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href  = url;
+        link.download = `notifymails_export_${Date.now()}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.exportLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.exportLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  openDeleteModal() {
+    this.deleteConfirmPassword = '';
+    this.deleteError           = '';
+    this.showDeleteModal       = true;
+    this.cdr.markForCheck();
+  }
+
+  closeDeleteModal() {
+    this.showDeleteModal = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmDeleteAccount() {
+    if (!this.deleteConfirmPassword.trim()) {
+      this.deleteError = 'Mot de passe requis.';
+      this.cdr.markForCheck();
+      return;
+    }
+    this.deleteLoading = true;
+    this.deleteError   = '';
+    this.emailService.deleteAccount(this.deleteConfirmPassword).subscribe({
+      next: () => {
+        this.authService.logout().subscribe({ error: () => {} });
+        localStorage.clear();
+        this.router.navigate(['/'], { replaceUrl: true });
+      },
+      error: (err) => {
+        this.deleteLoading = false;
+        this.deleteError   = err.error?.error || 'Mot de passe incorrect ou erreur serveur.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
 }
