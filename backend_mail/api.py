@@ -1910,7 +1910,11 @@ def payment_verify():
                 cur.execute("SELECT id FROM users WHERE email = %s", (email,))
                 u = cur.fetchone()
                 if u:
-                    cur.execute("UPDATE users SET plan = %s WHERE id = %s", (plan, u['id']))
+                    cur.execute(
+                        "UPDATE users SET plan=%s, plan_expires_at=NOW() + INTERVAL '30 days', "
+                        "plan_renew_sent=FALSE WHERE id=%s",
+                        (plan, u['id'])
+                    )
                     cur.execute(
                         "UPDATE payments SET status = 'paid' WHERE reference = %s",
                         (reference,)
@@ -1969,13 +1973,17 @@ def geniuspay_webhook():
         db = get_db()
         try:
             with db.cursor() as cur:
-                cur.execute("UPDATE users SET plan = %s WHERE id = %s", (plan, int(user_id)))
+                cur.execute(
+                    "UPDATE users SET plan=%s, plan_expires_at=NOW() + INTERVAL '30 days', "
+                    "plan_renew_sent=FALSE WHERE id=%s",
+                    (plan, int(user_id))
+                )
                 cur.execute(
                     "UPDATE payments SET status = 'paid' WHERE reference = %s",
                     (reference,)
                 )
             db.commit()
-            print(f'[GeniusPay Webhook] Plan {plan} activé pour user_id={user_id}')
+            print(f'[GeniusPay Webhook] Plan {plan} activé pour user_id={user_id}, expire dans 30j')
         finally:
             _return_db(db)
 
@@ -5370,6 +5378,154 @@ def _send_weekly_summaries():
             _return_db(db)
 
 
+# ─── ABONNEMENT — EXPIRATION & RAPPELS (Phase 3) ─────────────────────────────
+
+@app.route('/api/user/subscription', methods=['GET'])
+@token_required
+def get_subscription():
+    """Retourne le plan actuel, la date d'expiration et le nombre de jours restants."""
+    user_id = request.current_user['id']
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            cur.execute(
+                "SELECT plan, plan_expires_at FROM users WHERE id=%s",
+                (user_id,)
+            )
+            row = cur.fetchone()
+        if not row:
+            return jsonify({'error': 'Utilisateur introuvable'}), 404
+
+        plan       = row['plan'] or 'free'
+        expires_at = row['plan_expires_at']
+        days_left  = None
+        if expires_at:
+            delta = (expires_at - datetime.utcnow()).days
+            days_left = max(0, delta)
+
+        return jsonify({
+            'plan':       plan,
+            'expires_at': expires_at.isoformat() if expires_at else None,
+            'days_left':  days_left,
+            'is_active':  (days_left is None or days_left > 0) and plan != 'free',
+        }), 200
+    finally:
+        _return_db(db)
+
+
+def _send_renewal_reminder_email(user: dict, days_left: int):
+    """Envoie un email de rappel de renouvellement d'abonnement."""
+    to_email = user['email']
+    name     = (user.get('name') or to_email.split('@')[0]).split()[0]
+    plan     = (user.get('plan') or 'premium').capitalize()
+    try:
+        msg            = MIMEMultipart('alternative')
+        msg['Subject'] = f'Votre abonnement MailNotifier expire dans {days_left} jour{"s" if days_left > 1 else ""}'
+        msg['From']    = f'MailNotifier <{SMTP_EMAIL}>'
+        msg['To']      = to_email
+
+        urgency_color  = '#f59e0b' if days_left > 1 else '#ef4444'
+        renew_url      = os.getenv('FRONTEND_URL', 'https://notifymails.com')
+
+        html = f"""
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:32px;background:#f5f5f5;border-radius:16px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <h1 style="color:#1a237e;margin:0;">MailNotifier</h1>
+            <p style="color:#666;margin:4px 0;">Rappel d'abonnement</p>
+          </div>
+          <div style="background:white;border-radius:12px;padding:32px;">
+            <p style="color:#333;font-size:16px;">Bonjour <strong>{name}</strong>,</p>
+            <p style="color:#555;font-size:14px;line-height:1.6;">
+              Votre abonnement <strong>MailNotifier {plan}</strong> expire dans
+              <span style="color:{urgency_color};font-weight:700;">{days_left} jour{"s" if days_left > 1 else ""}</span>.
+            </p>
+            <p style="color:#555;font-size:14px;">Sans renouvellement, votre compte passera automatiquement en plan <strong>Gratuit</strong> et les notifications WhatsApp seront désactivées.</p>
+            <div style="text-align:center;margin:28px 0;">
+              <a href="{renew_url}" style="background:#1a237e;color:white;padding:14px 32px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700;">
+                Renouveler mon abonnement
+              </a>
+            </div>
+            <p style="color:#bbb;font-size:12px;text-align:center;">Si vous ne souhaitez pas renouveler, aucune action n'est requise.</p>
+          </div>
+        </div>
+        """
+        msg.attach(MIMEText(html, 'html'))
+        ctx = create_default_context()
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=ctx) as server:
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        print(f"[Renewal] Email rappel envoyé à {to_email} (J-{days_left})")
+    except Exception as e:
+        print(f"[Renewal] Erreur envoi email à {to_email}: {e}")
+
+
+def _check_plan_expirations():
+    """Vérifie les abonnements : rappel J-3 et rétrogradation à l'expiration."""
+    db = get_db()
+    try:
+        with db.cursor() as cur:
+            # Rappel J-3 : plan actif, expiration dans 1-3 jours, rappel pas encore envoyé
+            cur.execute("""
+                SELECT id, email, name, plan FROM users
+                WHERE plan != 'free'
+                  AND plan_expires_at IS NOT NULL
+                  AND plan_expires_at > NOW()
+                  AND plan_expires_at <= NOW() + INTERVAL '3 days'
+                  AND plan_renew_sent = FALSE
+            """)
+            to_remind = cur.fetchall()
+
+            for user in to_remind:
+                days_left = max(1, (user['plan_expires_at'] if isinstance(user, dict) else 1))
+                # Recalcul propre
+                cur.execute("SELECT plan_expires_at FROM users WHERE id=%s", (user['id'],))
+                row = cur.fetchone()
+                if row and row['plan_expires_at']:
+                    days_left = max(0, (row['plan_expires_at'] - datetime.utcnow()).days)
+                threading.Thread(
+                    target=_send_renewal_reminder_email,
+                    args=(dict(user), days_left),
+                    daemon=True
+                ).start()
+                cur.execute(
+                    "UPDATE users SET plan_renew_sent=TRUE WHERE id=%s",
+                    (user['id'],)
+                )
+
+            # Rétrogradation : plan expiré depuis plus d'une heure
+            cur.execute("""
+                UPDATE users
+                SET plan='free', plan_renew_sent=FALSE
+                WHERE plan != 'free'
+                  AND plan_expires_at IS NOT NULL
+                  AND plan_expires_at < NOW() - INTERVAL '1 hour'
+                RETURNING id, email, plan
+            """)
+            downgraded = cur.fetchall()
+            for u in downgraded:
+                print(f"[Renewal] Compte {u['email']} rétrogradé vers free (plan expiré)")
+
+        db.commit()
+        if to_remind or downgraded:
+            print(f"[Renewal] {len(to_remind)} rappels envoyés, {len(downgraded)} comptes rétrogradés")
+    except Exception as e:
+        print(f"[Renewal] Erreur check expirations: {e}")
+        db.rollback()
+    finally:
+        _return_db(db)
+
+
+def _plan_expiry_loop():
+    """Vérifie les expirations de plan toutes les heures."""
+    time.sleep(300)   # attendre 5 min après le boot
+    while True:
+        try:
+            _check_plan_expirations()
+        except Exception as e:
+            print(f"[EXPIRY LOOP] Erreur: {e}")
+        time.sleep(3600)   # toutes les heures
+
+
 def _weekly_summary_loop():
     """Vérifie chaque heure si c'est lundi 8h UTC pour envoyer les résumés."""
     time.sleep(180)   # laisse le serveur finir son boot
@@ -5421,6 +5577,8 @@ def _startup():
         threading.Thread(target=_self_ping_loop, daemon=True, name="self-ping").start()
         print("[STARTUP] Lancement thread résumé hebdomadaire...")
         threading.Thread(target=_weekly_summary_loop, daemon=True, name="weekly-summary").start()
+        print("[STARTUP] Lancement thread vérification expirations abonnements...")
+        threading.Thread(target=_plan_expiry_loop, daemon=True, name="plan-expiry").start()
         print("[STARTUP] Tous les threads lances avec succes.")
     except Exception as e:
         import traceback

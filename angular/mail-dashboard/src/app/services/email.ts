@@ -74,6 +74,13 @@ export interface GmailStatus {
   monitor_last_ok?: string | null;
 }
 
+export interface Subscription {
+  plan: string;
+  expires_at: string | null;
+  days_left: number | null;
+  is_active: boolean;
+}
+
 export interface CustomRule {
   id: number;
   rule_type: 'vip' | 'sender' | 'keyword';
@@ -108,6 +115,7 @@ export interface UserSettings {
   telegram_enabled?: boolean;
   whatsapp_enabled?: boolean;
   two_fa_enabled?: boolean;
+  plan?: string;
   plan_expires_at?: string | null;
   quiet_start?: string;
   quiet_end?: string;
@@ -222,6 +230,12 @@ export class EmailService {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/user/account`, {
       body: { password }
     });
+  }
+
+  // ─── ABONNEMENT ─────────────────────────────────────────────────────────────
+
+  getSubscription(): Observable<Subscription> {
+    return this.http.get<Subscription>(`${this.apiUrl}/user/subscription`);
   }
 
   // ─── RÈGLES DE TRI ──────────────────────────────────────────────────────────

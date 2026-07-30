@@ -956,6 +956,78 @@ $r: 14px;
 
 .save-row { display: flex; justify-content: flex-end; margin-top: 8px; }
 
+// ── BANNIÈRE EXPIRATION PLAN ───────────────────────────────────────
+.expiry-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 20px; background: #fffbeb; border-bottom: 2px solid #fde68a;
+  font-size: 13.5px; color: #92400e;
+  mat-icon { color: #f59e0b; font-size: 19px; flex-shrink: 0; }
+  span { flex: 1; }
+  &.expiry-critical {
+    background: #fef2f2; border-color: #fca5a5; color: #991b1b;
+    mat-icon { color: #ef4444; }
+  }
+}
+
+.expiry-renew-btn {
+  flex-shrink: 0; padding: 5px 16px; border-radius: 8px; border: none;
+  background: #1a237e; color: white; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: opacity .15s;
+  &:hover { opacity: .85; }
+}
+
+// ── CARTE ABONNEMENT ──────────────────────────────────────────────
+.sub-info-row {
+  display: flex; gap: 32px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
+.sub-plan-block, .sub-expiry-block {
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.sub-plan-label {
+  font-size: 11.5px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--muted-color);
+}
+
+.sub-plan-badge {
+  display: inline-flex; align-items: center; padding: 4px 14px;
+  border-radius: 20px; font-size: 13px; font-weight: 700;
+  &.plan-badge-free       { background: #e0e7ef; color: #374151; }
+  &.plan-badge-premium    { background: #dbeafe; color: #1e3a8a; }
+  &.plan-badge-enterprise { background: #ede9fe; color: #4c1d95; }
+  &.plan-badge-test       { background: #fef3c7; color: #78350f; }
+}
+
+.sub-expiry-date {
+  font-size: 14px; font-weight: 600; color: var(--text-color);
+  display: flex; align-items: center; gap: 6px;
+  &.sub-expiry-soon    { color: #d97706; }
+  &.sub-expiry-expired { color: #dc2626; }
+}
+
+.sub-days-left {
+  font-size: 12px; font-weight: 500; color: var(--muted-color);
+  &.sub-expired { color: #dc2626; }
+}
+
+.sub-upgrade-hint {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; color: var(--text-sub); line-height: 1.5;
+  background: var(--bg-color); border-radius: 8px; padding: 10px 12px;
+  margin-bottom: 14px;
+  mat-icon { color: var(--p); font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+}
+
+.sub-actions { display: flex; }
+
+.btn-renew {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--p) !important; color: #fff !important;
+  border-radius: 8px !important; font-size: 13.5px; font-weight: 600; height: 36px;
+  mat-icon { font-size: 17px; }
+}
+
 // ── SÉCURITÉ & RGPD ───────────────────────────────────────────────
 .settings-group {
   background: var(--surface-color);

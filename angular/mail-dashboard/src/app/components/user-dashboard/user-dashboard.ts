@@ -15,7 +15,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate, CustomRule, SecurityCheckResult } from '../../services/email';
+import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate, CustomRule, SecurityCheckResult, Subscription } from '../../services/email';
 import { AuthService } from '../../services/auth';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
@@ -488,6 +488,8 @@ export class UserDashboard implements OnInit, OnDestroy {
       },
       error: () => { /* keep localStorage values as fallback */ }
     });
+
+    this.loadSubscription();
 
     this.emailService.getGmailStatus(this.user.email).subscribe({
       next: (res) => {
@@ -1180,6 +1182,43 @@ getSenderName(sender: string): string {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ABONNEMENT (Phase 3)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  subscription: Subscription | null = null;
+
+  loadSubscription() {
+    this.emailService.getSubscription().subscribe({
+      next: (s) => { this.subscription = s; this.cdr.markForCheck(); },
+      error: () => {}
+    });
+  }
+
+  get planLabel(): string {
+    const p = this.subscription?.plan || this.settings?.plan || 'free';
+    const map: Record<string, string> = { free: 'Gratuit', premium: 'Premium', enterprise: 'Enterprise', test: 'Test' };
+    return map[p] || p;
+  }
+
+  get planBadgeClass(): string {
+    const p = this.subscription?.plan || 'free';
+    return `plan-badge-${p}`;
+  }
+
+  get daysLeftLabel(): string {
+    const d = this.subscription?.days_left;
+    if (d === null || d === undefined) return '';
+    if (d === 0) return 'Expiré aujourd\'hui';
+    return `${d} jour${d > 1 ? 's' : ''} restant${d > 1 ? 's' : ''}`;
+  }
+
+  get showExpiryBanner(): boolean {
+    if (!this.subscription) return false;
+    const d = this.subscription.days_left;
+    return this.subscription.plan !== 'free' && d !== null && d <= 7;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────

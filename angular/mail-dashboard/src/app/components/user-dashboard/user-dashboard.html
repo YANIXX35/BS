@@ -123,6 +123,23 @@
     </div>
   </header>
 
+  <!-- ══════════════════════ BANNIÈRE EXPIRATION PLAN ══════════════════════ -->
+  @if (showExpiryBanner && subscription) {
+    <div class="expiry-banner" [class.expiry-critical]="(subscription.days_left ?? 99) === 0">
+      <mat-icon>{{ (subscription.days_left ?? 99) === 0 ? 'error' : 'warning' }}</mat-icon>
+      <span>
+        @if ((subscription.days_left ?? 99) === 0) {
+          Votre abonnement <strong>{{ planLabel }}</strong> a expiré — vous êtes repassé en plan Gratuit.
+        } @else {
+          Votre abonnement <strong>{{ planLabel }}</strong> expire dans <strong>{{ daysLeftLabel }}</strong>.
+        }
+      </span>
+      <button class="expiry-renew-btn" (click)="navigateTo('settings')">
+        Renouveler
+      </button>
+    </div>
+  }
+
   <!-- ══════════════════════ DASHBOARD ══════════════════════ -->
   @if (activeView === 'dashboard') {
   <div class="content-pad">
@@ -725,6 +742,48 @@
           }
         }
       }
+    </div>
+
+    <!-- ── ABONNEMENT ───────────────────────────────────────────────────────── -->
+    <div class="settings-group">
+      <h3 class="settings-group-title"><mat-icon>workspace_premium</mat-icon> Mon abonnement</h3>
+
+      <div class="sub-info-row">
+        <div class="sub-plan-block">
+          <span class="sub-plan-label">Plan actuel</span>
+          <span class="sub-plan-badge" [class]="planBadgeClass">{{ planLabel }}</span>
+        </div>
+
+        @if (subscription && subscription.plan !== 'free' && subscription.expires_at) {
+          <div class="sub-expiry-block">
+            <span class="sub-plan-label">Expiration</span>
+            <span class="sub-expiry-date"
+                  [class.sub-expiry-soon]="(subscription.days_left ?? 99) <= 7"
+                  [class.sub-expiry-expired]="(subscription.days_left ?? 99) === 0">
+              {{ subscription.expires_at | date:'dd/MM/yyyy' }}
+              @if ((subscription.days_left ?? 99) > 0) {
+                <span class="sub-days-left">({{ daysLeftLabel }})</span>
+              } @else {
+                <span class="sub-days-left sub-expired">Expiré</span>
+              }
+            </span>
+          </div>
+        }
+      </div>
+
+      @if (subscription && subscription.plan === 'free') {
+        <div class="sub-upgrade-hint">
+          <mat-icon>info</mat-icon>
+          Plan Gratuit — notifications WhatsApp et fonctionnalités avancées disponibles avec Premium (2 000 XOF/mois).
+        </div>
+      }
+
+      <div class="sub-actions">
+        <button mat-flat-button class="btn-renew" (click)="navigateTo('dashboard')">
+          <mat-icon>refresh</mat-icon>
+          {{ subscription?.plan === 'free' ? 'Passer Premium' : 'Renouveler' }}
+        </button>
+      </div>
     </div>
 
     <!-- ── RÈGLES DE TRI PERSONNALISÉES ─────────────────────────────────────── -->
