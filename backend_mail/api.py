@@ -4436,6 +4436,7 @@ def _check_user_emails_gmail(user):
                     if 'INBOX' in msg.get('labelIds', []):
                         new_ids.append(msg['id'])
 
+            user_rules = _load_user_rules(user_id)
             for msg_id in new_ids:
                 try:
                     msg = service.users().messages().get(
@@ -4447,7 +4448,7 @@ def _check_user_emails_gmail(user):
                     subject  = hdrs.get('Subject', '(Sans objet)')
                     sender   = hdrs.get('From', 'Inconnu')
                     snippet  = msg.get('snippet', '')[:200]
-                    category = _classify_email(sender, subject, snippet)
+                    category = _classify_email(sender, subject, snippet, user_rules)
                     print(f"[Monitor] Email [{category}] : {subject[:60]}")
 
                     if chat_id and user.get('telegram_enabled', True):
