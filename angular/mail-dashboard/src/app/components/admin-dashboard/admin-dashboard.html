@@ -814,6 +814,17 @@
                   <span style="color:#f44336;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">cancel</mat-icon> {{ adminWaMessage }}</span>
                 }
               </div>
+              <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color)">
+                <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px">
+                  <mat-icon style="font-size:14px;height:14px;width:14px;vertical-align:middle">edit</mat-icon>
+                  Saisie directe du Chat ID (si la vérification échoue — ex: format <code>@lid</code>) :
+                </p>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>WhatsApp Chat ID (manuel)</mat-label>
+                  <input matInput [(ngModel)]="adminSettings.whatsapp_chat_id" placeholder="ex: 62508954075303@lid" />
+                  <mat-icon matSuffix>chat</mat-icon>
+                </mat-form-field>
+              </div>
             </div>
 
             <!-- Base de données -->
