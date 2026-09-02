@@ -13,7 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Subscription } from 'rxjs';
+import { Subscription as RxSubscription } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTemplate, CustomRule, SecurityCheckResult, Subscription } from '../../services/email';
 import { AuthService } from '../../services/auth';
@@ -244,7 +244,7 @@ export class UserDashboard implements OnInit, OnDestroy {
 
   private _clockInterval: any;
   private _syncInterval: any;
-  private _themeSub!: Subscription;
+  private _themeSub!: RxSubscription;
   private _visibilityHandler!: () => void;
 
   constructor(
