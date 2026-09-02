@@ -77,6 +77,60 @@ export class AdminDashboard implements OnInit {
   settingsSaved = false;
   settingsError = '';
 
+  // WhatsApp verification
+  adminCountryCodes = [
+    { code: '+225', flag: '🇨🇮', name: 'Côte d\'Ivoire' },
+    { code: '+221', flag: '🇸🇳', name: 'Sénégal' },
+    { code: '+223', flag: '🇲🇱', name: 'Mali' },
+    { code: '+229', flag: '🇧🇯', name: 'Bénin' },
+    { code: '+226', flag: '🇧🇫', name: 'Burkina Faso' },
+    { code: '+224', flag: '🇬🇳', name: 'Guinée' },
+    { code: '+228', flag: '🇹🇬', name: 'Togo' },
+    { code: '+33',  flag: '🇫🇷', name: 'France' },
+    { code: '+1',   flag: '🇺🇸', name: 'USA / Canada' },
+  ];
+  adminDialCode = '+225';
+  adminLocalPhone = '';
+  adminWaLoading = false;
+  adminWaResult: 'none' | 'ok' | 'error' = 'none';
+  adminWaMessage = '';
+
+  get adminFullPhone(): string {
+    return this.adminDialCode.replace('+', '') + this.adminLocalPhone.replace(/\D/g, '');
+  }
+
+  verifyAdminWhatsapp() {
+    const phone = this.adminFullPhone.trim();
+    if (!phone || !this.adminLocalPhone) {
+      this.adminWaResult = 'error';
+      this.adminWaMessage = 'Entre ton numéro d\'abord.';
+      return;
+    }
+    this.adminWaLoading = true;
+    this.adminWaResult = 'none';
+    this.adminWaMessage = '';
+    this.emailService.checkWhatsappNumber(phone).subscribe({
+      next: (res) => {
+        this.adminWaLoading = false;
+        if (res.exists) {
+          this.adminWaResult = 'ok';
+          this.adminWaMessage = 'Numéro WhatsApp vérifié !';
+          this.adminSettings.whatsapp_chat_id = res.chatId;
+        } else {
+          this.adminWaResult = 'error';
+          this.adminWaMessage = 'Ce numéro n\'est pas sur WhatsApp.';
+        }
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.adminWaLoading = false;
+        this.adminWaResult = 'error';
+        this.adminWaMessage = 'Erreur lors de la vérification.';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   // Profile
   profilePhoto = '';
   editName = '';

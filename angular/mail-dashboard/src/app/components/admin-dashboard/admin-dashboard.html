@@ -781,12 +781,39 @@
             <!-- WhatsApp -->
             <div class="section-block">
               <div class="block-header"><h3><mat-icon style="color:#25d366">chat</mat-icon> WhatsApp</h3></div>
-              <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Entre ton numéro au format international (ex: <code>2250708090001@c.us</code> pour la Côte d'Ivoire).</p>
-              <mat-form-field appearance="outline" class="full-width" style="margin-top:4px">
-                <mat-label>WhatsApp Chat ID</mat-label>
-                <input matInput [(ngModel)]="adminSettings.whatsapp_chat_id" placeholder="ex: 2250708090001@c.us" />
-                <mat-icon matSuffix>chat</mat-icon>
-              </mat-form-field>
+              @if (adminSettings.whatsapp_chat_id) {
+                <div class="settings-row" style="margin-bottom:10px">
+                  <mat-icon style="color:#25d366">check_circle</mat-icon>
+                  <span>Numéro enregistré : <strong>{{ adminSettings.whatsapp_chat_id }}</strong></span>
+                </div>
+              }
+              <div style="display:flex;gap:8px;align-items:flex-start">
+                <mat-form-field appearance="outline" style="width:130px;flex-shrink:0">
+                  <mat-label>Pays</mat-label>
+                  <mat-select [(ngModel)]="adminDialCode" (ngModelChange)="adminWaResult='none'">
+                    @for (c of adminCountryCodes; track c.code) {
+                      <mat-option [value]="c.code">{{ c.flag }} {{ c.code }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" style="flex:1">
+                  <mat-label>Numéro local</mat-label>
+                  <input matInput [(ngModel)]="adminLocalPhone" placeholder="0708090001" (ngModelChange)="adminWaResult='none'" />
+                  <mat-icon matSuffix>phone</mat-icon>
+                </mat-form-field>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+                <button mat-stroked-button (click)="verifyAdminWhatsapp()" [disabled]="adminWaLoading" style="color:#25d366;border-color:#25d366">
+                  <mat-icon>{{ adminWaLoading ? 'hourglass_empty' : 'verified' }}</mat-icon>
+                  {{ adminWaLoading ? 'Vérification...' : 'Vérifier le numéro' }}
+                </button>
+                @if (adminWaResult === 'ok') {
+                  <span style="color:#25d366;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">check_circle</mat-icon> {{ adminWaMessage }}</span>
+                }
+                @if (adminWaResult === 'error') {
+                  <span style="color:#f44336;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">cancel</mat-icon> {{ adminWaMessage }}</span>
+                }
+              </div>
             </div>
 
             <!-- Base de données -->
