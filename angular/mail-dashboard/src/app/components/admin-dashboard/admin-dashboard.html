@@ -778,6 +778,17 @@
               </mat-form-field>
             </div>
 
+            <!-- WhatsApp -->
+            <div class="section-block">
+              <div class="block-header"><h3><mat-icon style="color:#25d366">chat</mat-icon> WhatsApp</h3></div>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Entre ton numéro au format international (ex: <code>2250708090001@c.us</code> pour la Côte d'Ivoire).</p>
+              <mat-form-field appearance="outline" class="full-width" style="margin-top:4px">
+                <mat-label>WhatsApp Chat ID</mat-label>
+                <input matInput [(ngModel)]="adminSettings.whatsapp_chat_id" placeholder="ex: 2250708090001@c.us" />
+                <mat-icon matSuffix>chat</mat-icon>
+              </mat-form-field>
+            </div>
+
             <!-- Base de données -->
             <div class="section-block">
               <div class="block-header"><h3><mat-icon>storage</mat-icon> Base de donnees</h3></div>

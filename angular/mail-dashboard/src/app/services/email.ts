@@ -112,6 +112,7 @@ export interface UserSettings {
   theme_mode?: string;
   theme_secondary?: string;
   theme_updated_at?: string;   // ISO timestamp — used for conflict detection
+  whatsapp_chat_id?: string;
   telegram_enabled?: boolean;
   whatsapp_enabled?: boolean;
   two_fa_enabled?: boolean;
