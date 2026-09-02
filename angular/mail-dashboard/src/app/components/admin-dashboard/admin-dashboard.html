@@ -704,6 +704,11 @@
                     <input matInput [(ngModel)]="editName" />
                     <mat-icon matSuffix>person</mat-icon>
                   </mat-form-field>
+                  <mat-form-field appearance="outline" class="full-width" style="margin-bottom:8px">
+                    <mat-label>Téléphone (ex: +2250509273117)</mat-label>
+                    <input matInput [(ngModel)]="adminSettings.phone" placeholder="+2250509273117" />
+                    <mat-icon matSuffix>phone</mat-icon>
+                  </mat-form-field>
                   <p style="margin:0 0 10px;font-size:13px;color:#6b7280">{{ admin.email }}</p>
                   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
                     <span class="role-badge admin">Administrateur</span>
@@ -811,7 +816,15 @@
                   <span style="color:#25d366;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">check_circle</mat-icon> {{ adminWaMessage }}</span>
                 }
                 @if (adminWaResult === 'error') {
-                  <span style="color:#f44336;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">cancel</mat-icon> {{ adminWaMessage }}</span>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <span style="color:#f44336;font-size:13px;display:flex;align-items:center;gap:4px"><mat-icon style="font-size:16px;height:16px;width:16px">cancel</mat-icon> {{ adminWaMessage }}</span>
+                    @if (adminSettings.whatsapp_chat_id?.includes('@lid')) {
+                      <span style="color:#ff9800;font-size:11px;display:flex;align-items:center;gap:4px">
+                        <mat-icon style="font-size:13px;height:13px;width:13px">info</mat-icon>
+                        Normal pour un compte <code>@lid</code> — utilise la saisie directe ci-dessous.
+                      </span>
+                    }
+                  </div>
                 }
               </div>
               <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border-color)">

@@ -293,6 +293,11 @@ export class AdminDashboard implements OnInit {
     const stored = JSON.parse(localStorage.getItem('user') || '{}');
     stored.name = this.editName;
     localStorage.setItem('user', JSON.stringify(stored));
+    this.emailService.updateUserSettings({
+      email: this.admin.email,
+      name: this.editName,
+      phone: this.adminSettings.phone
+    }).subscribe({ error: (err) => console.error('[profile save]', err) });
     this.profileSaved = true;
     this.cdr.markForCheck();
     setTimeout(() => { this.profileSaved = false; this.cdr.markForCheck(); }, 3000);
