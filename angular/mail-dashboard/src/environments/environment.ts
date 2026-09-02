@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://backend-mail-knt0.onrender.com',
+  apiUrl: 'https://api.notifymails.com',
   firebase: {
     apiKey: 'AIzaSyDa3yXuaplIOg1d105B6ZU961K0FwbjVEc',
     authDomain: 'mailnotifier-d92d1.firebaseapp.com',
