@@ -724,7 +724,7 @@ $rose:      #f43f5e;
 // ── SECTION HEADER COMMUN ──────────────────────────────────────────────────────
 .section-header {
   text-align: center;
-  margin-bottom: 56px;
+  margin-bottom: 64px;
 
   .section-badge {
     display: inline-block;
@@ -2937,11 +2937,15 @@ $rose:      #f43f5e;
 
 // ── RESPONSIVE ─────────────────────────────────────────────────────────────────
 
-@media (max-width: 1100px) {
-  .hero { padding: 100px 48px 72px; }
-  .features .features-grid { grid-template-columns: repeat(2, 1fr); }
-  .features, .how-it-works, .pricing { padding-left: 48px; padding-right: 48px; }
-  .login-section { padding-left: 48px; padding-right: 48px; }
+@media (max-width: 1200px) and (min-width: 901px) {
+  .hero { padding: 100px 52px 72px; gap: 40px; }
+  .features .features-grid { grid-template-columns: repeat(3, 1fr); }
+  .features, .how-it-works, .pricing { padding-left: 52px; padding-right: 52px; }
+  .login-section { padding-left: 52px; padding-right: 52px; }
+}
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .features .features-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 900px) {
@@ -3189,6 +3193,200 @@ $rose:      #f43f5e;
     }
   }
   .footer { padding: 32px 14px; }
+}
+
+// ── DESKTOP ENHANCEMENTS ──────────────────────────────────────────────────────
+// Améliorations visuelles dédiées aux grands écrans (>1200px)
+
+// Relief par défaut sur les cartes (desktop uniquement)
+@media (min-width: 1101px) {
+  .feature-card {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.20), 0 1px 4px rgba(0,0,0,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+
+    &:hover {
+      box-shadow: 0 28px 72px rgba(99,102,241,0.22), 0 8px 28px rgba(0,0,0,0.32),
+                  inset 0 0 0 1px rgba(99,102,241,0.22);
+    }
+  }
+
+  .pricing-card {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.22), 0 1px 4px rgba(0,0,0,0.12),
+                inset 0 1px 0 rgba(255,255,255,0.04);
+
+    &.featured {
+      box-shadow:
+        0 0 0 1.5px rgba(99,102,241,0.35),
+        0 28px 88px rgba(99,102,241,0.32),
+        0 8px 28px rgba(124,58,237,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    &:hover { box-shadow: 0 24px 68px rgba(99,102,241,0.20), 0 6px 24px rgba(0,0,0,0.30); }
+  }
+
+  .how-it-works .steps .step {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.10);
+  }
+}
+
+@media (min-width: 1201px) {
+  // ── Hero ──
+  .hero {
+    padding: 100px clamp(80px, 7vw, 160px) 80px;
+    gap: 64px;
+
+    .hero-content {
+      max-width: 660px;
+
+      h1 {
+        font-size: 68px;
+        letter-spacing: -2.5px;
+        line-height: 1.07;
+      }
+
+      p { font-size: 18px; }
+    }
+
+    .hero-visual {
+      flex: 0 0 auto;
+
+      .phone-glow {
+        width: 400px; height: 400px;
+      }
+
+      .phone-mockup {
+        width: 340px;
+
+        .phone-screen {
+          padding: 18px 14px 20px;
+          gap: 12px;
+
+          .notif-card {
+            padding: 14px;
+            .notif-icon { width: 44px; height: 44px; border-radius: 13px; }
+            .notif-title { font-size: 13px; }
+            .notif-text  { font-size: 12px; }
+          }
+        }
+      }
+    }
+  }
+
+  // ── Sections — container centré ──
+  .features {
+    padding: 110px clamp(48px, 7vw, 120px);
+
+    .features-grid {
+      max-width: 1360px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+    }
+
+    .feature-card {
+      padding: 32px 28px;
+      h3 { font-size: 16px; }
+      p  { font-size: 14px; }
+    }
+  }
+
+  .how-it-works {
+    padding: 110px clamp(48px, 7vw, 120px);
+
+    .steps-wrap { max-width: 1000px; }
+
+    .steps .step-bubble { width: 80px; height: 80px; }
+    .steps .step-content h3 { font-size: 16px; }
+    .steps .step-content p  { font-size: 14px; }
+  }
+
+  .pricing {
+    padding: 110px clamp(48px, 7vw, 120px);
+
+    .pricing-grid {
+      max-width: 1100px;
+      gap: 28px;
+    }
+
+    .pricing-card {
+      padding: 36px 32px;
+
+      .plan-header .plan-name { font-size: 20px; }
+      .plan-header .plan-price .price-amount { font-size: 42px; }
+      .plan-features li { font-size: 14.5px; }
+    }
+  }
+
+  // ── Login / Auth ──
+  .login-section {
+    padding: 100px clamp(48px, 7vw, 120px);
+
+    .auth-wrap {
+      max-width: 1120px;
+      border-radius: 32px;
+    }
+
+    .auth-brand {
+      width: 400px;
+      padding: 56px 44px;
+
+      h2 { font-size: 26px; }
+
+      .auth-brand-logo { width: 160px; }
+
+      .brand-perks li .bp-icon {
+        width: 40px; height: 40px; border-radius: 12px;
+        mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      }
+
+      .brand-perks li div strong { font-size: 14.5px; }
+      .brand-perks li div span  { font-size: 13px; }
+    }
+
+    .auth-card {
+      padding: 52px 48px;
+      max-height: none; // Supprime le scroll inutile sur grand écran
+
+      .auth-toggle button { height: 42px; font-size: 14px; }
+      .form-head h3 { font-size: 24px; }
+      .form-head p  { font-size: 14px; }
+      .fld-group .fld-box { height: 50px; border-radius: 12px; }
+      .fld-group label { font-size: 13px; }
+      .btn-auth { height: 52px; font-size: 15px; border-radius: 14px; }
+      .btn-google { height: 50px; font-size: 15px; border-radius: 13px; }
+      .otp-box { height: 68px !important; }
+    }
+  }
+}
+
+// ── Ultra-wide (>1440px) ───────────────────────────────────────────────────────
+@media (min-width: 1440px) {
+  .hero {
+    padding: 110px clamp(100px, 9vw, 200px) 90px;
+
+    .hero-content {
+      max-width: 700px;
+
+      h1 { font-size: 78px; letter-spacing: -3px; }
+
+      .hero-stats .stat strong { font-size: 30px; }
+    }
+
+    .hero-visual .phone-mockup {
+      width: 380px;
+
+      .phone-screen .notif-card {
+        .notif-icon { width: 48px; height: 48px; border-radius: 14px; }
+        .notif-title { font-size: 14px; }
+        .notif-text  { font-size: 12px; }
+      }
+    }
+  }
+
+  .features .features-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 1480px;
+  }
 }
 
 // ── CHATBOT WIDGET ─────────────────────────────────────────────────────────────
