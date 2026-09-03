@@ -1338,6 +1338,38 @@ $rose:      #f43f5e;
     svg { display: block; }
   }
 
+  .wave-redirected-state {
+    text-align: center;
+    padding: 8px 0;
+
+    .wave-qr-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(27,156,234,0.12);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      mat-icon { font-size: 34px; width: 34px; height: 34px; color: #1B9CEA; }
+    }
+
+    h4 { margin: 0 0 8px; font-size: 17px; font-weight: 700; color: $text; }
+
+    p {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: $muted;
+      line-height: 1.5;
+    }
+
+    .wave-redirect-sub {
+      font-size: 12px;
+      margin-bottom: 20px;
+    }
+
+    .wave-confirm-btn {
+      mat-icon { font-size: 18px; width: 18px; height: 18px; margin-right: 6px; }
+    }
+  }
+
   .pay-secure-note {
     display: flex;
     align-items: center;

@@ -102,6 +102,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   paymentError = '';
   paymentSuccess = false;
   paymentSuccessPlan = '';
+  waveRedirected = false;
 
   // ── Chatbot ────────────────────────────────────────────────────────────────
   chatOpen     = false;
@@ -290,6 +291,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
     this.paymentError = '';
     this.paymentLoading = false;
     this.wavePhone = '';
+    this.waveRedirected = false;
     this.showPayModal = true;
   }
 
@@ -304,9 +306,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
     this.paymentService.createWavePayment(this.wavePhone.trim(), this.payPlan).subscribe({
       next: (res) => {
         this.paymentLoading = false;
-        this.paymentSuccess = true;
-        this.paymentSuccessPlan = this.payPlan;
-        this.showPayModal = false;
+        this.waveRedirected = true;
         window.open(res.wave_url, '_blank');
         this.cdr.markForCheck();
       },
@@ -316,6 +316,14 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
       }
     });
+  }
+
+  confirmWavePayment() {
+    this.paymentSuccess = true;
+    this.paymentSuccessPlan = this.payPlan;
+    this.showPayModal = false;
+    this.waveRedirected = false;
+    this.cdr.markForCheck();
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────

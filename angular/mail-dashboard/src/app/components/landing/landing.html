@@ -261,7 +261,7 @@
         </p>
       </div>
 
-      @if (!paymentLoading && !paymentError) {
+      @if (!paymentLoading && !paymentError && !waveRedirected) {
         <div class="wave-steps">
           <div class="wave-step"><span class="ws-num">1</span><span>Entrez votre numéro Wave</span></div>
           <div class="wave-step"><span class="ws-num">2</span><span>Scannez le QR ou confirmez sur l'app</span></div>
@@ -275,11 +275,29 @@
         </mat-form-field>
         <button mat-flat-button class="wave-pay-btn" (click)="payWithWave()">
           <svg width="20" height="20" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:8px;vertical-align:middle"><circle cx="20" cy="20" r="20" fill="rgba(255,255,255,0.25)"/><path d="M8 22c2.5-5 5-8 7-8s3.5 4 5 7 2.5 6 5 6 5-5 7-13" stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none"/></svg>
-          Payer {{ payPlan === 'premium' ? '2 000' : '5 000' }} XOF avec Wave
+          Payer avec Wave
         </button>
         <p class="pay-secure-note">
           <mat-icon>lock</mat-icon> Paiement securise — vous serez redirige vers Wave
         </p>
+      }
+
+      @if (waveRedirected) {
+        <div class="wave-redirected-state">
+          <div class="wave-qr-icon">
+            <mat-icon>qr_code_scanner</mat-icon>
+          </div>
+          <h4>Page Wave ouverte !</h4>
+          <p>Scannez le QR code sur l'application Wave et validez le paiement.</p>
+          <p class="wave-redirect-sub">Revenez ici une fois le paiement effectué et cliquez sur le bouton ci-dessous.</p>
+          <button mat-flat-button class="wave-pay-btn wave-confirm-btn" (click)="confirmWavePayment()">
+            <mat-icon>check_circle</mat-icon>
+            J'ai payé avec Wave
+          </button>
+          <button mat-stroked-button class="retry-btn" style="margin-top:10px" (click)="waveRedirected = false">
+            <mat-icon>arrow_back</mat-icon> Retour
+          </button>
+        </div>
       }
 
       @if (paymentLoading) {
