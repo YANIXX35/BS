@@ -16,11 +16,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser, UserActivity } from '../../services/admin';
+import { AdminService, AdminUser, Payment, AdminStats, GmailScopeUser, UserActivity, Backup } from '../../services/admin';
 import { EmailService, Email, Stats, UserSettings } from '../../services/email';
 import { AuthService } from '../../services/auth';
 
-export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings' | 'activity';
+export type Section = 'overview' | 'users' | 'emails' | 'user-emails' | 'payments' | 'settings' | 'activity' | 'backup';
 
 interface NavItem {
   id: Section;
@@ -220,6 +220,7 @@ export class AdminDashboard implements OnInit {
     { id: 'user-emails', icon: 'manage_search', label: 'Mails utilisateurs' },
     { id: 'users',       icon: 'people',        label: 'Utilisateurs' },
     { id: 'payments',    icon: 'payment',       label: 'Paiements' },
+    { id: 'backup',      icon: 'backup',        label: 'Sauvegardes' },
   ];
 
   planOptions = [
@@ -521,6 +522,7 @@ export class AdminDashboard implements OnInit {
     this.mobileMenuOpen = false;
     if (s === 'settings')  this.loadGmailScopeStatus();
     if (s === 'activity')  this.loadUserActivity();
+    if (s === 'backup')    this.loadBackups();
     this.cdr.markForCheck();
   }
 
@@ -695,6 +697,53 @@ export class AdminDashboard implements OnInit {
       next: () => { this.snack.open('Paiement confirmé ✓', '', { duration: 2500 }); this.loadAll(); },
       error: () => this.snack.open('Erreur lors de la confirmation', '', { duration: 2500 })
     });
+  }
+
+  // ── Backup ──────────────────────────────────────────────────────────────────
+  backups: Backup[] = [];
+  backupLoading = false;
+  backupCreating = false;
+
+  loadBackups() {
+    this.backupLoading = true;
+    this.adminService.getBackups().subscribe({
+      next: (data) => { this.backups = data; this.backupLoading = false; this.cdr.markForCheck(); },
+      error: () => { this.backupLoading = false; this.cdr.markForCheck(); }
+    });
+  }
+
+  createBackup() {
+    this.backupCreating = true;
+    this.adminService.createBackup().subscribe({
+      next: () => {
+        this.backupCreating = false;
+        this.snack.open('Sauvegarde créée ✓', '', { duration: 2500 });
+        this.loadBackups();
+      },
+      error: () => {
+        this.backupCreating = false;
+        this.snack.open('Erreur lors de la sauvegarde', '', { duration: 2500 });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  downloadBackup(id: number) {
+    window.open(this.adminService.getBackupDownloadUrl(id), '_blank');
+  }
+
+  deleteBackup(id: number) {
+    if (!confirm('Supprimer cette sauvegarde ?')) return;
+    this.adminService.deleteBackup(id).subscribe({
+      next: () => { this.snack.open('Supprimée', '', { duration: 2000 }); this.loadBackups(); },
+      error: () => this.snack.open('Erreur', '', { duration: 2000 })
+    });
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / 1024 / 1024).toFixed(2) + ' Mo';
   }
 
   deletePayment(id: number) {

@@ -103,6 +103,22 @@ export class AdminService {
   getUserActivity(): Observable<UserActivity[]> {
     return this.http.get<UserActivity[]>(`${this.api}/user-activity`);
   }
+
+  getBackups(): Observable<Backup[]> {
+    return this.http.get<Backup[]>(`${this.api}/backups`);
+  }
+
+  createBackup(): Observable<any> {
+    return this.http.post(`${this.api}/backups/create`, {});
+  }
+
+  deleteBackup(id: number): Observable<any> {
+    return this.http.delete(`${this.api}/backups/${id}`);
+  }
+
+  getBackupDownloadUrl(id: number): string {
+    return `${this.api}/backups/${id}/download`;
+  }
 }
 
 export interface GmailScopeUser {
@@ -110,6 +126,15 @@ export interface GmailScopeUser {
   name: string;
   has_scope: boolean;
   gmail_connected_email: string | null;
+}
+
+export interface Backup {
+  id: number;
+  label: string;
+  size_bytes: number;
+  nb_users: number;
+  nb_payments: number;
+  created_at: string;
 }
 
 export interface UserActivity {

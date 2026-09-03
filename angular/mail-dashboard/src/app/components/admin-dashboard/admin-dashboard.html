@@ -350,6 +350,74 @@
         </div>
       }
 
+      <!-- ══════════════════════ BACKUP ══════════════════════ -->
+      @if (activeSection === 'backup') {
+        <div class="section">
+          <div class="section-block">
+            <div class="block-header">
+              <h3>Sauvegardes automatiques</h3>
+              <button mat-flat-button class="btn-backup" (click)="createBackup()" [disabled]="backupCreating">
+                @if (backupCreating) {
+                  <mat-progress-spinner mode="indeterminate" diameter="18" />
+                } @else {
+                  <mat-icon>add</mat-icon>
+                }
+                Nouvelle sauvegarde
+              </button>
+            </div>
+
+            <div class="backup-info-banner">
+              <mat-icon>info</mat-icon>
+              <span>Une sauvegarde automatique est créée <strong>toutes les 2 heures</strong>. Elle contient les utilisateurs, paiements et règles de tri (sans mots de passe). Max 24 sauvegardes conservées.</span>
+            </div>
+
+            @if (backupLoading) {
+              <div style="text-align:center;padding:40px">
+                <mat-progress-spinner mode="indeterminate" diameter="36" />
+              </div>
+            } @else {
+              @if (backups.length === 0) {
+                <div class="backup-empty">
+                  <mat-icon>cloud_off</mat-icon>
+                  <p>Aucune sauvegarde disponible. Cliquez sur "Nouvelle sauvegarde" pour en créer une maintenant.</p>
+                </div>
+              } @else {
+                <div class="backup-grid">
+                  @for (b of backups; track b.id) {
+                    <div class="backup-card" [class.auto]="b.label === 'auto'" [class.manual]="b.label === 'manuel'">
+                      <div class="backup-card-icon">
+                        <mat-icon>{{ b.label === 'auto' ? 'schedule' : 'person' }}</mat-icon>
+                      </div>
+                      <div class="backup-card-info">
+                        <div class="backup-card-title">
+                          <span class="backup-badge" [class.auto]="b.label === 'auto'" [class.manual]="b.label === 'manuel'">
+                            {{ b.label === 'auto' ? 'Automatique' : 'Manuel' }}
+                          </span>
+                          <span class="backup-date">{{ b.created_at }}</span>
+                        </div>
+                        <div class="backup-card-stats">
+                          <span><mat-icon style="font-size:14px;height:14px;width:14px">people</mat-icon> {{ b.nb_users }} utilisateurs</span>
+                          <span><mat-icon style="font-size:14px;height:14px;width:14px">payment</mat-icon> {{ b.nb_payments }} paiements</span>
+                          <span><mat-icon style="font-size:14px;height:14px;width:14px">storage</mat-icon> {{ formatBytes(b.size_bytes) }}</span>
+                        </div>
+                      </div>
+                      <div class="backup-card-actions">
+                        <button mat-icon-button matTooltip="Télécharger JSON" (click)="downloadBackup(b.id)">
+                          <mat-icon>download</mat-icon>
+                        </button>
+                        <button mat-icon-button matTooltip="Supprimer" class="btn-del-backup" (click)="deleteBackup(b.id)">
+                          <mat-icon>delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
       <!-- ══════════════════════ EMAILS ══════════════════════ -->
       @if (activeSection === 'emails') {
         <div class="section">
