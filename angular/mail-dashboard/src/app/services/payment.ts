@@ -23,4 +23,8 @@ export class PaymentService {
   createWavePayment(phone: string, plan: string): Observable<WavePaymentResponse> {
     return this.http.post<WavePaymentResponse>(`${this.api}/wave`, { phone, plan });
   }
+
+  notifyWavePaid(paymentId: number): Observable<any> {
+    return this.http.post(`${this.api}/wave/${paymentId}/paid`, {});
+  }
 }

@@ -103,6 +103,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   paymentSuccess = false;
   paymentSuccessPlan = '';
   waveRedirected = false;
+  wavePaymentId: number | null = null;
 
   // ── Chatbot ────────────────────────────────────────────────────────────────
   chatOpen     = false;
@@ -307,6 +308,7 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
       next: (res) => {
         this.paymentLoading = false;
         this.waveRedirected = true;
+        this.wavePaymentId = res.payment_id;
         window.open(res.wave_url, '_blank');
         this.cdr.markForCheck();
       },
@@ -319,10 +321,14 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   }
 
   confirmWavePayment() {
+    if (this.wavePaymentId) {
+      this.paymentService.notifyWavePaid(this.wavePaymentId).subscribe({ error: () => {} });
+    }
     this.paymentSuccess = true;
     this.paymentSuccessPlan = this.payPlan;
     this.showPayModal = false;
     this.waveRedirected = false;
+    this.wavePaymentId = null;
     this.cdr.markForCheck();
   }
 
