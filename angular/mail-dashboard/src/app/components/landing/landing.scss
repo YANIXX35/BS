@@ -2634,12 +2634,16 @@ $rose:      #f43f5e;
   // ── HERO ──
   .hero { background: linear-gradient(160deg, #eef2ff 0%, #f0f4ff 50%, #e0e7ff 100%) !important; }
 
-  .hero .orb { opacity: 0.18 !important; }
+  // L'aurora (::before) couvre le hero avec des dégradés sombres → invisible en mode clair
+  // On réduit fortement son opacité pour laisser apparaître le fond clair
+  .hero .hero-bg::before { opacity: 0.08 !important; }
+
+  .hero .orb { opacity: 0.08 !important; }
   .hero .grid-overlay {
     background-image:
       linear-gradient(rgba(99,102,241,0.10) 1px, transparent 1px),
       linear-gradient(90deg, rgba(99,102,241,0.10) 1px, transparent 1px) !important;
-    opacity: 0.7;
+    opacity: 0.5;
   }
 
   .hero-badge {
