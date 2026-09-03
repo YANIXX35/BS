@@ -396,7 +396,10 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.loginLoading = false;
-        this.loginError = err.error?.error || 'Erreur de connexion';
+        const msg = err.error?.error || err.message || '';
+        const status = err.status ?? 'no-status';
+        const type = err.name || 'UnknownError';
+        this.loginError = msg || `[${type}] HTTP ${status}`;
         this.cdr.markForCheck();
       }
     });
