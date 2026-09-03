@@ -197,17 +197,19 @@ def set_security_headers(response):
 @app.route('/api/<path:path>', methods=['OPTIONS'])
 def handle_options(path):
     """Gère les requêtes preflight OPTIONS avec tous les headers CORS nécessaires"""
-    response = ''
-    # Si c'est une requête preflight, renvoyer les headers CORS
-    if request.method == 'OPTIONS':
-        origin = request.headers.get('Origin', '')
-        if origin in ALLOWED_ORIGINS:
-            response = jsonify({'status': 'preflight'})
-            response.headers['Access-Control-Allow-Origin'] = origin
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Expires'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-        response.headers['Access-Control-Max-Age'] = '86400'
+    origin = request.headers.get('Origin', 'NO_ORIGIN')
+    ua     = request.headers.get('User-Agent', 'NO_UA')[:80]
+    print(f"[OPTIONS] path={path} origin={origin} ua={ua}", flush=True)
+
+    response = jsonify({'status': 'preflight'})
+    if origin in ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin']      = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+    response.headers['Access-Control-Allow-Headers'] = (
+        'Content-Type, Authorization, Cache-Control, Pragma, X-Requested-With, Expires'
+    )
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+    response.headers['Access-Control-Max-Age']       = '86400'
     return response, 200
 
 SMTP_EMAIL        = os.getenv('SMTP_EMAIL')
