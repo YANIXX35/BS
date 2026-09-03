@@ -28,8 +28,12 @@ export class AuthService {
   }
 
   login(email: string, password: string): Observable<any> {
-    return this.http.post(`${this.api}/login`, { email, password }, { headers: this.headers })
-      .pipe(timeout(15000));
+    const body = new URLSearchParams();
+    body.set('email', email);
+    body.set('password', password);
+    return this.http.post(`${this.api}/login`, body.toString(), {
+      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
+    }).pipe(timeout(15000));
   }
 
   requestPasswordReset(email: string): Observable<any> {
