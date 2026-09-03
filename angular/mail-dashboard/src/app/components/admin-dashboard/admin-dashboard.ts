@@ -689,6 +689,14 @@ export class AdminDashboard implements OnInit {
     });
   }
 
+  confirmPayment(id: number) {
+    if (!confirm('Confirmer ce paiement Wave et activer le plan ?')) return;
+    this.adminService.confirmPayment(id).subscribe({
+      next: () => { this.snack.open('Paiement confirmé ✓', '', { duration: 2500 }); this.loadAll(); },
+      error: () => this.snack.open('Erreur lors de la confirmation', '', { duration: 2500 })
+    });
+  }
+
   deletePayment(id: number) {
     if (!confirm('Supprimer ce paiement ?')) return;
     this.adminService.deletePayment(id).subscribe({

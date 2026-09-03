@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy, ChangeDetectorRef, HostListener, NgZone, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
-import { timeout } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
@@ -97,8 +96,8 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Payment ────────────────────────────────────────────────────────────────
   showPayModal = false;
-  payPlan: 'test' | 'premium' | 'enterprise' = 'premium';
-  paymentEmail = '';
+  payPlan: 'premium' | 'enterprise' = 'premium';
+  wavePhone = '';
   paymentLoading = false;
   paymentError = '';
   paymentSuccess = false;
@@ -155,19 +154,6 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
         { label: 'Notifications WhatsApp',  ok: false },
         { label: 'Filtres avancés',         ok: false },
         { label: 'Support prioritaire',     ok: false },
-      ],
-    },
-    {
-      id: 'test',
-      name: 'Test (200 XOF)',
-      price: '200',
-      period: 'XOF — test unique',
-      color: 'free',
-      test: true,
-      features: [
-        { label: 'Paiement de test réel',   ok: true  },
-        { label: 'Vérifie le webhook',      ok: true  },
-        { label: 'À supprimer après test',  ok: true  },
       ],
     },
     {
@@ -276,43 +262,16 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
       }
     });
 
-    // Detect return from Genius Pay
+    // Detect return from Wave payment (query param optionnel)
     this.route.queryParams.pipe(takeUntil(this._destroy$)).subscribe(params => {
-      const status = params['payment_status'];
-      const plan   = params['plan'];
-      const email  = params['email'];
-      const txId   = params['tx_id'] || params['transaction_id'] || params['reference'];
-
-      if (status === 'success') {
-        if (txId) {
-          this.paymentService.verify(txId, plan, email).subscribe({
-            next: (res) => {
-              if (res.status === 'paid') {
-                this.paymentSuccess = true;
-                this.paymentSuccessPlan = plan;
-              } else {
-                this.paymentError = 'Paiement non confirmé. Contactez le support si vous avez été débité.';
-              }
-              this.cdr.markForCheck();
-            },
-            error: () => {
-              this.paymentError = 'Impossible de vérifier le paiement. Contactez le support avec votre référence : ' + txId;
-              this.showPayModal = true;
-              this.cdr.markForCheck();
-            }
-          });
-        }
-        // Clean URL
+      if (params['wave_success']) {
+        this.paymentSuccess = true;
+        this.paymentSuccessPlan = params['plan'] || 'premium';
         this.router.navigate([], { replaceUrl: true, queryParams: {} });
         setTimeout(() => this.scrollTo('pricing'), 400);
+        this.cdr.markForCheck();
       }
     });
-
-    // Pre-fill email if already logged in
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { this.paymentEmail = JSON.parse(stored).email || ''; } catch { /* noop */ }
-    }
 
   }
 
@@ -326,42 +285,34 @@ export class Landing implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Payment ────────────────────────────────────────────────────────────────
-  openPayModal(plan: 'test' | 'premium' | 'enterprise') {
-    // Pré-remplir avec l'email du compte connecté si dispo
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user?.email) this.paymentEmail = user.email;
-    } catch { /* noop */ }
+  openPayModal(plan: 'premium' | 'enterprise') {
     this.payPlan = plan;
     this.paymentError = '';
     this.paymentLoading = false;
+    this.wavePhone = '';
     this.showPayModal = true;
   }
 
-  pay() {
-    if (!this.paymentEmail) {
-      this.paymentError = 'Veuillez saisir votre adresse email';
+  payWithWave() {
+    if (!this.wavePhone.trim()) {
+      this.paymentError = 'Veuillez saisir votre numéro de téléphone';
       return;
     }
     this.paymentLoading = true;
     this.paymentError = '';
 
-    this.paymentService.initiate(this.payPlan, this.paymentEmail).pipe(
-      timeout(35000)
-    ).subscribe({
+    this.paymentService.createWavePayment(this.wavePhone.trim(), this.payPlan).subscribe({
       next: (res) => {
         this.paymentLoading = false;
-        window.location.href = res.payment_url;
+        this.paymentSuccess = true;
+        this.paymentSuccessPlan = this.payPlan;
+        this.showPayModal = false;
+        window.open(res.wave_url, '_blank');
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.paymentLoading = false;
-        if (err.name === 'TimeoutError') {
-          this.paymentError = 'GeniusPay ne répond pas. Réessayez dans quelques instants.';
-        } else {
-          const detail = err.error?.error || err.error?.message || err.message || '';
-          const raw = err.error?.raw ? JSON.stringify(err.error.raw).slice(0, 120) : '';
-          this.paymentError = detail + (raw ? ` — ${raw}` : '') || 'Erreur inconnue';
-        }
+        this.paymentError = err.error?.error || 'Erreur lors de la création du paiement';
         this.cdr.markForCheck();
       }
     });

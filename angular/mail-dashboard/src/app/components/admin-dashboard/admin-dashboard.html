@@ -606,26 +606,47 @@
             } @else {
               <div class="file-list">
                 <div class="file-list-header">
-                  <span class="col-name">Utilisateur</span>
+                  <span class="col-name">Payeur</span>
                   <span class="col-sharing">Plan</span>
                   <span class="col-size">Montant</span>
                   <span class="col-date">Date</span>
+                  <span class="col-method">Méthode</span>
+                  <span class="col-status">Statut</span>
                   <span class="col-more">Actions</span>
                 </div>
                 @for (p of payments; track p.id) {
                   <div class="file-row">
                     <div class="col-name">
-                      <div class="file-icon green">{{ p.name.charAt(0).toUpperCase() }}</div>
+                      <div class="file-icon" [class]="p.status === 'paid' ? 'green' : 'orange'">
+                        {{ p.name.charAt(0).toUpperCase() }}
+                      </div>
                       <div class="file-meta">
                         <span class="file-name">{{ p.name }}</span>
-                        <span class="file-sub">{{ p.email }}</span>
+                        <span class="file-sub">{{ p.phone || p.email || '—' }}</span>
                       </div>
                     </div>
                     <span class="col-sharing"><span class="plan-badge" [class]="p.plan">{{ p.plan }}</span></span>
-                    <span class="col-size amount-text">{{ p.amount | number:'1.2-2' }}€</span>
-                    <span class="col-date">{{ p.created_at | slice:0:10 }}</span>
-                    <span class="col-more">
-                      <button mat-icon-button (click)="deletePayment(p.id)">
+                    <span class="col-size amount-text">{{ p.amount | number:'1.0-0' }} XOF</span>
+                    <span class="col-date">{{ p.created_at | slice:0:16 }}</span>
+                    <span class="col-method">
+                      @if (p.payment_method === 'wave') {
+                        <span class="method-badge wave-badge">Wave</span>
+                      } @else {
+                        <span class="method-badge">{{ p.payment_method || 'wave' }}</span>
+                      }
+                    </span>
+                    <span class="col-status">
+                      <span class="status-chip" [class]="p.status === 'paid' ? 'paid' : 'pending'">
+                        {{ p.status === 'paid' ? 'Payé' : 'En attente' }}
+                      </span>
+                    </span>
+                    <span class="col-more" style="display:flex;gap:4px">
+                      @if (p.status !== 'paid') {
+                        <button mat-icon-button (click)="confirmPayment(p.id)" matTooltip="Confirmer paiement">
+                          <mat-icon style="color:#22c55e">check_circle</mat-icon>
+                        </button>
+                      }
+                      <button mat-icon-button (click)="deletePayment(p.id)" matTooltip="Supprimer">
                         <mat-icon class="delete-icon">delete</mat-icon>
                       </button>
                     </span>

@@ -23,6 +23,8 @@ export interface Payment {
   amount: number;
   status: string;
   created_at: string;
+  phone?: string;
+  payment_method?: string;
 }
 
 export interface AdminStats {
@@ -72,6 +74,10 @@ export class AdminService {
 
   deletePayment(id: number): Observable<any> {
     return this.http.delete(`${this.api}/payments/${id}`);
+  }
+
+  confirmPayment(id: number): Observable<any> {
+    return this.http.post(`${this.api}/payments/${id}/confirm`, {});
   }
 
   suspendUser(id: number, suspended: boolean): Observable<any> {
