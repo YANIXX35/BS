@@ -409,7 +409,7 @@
                 <label>Adresse email</label>
                 <div class="fld-box">
                   <mat-icon>email</mat-icon>
-                  <input type="email" [(ngModel)]="loginEmail" placeholder="exemple@gmail.com" />
+                  <input type="email" [(ngModel)]="loginEmail" placeholder="exemple@gmail.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
                 </div>
               </div>
 
@@ -417,7 +417,7 @@
                 <label>Mot de passe</label>
                 <div class="fld-box">
                   <mat-icon>lock</mat-icon>
-                  <input type="password" [(ngModel)]="loginPassword" placeholder="••••••••" (keyup.enter)="login()" />
+                  <input type="password" [(ngModel)]="loginPassword" placeholder="••••••••" (keyup.enter)="login()" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" />
                 </div>
               </div>
 
@@ -461,7 +461,7 @@
                 <label>Adresse email</label>
                 <div class="fld-box">
                   <mat-icon>email</mat-icon>
-                  <input type="email" [(ngModel)]="regEmail" placeholder="exemple@gmail.com" />
+                  <input type="email" [(ngModel)]="regEmail" placeholder="exemple@gmail.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
                 </div>
               </div>
 
@@ -469,7 +469,7 @@
                 <label>Mot de passe</label>
                 <div class="fld-box">
                   <mat-icon>lock</mat-icon>
-                  <input type="password" [(ngModel)]="regPassword" placeholder="••••••••" />
+                  <input type="password" [(ngModel)]="regPassword" placeholder="••••••••" autocomplete="new-password" autocapitalize="none" autocorrect="off" spellcheck="false" />
                 </div>
               </div>
 
