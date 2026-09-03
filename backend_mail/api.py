@@ -150,6 +150,10 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+@app.errorhandler(429)
+def rate_limit_handler(e):
+    return jsonify({'error': 'Trop de tentatives. Veuillez patienter une minute avant de réessayer.'}), 429
+
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # CORS restreint aux origines connues
@@ -234,6 +238,11 @@ GREEN_API_URL      = (os.getenv('GREEN_API_URL') or 'https://api.green-api.com')
 GREEN_API_INSTANCE = (os.getenv('GREEN_API_INSTANCE') or '').strip() or None
 GREEN_API_TOKEN    = (os.getenv('GREEN_API_TOKEN') or '').strip() or None
 
+# ─── VONAGE (WhatsApp Business API) ───────────────────────────────────────────
+VONAGE_API_KEY    = (os.getenv('VONAGE_API_KEY') or '').strip() or None
+VONAGE_API_SECRET = (os.getenv('VONAGE_API_SECRET') or '').strip() or None
+VONAGE_WA_FROM    = (os.getenv('VONAGE_WA_FROM') or '14157386102').strip()  # sandbox number
+
 # ─── GOOGLE OAUTH CONFIG ──────────────────────────────────────────────────────
 GOOGLE_CLIENT_ID     = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
@@ -248,8 +257,8 @@ if _gcsj and (not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET):
         GOOGLE_CLIENT_SECRET = GOOGLE_CLIENT_SECRET or _web.get('client_secret', '')
     except Exception:
         pass
-OAUTH_REDIRECT_URI       = os.getenv('OAUTH_REDIRECT_URI', 'https://backend-mail-1.onrender.com/api/gmail/callback')
-GOOGLE_LOGIN_REDIRECT_URI = os.getenv('GOOGLE_LOGIN_REDIRECT_URI', 'https://backend-mail-1.onrender.com/api/auth/google/callback')
+OAUTH_REDIRECT_URI       = os.getenv('OAUTH_REDIRECT_URI', 'https://api.notifymails.com/api/gmail/callback')
+GOOGLE_LOGIN_REDIRECT_URI = os.getenv('GOOGLE_LOGIN_REDIRECT_URI', 'https://api.notifymails.com/api/auth/google/callback')
 FRONTEND_URL             = os.getenv('FRONTEND_URL', 'https://notifymails.com')
 GMAIL_SCOPES       = [
     'https://www.googleapis.com/auth/gmail.readonly',
@@ -2417,6 +2426,7 @@ def gmail_oauth_callback():
 
     try:
         # Échanger le code contre des tokens (sans vérif CSRF — le JWT fait office de preuve)
+        os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
         flow = Flow.from_client_config(
             _build_oauth_client_config(),
             scopes=GMAIL_SCOPES,
@@ -3700,7 +3710,8 @@ def get_user_settings():
                 "green_api_token, app_password, avatar, theme_color, font_family, theme_mode, theme_secondary, "
                 "to_char(theme_updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') AS theme_updated_at, "
                 "COALESCE(telegram_enabled, TRUE) AS telegram_enabled, "
-                "COALESCE(whatsapp_enabled, TRUE) AS whatsapp_enabled "
+                "COALESCE(whatsapp_enabled, TRUE) AS whatsapp_enabled, "
+                "whatsapp_chat_id "
                 "FROM users WHERE email = %s AND is_verified = 1",
                 (email,)
             )
@@ -3718,7 +3729,7 @@ def get_user_settings():
         user = dict(user)
         for key in ["phone", "gmail_address", "telegram_chat_id", "green_api_instance",
                     "green_api_token", "avatar", "theme_color", "font_family",
-                    "theme_mode", "theme_secondary"]:
+                    "theme_mode", "theme_secondary", "whatsapp_chat_id"]:
             if user.get(key) is None:
                 user[key] = ""
         user['telegram_enabled'] = bool(user.get('telegram_enabled', True))
@@ -3790,7 +3801,8 @@ def update_user_settings():
                         theme_secondary  = COALESCE(%s, theme_secondary),
                         theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END,
                         telegram_enabled = COALESCE(%s, telegram_enabled),
-                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled)
+                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled),
+                        whatsapp_chat_id = COALESCE(%s, whatsapp_chat_id)
                     WHERE email = %s AND is_verified = 1""",
                     (name, _val('phone'), _val('gmail_address'),
                      _val('telegram_chat_id'), _val('green_api_instance'),
@@ -3798,6 +3810,7 @@ def update_user_settings():
                      avatar, theme_color, font_family, theme_mode, theme_secondary,
                      bool(theme_color or font_family or theme_mode or theme_secondary),
                      _bool_val('telegram_enabled'), _bool_val('whatsapp_enabled'),
+                     _val('whatsapp_chat_id'),
                      email)
                 )
             else:
@@ -3816,7 +3829,8 @@ def update_user_settings():
                         theme_secondary  = COALESCE(%s, theme_secondary),
                         theme_updated_at = CASE WHEN %s THEN NOW() ELSE theme_updated_at END,
                         telegram_enabled = COALESCE(%s, telegram_enabled),
-                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled)
+                        whatsapp_enabled = COALESCE(%s, whatsapp_enabled),
+                        whatsapp_chat_id = COALESCE(%s, whatsapp_chat_id)
                     WHERE email = %s AND is_verified = 1""",
                     (name, _val('phone'), _val('gmail_address'),
                      _val('telegram_chat_id'), _val('green_api_instance'),
@@ -3824,6 +3838,7 @@ def update_user_settings():
                      avatar, theme_color, font_family, theme_mode, theme_secondary,
                      bool(theme_color or font_family or theme_mode or theme_secondary),
                      _bool_val('telegram_enabled'), _bool_val('whatsapp_enabled'),
+                     _val('whatsapp_chat_id'),
                      email)
                 )
         db.commit()
@@ -4079,11 +4094,41 @@ def _get_smart_reply_suggestions(user_email: str, ctx: dict) -> str:
     return ''
 
 
+def _send_whatsapp_vonage(phone_clean: str, text: str) -> bool:
+    """Envoie un message WhatsApp via Vonage Messages API. Retourne True si succès."""
+    if not VONAGE_API_KEY or not VONAGE_API_SECRET:
+        return False
+    try:
+        url = 'https://messages-sandbox.nexmo.com/v1/messages'
+        payload = {
+            "message_type": "text",
+            "text": text,
+            "to": phone_clean,
+            "from": VONAGE_WA_FROM,
+            "channel": "whatsapp"
+        }
+        resp = requests.post(
+            url, json=payload,
+            auth=(VONAGE_API_KEY, VONAGE_API_SECRET),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            timeout=10
+        )
+        if resp.ok:
+            print(f"[Monitor] WhatsApp Vonage OK → {phone_clean}")
+            return True
+        else:
+            print(f"[Monitor] WhatsApp Vonage erreur: {resp.status_code} {resp.text[:200]}")
+            return False
+    except Exception as e:
+        print(f"[Monitor] WhatsApp Vonage exception: {e}")
+        return False
+
+
 def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str,
                                 category: str = 'normal', gmail_message_id: str = '',
                                 gmail_thread_id: str = ''):
     phone = user.get('phone')
-    if not phone or not GREEN_API_INSTANCE or not GREEN_API_TOKEN:
+    if not phone:
         return
     phone_clean = re.sub(r'\D', '', phone)
     if not phone_clean:
@@ -4098,7 +4143,6 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str,
 
     now_str = datetime.now().strftime('%H:%M')
 
-    # ── Nouveau format conversationnel moderne ─────────────────────────────────
     text = (
         f"━━━━━━━━━━━━━━━\n"
         f"{cat_icon} *{sender_name}*\n\n"
@@ -4110,6 +4154,16 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str,
         f"Votre réponse sera envoyée par email."
     )
 
+    # ── Vonage en priorité, Green API en fallback ──────────────────────────────
+    if VONAGE_API_KEY and VONAGE_API_SECRET:
+        _send_whatsapp_vonage(phone_clean, text)
+        return
+
+    # ── Fallback Green API ─────────────────────────────────────────────────────
+    if not GREEN_API_INSTANCE or not GREEN_API_TOKEN:
+        print(f"[Monitor] WhatsApp: aucun provider configuré pour {phone_clean}")
+        return
+
     try:
         chat_id = user.get('whatsapp_chat_id') or _resolve_whatsapp_chat_id(phone_clean)
         if not chat_id:
@@ -4119,7 +4173,7 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str,
         resp = requests.post(url, json={"chatId": chat_id, "message": text}, timeout=10)
 
         if resp.ok:
-            print(f"[Monitor] WhatsApp OK → {phone_clean} (chatId={chat_id})")
+            print(f"[Monitor] WhatsApp Green API OK → {phone_clean} (chatId={chat_id})")
             if not user.get('whatsapp_chat_id') and chat_id:
                 _save_whatsapp_chat_id(user.get('id'), chat_id)
 
@@ -4134,16 +4188,15 @@ def _send_whatsapp_notification(user, sender: str, subject: str, snippet: str,
                 )
                 _set_wa_context(user.get('email', ''), gmail_message_id, sender, subject, snippet)
 
-            # ── Suggestions IA automatiques (envoyées juste après la notif) ──
             threading.Thread(
                 target=_send_ai_suggestions_wa,
                 args=(chat_id, user.get('email', ''), sender_name, subject, snippet),
                 daemon=True
             ).start()
         else:
-            print(f"[Monitor] WhatsApp erreur: {resp.status_code} {resp.text[:100]}")
+            print(f"[Monitor] WhatsApp Green API erreur: {resp.status_code} {resp.text[:100]}")
     except Exception as e:
-        print(f"[Monitor] WhatsApp exception: {e}")
+        print(f"[Monitor] WhatsApp Green API exception: {e}")
 
 
 def _send_ai_suggestions_wa(chat_id: str, user_email: str, sender_name: str, subject: str, snippet: str):
