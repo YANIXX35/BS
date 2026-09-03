@@ -20,12 +20,12 @@ messaging.onBackgroundMessage(function(payload) {
     badge: '/icons/icon-72x72.png',
     tag: 'mailnotifier-email',
     renotify: true,
-    data: { url: 'https://bs-mailnotif-nine.vercel.app/dashboard' },
+    data: { url: 'https://notifymails.com/dashboard' },
   });
 });
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  const url = event.notification.data?.url || 'https://bs-mailnotif-nine.vercel.app/dashboard';
+  const url = event.notification.data?.url || 'https://notifymails.com/dashboard';
   event.waitUntil(clients.openWindow(url));
 });
