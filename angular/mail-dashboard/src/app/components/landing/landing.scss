@@ -3415,6 +3415,11 @@ $rose:      #f43f5e;
     bottom: 0; right: 0; left: 0;
     padding: 0;
     gap: 0;
+    // Container is transparent — only children need pointer events
+    pointer-events: none;
+
+    // Re-enable pointer events only on visible interactive children
+    .chat-fab, .chat-panel { pointer-events: all; }
 
     // FAB stays bottom-right when chat is closed
     .chat-fab {
