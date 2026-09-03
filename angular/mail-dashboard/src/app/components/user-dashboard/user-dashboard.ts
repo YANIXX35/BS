@@ -19,6 +19,7 @@ import { EmailService, Stats, Email, EmailDetail, UserSettings, AiAnalysis, WaTe
 import { AuthService } from '../../services/auth';
 import { ThemeService } from '../../services/theme.service';
 import { PushNotificationService } from '../../services/push-notification.service';
+import { PaymentService, PLAN_PRICES } from '../../services/payment';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -40,12 +41,60 @@ export class UserDashboard implements OnInit, OnDestroy {
   loadingStats  = true;
   loadingEmails = true;
   currentTime   = new Date();
-  activeView: 'dashboard' | 'settings' | 'profile' = 'dashboard';
+  activeView: 'dashboard' | 'settings' | 'profile' | 'payment' = 'dashboard';
   mobileSidebarOpen = false;
 
-  navigateTo(view: 'dashboard' | 'settings' | 'profile') {
+  // ── Payment Wave ───────────────────────────────────────────────────────────
+  readonly PLAN_PRICES = PLAN_PRICES;
+  wavePlan: 'premium' | 'enterprise' = 'premium';
+  wavePhone = '';
+  waveLoading = false;
+  waveError = '';
+  waveRedirected = false;
+  wavePaymentId: number | null = null;
+  waveSuccess = false;
+
+  navigateTo(view: 'dashboard' | 'settings' | 'profile' | 'payment') {
     this.activeView = view;
     this.mobileSidebarOpen = false;
+    if (view === 'payment') {
+      this.waveError = '';
+      this.waveRedirected = false;
+      this.waveSuccess = false;
+    }
+  }
+
+  payWithWave() {
+    if (!this.wavePhone.trim()) {
+      this.waveError = 'Veuillez saisir votre numéro de téléphone Wave';
+      return;
+    }
+    this.waveLoading = true;
+    this.waveError = '';
+    this.paymentService.createWavePayment(this.wavePhone.trim(), this.wavePlan).subscribe({
+      next: (res) => {
+        this.waveLoading = false;
+        this.waveRedirected = true;
+        this.wavePaymentId = res.payment_id;
+        window.open(res.wave_url, '_blank');
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.waveLoading = false;
+        this.waveError = err.error?.error || 'Erreur lors de la création du paiement';
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  confirmWavePayment() {
+    if (this.wavePaymentId) {
+      this.paymentService.notifyWavePaid(this.wavePaymentId).subscribe({ error: () => {} });
+    }
+    this.waveSuccess = true;
+    this.waveRedirected = false;
+    this.wavePaymentId = null;
+    this.cdr.markForCheck();
   }
 
   // Settings
@@ -257,6 +306,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
+    private paymentService: PaymentService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────────

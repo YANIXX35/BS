@@ -49,6 +49,11 @@
       <span>Gmail OAuth</span>
     </button>
 
+    <button class="sb-item" [class.active]="activeView==='payment'" (click)="navigateTo('payment')">
+      <mat-icon>payment</mat-icon>
+      <span>Paiement</span>
+    </button>
+
     <p class="sb-section">Général</p>
 
     <button class="sb-item" (click)="navigateTo('profile')">
@@ -1377,6 +1382,117 @@
       </div>
     </div>
   }
+  <!-- ══════════════════════ PAIEMENT ══════════════════════ -->
+  @if (activeView === 'payment') {
+  <div class="dash-container">
+    <div class="section-header">
+      <button mat-icon-button (click)="navigateTo('dashboard')"><mat-icon>arrow_back</mat-icon></button>
+      <div>
+        <h2>Paiement</h2>
+        <p>Souscrire ou renouveler votre abonnement via Wave</p>
+      </div>
+    </div>
+
+    <!-- Statut abonnement actuel -->
+    <div class="pay-current-plan">
+      <mat-icon>verified</mat-icon>
+      <span>Plan actuel : <strong>{{ subscription?.plan || 'free' | titlecase }}</strong></span>
+      @if (subscription?.plan !== 'free' && subscription?.days_left !== null) {
+        <span class="pay-expiry">— expire dans {{ subscription?.days_left }} jours</span>
+      }
+    </div>
+
+    @if (waveSuccess) {
+      <div class="pay-success-box">
+        <mat-icon>check_circle</mat-icon>
+        <div>
+          <strong>Demande enregistrée !</strong>
+          <p>Votre paiement Wave est en cours de vérification. Votre plan sera activé sous 24h.</p>
+        </div>
+      </div>
+    }
+
+    @if (!waveSuccess) {
+      <!-- Plans -->
+      <div class="pay-plans-grid">
+        <!-- Premium -->
+        <div class="pay-plan-card" [class.selected]="wavePlan === 'premium'" (click)="wavePlan = 'premium'">
+          <div class="ppc-check"><mat-icon>{{ wavePlan === 'premium' ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon></div>
+          <div class="ppc-info">
+            <h3>Premium</h3>
+            <p class="ppc-price">2 000 <span>XOF / mois</span></p>
+            <ul>
+              <li><mat-icon>check</mat-icon> Notifications WhatsApp</li>
+              <li><mat-icon>check</mat-icon> Filtres avancés</li>
+              <li><mat-icon>check</mat-icon> Surveillance Gmail</li>
+            </ul>
+          </div>
+        </div>
+        <!-- Enterprise -->
+        <div class="pay-plan-card" [class.selected]="wavePlan === 'enterprise'" (click)="wavePlan = 'enterprise'">
+          <div class="ppc-check"><mat-icon>{{ wavePlan === 'enterprise' ? 'radio_button_checked' : 'radio_button_unchecked' }}</mat-icon></div>
+          <div class="ppc-info">
+            <h3>Enterprise</h3>
+            <p class="ppc-price">5 000 <span>XOF / mois</span></p>
+            <ul>
+              <li><mat-icon>check</mat-icon> Tout Premium</li>
+              <li><mat-icon>check</mat-icon> Support prioritaire</li>
+              <li><mat-icon>check</mat-icon> Multi-comptes</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulaire Wave -->
+      <div class="pay-wave-form">
+        <div class="pwf-header">
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="20" fill="#1B9CEA"/><path d="M8 22c2.5-5 5-8 7-8s3.5 4 5 7 2.5 6 5 6 5-5 7-13" stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none"/></svg>
+          <h3>Payer avec Wave</h3>
+        </div>
+
+        @if (!waveRedirected && !waveLoading) {
+          <mat-form-field appearance="outline" class="pwf-field">
+            <mat-label>Numéro de téléphone Wave</mat-label>
+            <input matInput type="tel" [(ngModel)]="wavePhone" placeholder="+2250709000000" (keyup.enter)="payWithWave()" />
+            <mat-icon matSuffix>phone</mat-icon>
+          </mat-form-field>
+
+          @if (waveError) {
+            <div class="pwf-error"><mat-icon>error</mat-icon> {{ waveError }}</div>
+          }
+
+          <button class="pwf-btn" (click)="payWithWave()">
+            <svg width="18" height="18" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right:8px"><circle cx="20" cy="20" r="20" fill="rgba(255,255,255,0.25)"/><path d="M8 22c2.5-5 5-8 7-8s3.5 4 5 7 2.5 6 5 6 5-5 7-13" stroke="#fff" stroke-width="3.2" stroke-linecap="round" fill="none"/></svg>
+            Payer {{ wavePlan === 'premium' ? '2 000' : '5 000' }} XOF avec Wave
+          </button>
+          <p class="pwf-note"><mat-icon>lock</mat-icon> Paiement sécurisé — vous serez redirigé vers Wave</p>
+        }
+
+        @if (waveLoading) {
+          <div class="pwf-loading">
+            <mat-spinner diameter="36"></mat-spinner>
+            <span>Préparation du paiement...</span>
+          </div>
+        }
+
+        @if (waveRedirected) {
+          <div class="pwf-redirected">
+            <mat-icon class="pwf-qr-icon">qr_code_scanner</mat-icon>
+            <h4>Page Wave ouverte !</h4>
+            <p>Scannez le QR code et validez le paiement sur votre application Wave.</p>
+            <button class="pwf-btn pwf-confirm-btn" (click)="confirmWavePayment()">
+              <mat-icon>check_circle</mat-icon> J'ai payé avec Wave
+            </button>
+            <button class="pwf-back-btn" (click)="waveRedirected = false">
+              <mat-icon>arrow_back</mat-icon> Retour
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </div>
+  }
+
   <button class="dash-chat-fab" (click)="toggleChat()" [class.open]="chatOpen">
     @if (chatOpen) { <mat-icon>close</mat-icon> } @else { <mat-icon>chat</mat-icon> }
     @if (!chatOpen) { <span>Aide</span> }
